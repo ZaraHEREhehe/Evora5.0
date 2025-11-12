@@ -30,6 +30,7 @@ public class Dashboard {
 
         // ✅ Sidebar
         SidebarController sidebarController = new SidebarController();
+        sidebarController.setStage(stage);  // ← ADD THIS
         sidebarController.setOnTabChange(tab -> System.out.println("Dashboard navigated to: " + tab));
         Sidebar sidebar = new Sidebar(sidebarController, "Zara");
         root.setLeft(sidebar);

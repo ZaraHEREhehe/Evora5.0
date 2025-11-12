@@ -29,7 +29,7 @@ public class HelloApplication extends Application {
 
     // ✅ Method to switch to Dashboard after login
     public static void showDashboard() {
-        Dashboard dashboard = new Dashboard(primaryStage);
+        CalendarView dashboard = new CalendarView(primaryStage);
         dashboard.show();
     }
 
