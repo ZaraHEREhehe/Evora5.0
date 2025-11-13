@@ -6,16 +6,21 @@ import com.example.demo1.Sidebar.SidebarController;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.*;
+import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+import javafx.scene.shape.SVGPath;
+import javafx.scene.shape.StrokeLineCap;
+import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.scene.Node;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.Cursor;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -286,6 +291,7 @@ public class CalendarView {
 
         return grid;
     }
+
     private VBox createDayCell(LocalDate date, boolean isOtherMonth, boolean isToday) {
         List<Todo> dayTodos = getTodosForDate(date);
         List<Todo> pending = dayTodos.stream()
@@ -385,29 +391,99 @@ public class CalendarView {
         card.setEffect(new DropShadow(20, Color.gray(0, 0.15)));
 
         double scale = getScale();
+
+        // Create header with icon
+        HBox header = new HBox(12);
+        header.setAlignment(Pos.CENTER_LEFT);
+
+        // Calendar icon with checkmark
+        StackPane iconContainer = new StackPane();
+        iconContainer.setMinSize(24, 24);
+        iconContainer.setPrefSize(24, 24);
+        iconContainer.setMaxSize(24, 24);
+
+        // Create a group to hold both calendar and checkmark
+        Group iconGroup = new Group();
+
+        // Calendar outline
+        SVGPath calendarOutline = new SVGPath();
+        calendarOutline.setContent("M8 2v4M16 2v4M3 10h18M5 2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z");
+        calendarOutline.setStroke(Color.web("#6b7280")); // Gray color
+        calendarOutline.setStrokeWidth(2);
+        calendarOutline.setFill(Color.TRANSPARENT);
+        calendarOutline.setStrokeLineCap(StrokeLineCap.ROUND);
+        calendarOutline.setStrokeLineJoin(StrokeLineJoin.ROUND);
+
+        // Checkmark inside calendar
+        SVGPath checkmark = new SVGPath();
+        checkmark.setContent("M9 12.75L11.25 15 15 9.75"); // Checkmark path
+        checkmark.setStroke(Color.web("#6b7280")); // Same gray color
+        checkmark.setStrokeWidth(2);
+        checkmark.setFill(Color.TRANSPARENT);
+        checkmark.setStrokeLineCap(StrokeLineCap.ROUND);
+        checkmark.setStrokeLineJoin(StrokeLineJoin.ROUND);
+
+        // Position the checkmark inside the calendar
+        checkmark.setTranslateX(2);
+        checkmark.setTranslateY(2);
+
+        iconGroup.getChildren().addAll(calendarOutline, checkmark);
+        iconContainer.getChildren().add(iconGroup);
+
         Label title = new Label(selectedDate != null ?
                 "Tasks for " + selectedDate.format(DateTimeFormatter.ofPattern("MMM d, yyyy")) :
                 "Select a date");
         title.setStyle("-fx-font-weight: 600; -fx-text-fill: #1f2937;");
         title.setFont(Font.font("Poppins", 18 * scale));
 
+        header.getChildren().addAll(iconContainer, title);
+
         VBox list = new VBox(10);
         list.setMinHeight(200);
         List<Todo> selected = selectedDate != null ? getTodosForDate(selectedDate) : Collections.emptyList();
 
         if (selected.isEmpty()) {
-            Label empty = new Label(selectedDate == null ? "Click a date to see tasks" : "No tasks today");
-            empty.setTextFill(Color.web("#9ca3af"));
-            empty.setFont(Font.font("Poppins", 14 * scale));
-            empty.setAlignment(Pos.CENTER);
-            list.getChildren().add(empty);
+            VBox emptyState = new VBox(12);
+            emptyState.setAlignment(Pos.CENTER);
+            emptyState.setPadding(new Insets(20, 0, 20, 0));
+
+            // Empty state icon
+            StackPane emptyIconContainer = new StackPane();
+            emptyIconContainer.setMinSize(48, 48);
+            emptyIconContainer.setPrefSize(48, 48);
+            emptyIconContainer.setMaxSize(48, 48);
+            emptyIconContainer.setStyle("-fx-background-color: #f3f4f6; -fx-background-radius: 12;");
+
+            SVGPath emptyIcon = new SVGPath();
+            if (selectedDate == null) {
+                // Calendar icon for "select a date"
+                emptyIcon.setContent("M8 2v4M16 2v4M3 10h18M5 2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z");
+                emptyIcon.setStroke(Color.web("#9ca3af"));
+            } else {
+                // Checkmark icon for "no tasks"
+                emptyIcon.setContent("M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z");
+                emptyIcon.setStroke(Color.web("#9ca3af"));
+            }
+            emptyIcon.setStrokeWidth(2);
+            emptyIcon.setFill(Color.TRANSPARENT);
+            emptyIcon.setStrokeLineCap(StrokeLineCap.ROUND);
+            emptyIcon.setStrokeLineJoin(StrokeLineJoin.ROUND);
+
+            emptyIconContainer.getChildren().add(emptyIcon);
+
+            Label emptyText = new Label(selectedDate == null ? "Click a date to see tasks" : "No tasks for this date");
+            emptyText.setTextFill(Color.web("#9ca3af"));
+            emptyText.setFont(Font.font("Poppins", 14 * scale));
+            emptyText.setAlignment(Pos.CENTER);
+
+            emptyState.getChildren().addAll(emptyIconContainer, emptyText);
+            list.getChildren().add(emptyState);
         } else {
             selected.forEach(t -> list.getChildren().add(createTodoItem(t)));
         }
 
-        card.getChildren().addAll(title, list);
+        card.getChildren().addAll(header, list);
 
-        // Proper responsive width binding using Bindings.when
         card.prefWidthProperty().bind(
                 Bindings.when(scene.widthProperty().lessThan(1024))
                         .then(scene.widthProperty().subtract(100))
@@ -426,6 +502,17 @@ public class CalendarView {
         item.setStyle("-fx-border-radius: 22; -fx-border-width: 2; -fx-border-color: " +
                 (todo.isCompleted() ? "#86efac" : "#e5e7eb") + ";");
 
+        HBox top = new HBox(10);
+        top.setAlignment(Pos.CENTER_LEFT);
+
+        // Simple circle dot for pending tasks, checkmark for completed
+        Circle dot = new Circle(5, switch (todo.getPriority()) {
+            case "high" -> Color.web("#ef4444");
+            case "medium" -> Color.web("#f59e0b");
+            case "low" -> Color.web("#10b981");
+            default -> Color.GRAY;
+        });
+
         Label text = new Label(todo.getText());
         text.setTextFill(Color.web("#1f2937"));
         text.setFont(Font.font("Poppins", 14));
@@ -439,11 +526,11 @@ public class CalendarView {
         Label priority = new Label(todo.getPriority().toUpperCase());
         priority.setFont(Font.font("Poppins", 11));
         priority.setStyle(String.format("""
-            -fx-background-color: %s;
-            -fx-text-fill: %s;
-            -fx-padding: 4 10;
-            -fx-background-radius: 16;
-            """,
+        -fx-background-color: %s;
+        -fx-text-fill: %s;
+        -fx-padding: 4 10;
+        -fx-background-radius: 16;
+        """,
                 todo.getPriority().equals("high") ? "#fecaca" :
                         todo.getPriority().equals("medium") ? "#fde68a" : "#bbf7d0",
                 todo.getPriority().equals("high") ? "#991b1b" :
@@ -459,16 +546,7 @@ public class CalendarView {
             badges.getChildren().add(completed);
         }
 
-        Circle dot = new Circle(5, switch (todo.getPriority()) {
-            case "high" -> Color.web("#ef4444");
-            case "medium" -> Color.web("#f59e0b");
-            case "low" -> Color.web("#10b981");
-            default -> Color.GRAY;
-        });
-
-        HBox top = new HBox(10, dot, text);
-        top.setAlignment(Pos.CENTER_LEFT);
-
+        top.getChildren().addAll(dot, text);
         item.getChildren().addAll(top, badges);
         return item;
     }
@@ -515,10 +593,22 @@ public class CalendarView {
         return row;
     }
 
-    private Button createNavButton(String text, Runnable action) {
-        Button btn = new Button(text);
-        btn.setStyle("-fx-background-radius: 50; -fx-padding: 8 18; -fx-background-color: #f3f4f6; -fx-font-family: 'Poppins';");
+    private Button createNavButton(String type, Runnable action) {
+        Button btn = new Button();
+        btn.setStyle("-fx-background-radius: 50; -fx-padding: 8 12; -fx-background-color: #f3f4f6; -fx-font-family: 'Poppins'; -fx-cursor: hand;");
         btn.setOnAction(e -> action.run());
+
+        FontIcon icon = new FontIcon();
+        icon.setIconColor(Color.web("#4b5563"));
+        icon.setIconSize(16);
+
+        if (type.equals("Previous")) {
+            icon.setIconLiteral("fas-chevron-left"); // FontAwesome solid chevron-left
+        } else  {
+            icon.setIconLiteral("fas-chevron-right"); // FontAwesome solid chevron-right
+        }
+
+        btn.setGraphic(icon);
         return btn;
     }
 
