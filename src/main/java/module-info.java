@@ -9,6 +9,7 @@ module com.example.demo1 {
     requires org.kordamp.ikonli.javafx;
     requires org.kordamp.bootstrapfx.core;
     requires eu.hansolo.tilesfx;
+    requires javafx.graphics;
 
     opens com.example.demo1 to javafx.fxml;
     exports com.example.demo1;

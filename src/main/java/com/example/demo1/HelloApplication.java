@@ -1,15 +1,17 @@
+//HelloApplication.java
 package com.example.demo1;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 
 import java.io.IOException;
 
 public class HelloApplication extends Application {
 
-    private static Stage primaryStage;  // store reference to stage
+    private static Stage primaryStage;
 
     @Override
     public void start(Stage stage) throws IOException {
@@ -18,6 +20,8 @@ public class HelloApplication extends Application {
         // Load the login page
         FXMLLoader fxmlLoader = new FXMLLoader(HelloApplication.class.getResource("hello-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
+
+      //  scene.getStylesheets().add(getClass().getResource("/com/example/demo1/themeapp/styles/pastel.css").toExternalForm());
 
         stage.setTitle("Évora - Login");
         stage.setScene(scene);
@@ -29,8 +33,13 @@ public class HelloApplication extends Application {
 
     // ✅ Method to switch to Dashboard after login
     public static void showDashboard() {
-        Dashboard dashboard = new Dashboard(primaryStage);
-        dashboard.show();
+        BorderPane root = new BorderPane();
+        MainController mainController = new MainController(root, "Insharah");
+
+        Scene scene = new Scene(root, 1200, 700);
+        primaryStage.setScene(scene);
+        primaryStage.setTitle("Pastel Productivity Dashboard");
+        primaryStage.show();
     }
 
     public static void main(String[] args) {
