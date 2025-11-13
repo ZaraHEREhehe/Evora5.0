@@ -4,6 +4,7 @@ package com.example.demo1.Calendar;
 import com.example.demo1.Sidebar.Sidebar;
 import com.example.demo1.Sidebar.SidebarController;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.geometry.*;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -14,6 +15,7 @@ import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.scene.Node;
 import javafx.scene.effect.DropShadow;
+import javafx.scene.Cursor;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -30,8 +32,6 @@ public class CalendarView {
     private BorderPane root;
     private Scene scene;
     private boolean isFirstShow = true;
-
-    // === RESPONSIVE CACHE ===
     private double lastWidth = 1400;
 
     public CalendarView(Stage stage) {
@@ -67,7 +67,7 @@ public class CalendarView {
             // === BUILD CONTENT AFTER SCENE ===
             root.setCenter(buildMainContent());
 
-            // === RESPONSIVE ON RESIZE (NO FLICKER) ===
+            // === RESPONSIVE REBUILD ON RESIZE ===
             scene.widthProperty().addListener((obs, old, width) -> {
                 if (!isFirstShow && width.doubleValue() > 0) {
                     lastWidth = width.doubleValue();
@@ -84,13 +84,14 @@ public class CalendarView {
     }
 
     private ScrollPane buildMainContent() {
-        VBox main = new VBox(30);
+        VBox main = new VBox(24);
         main.setPadding(new Insets(40));
         main.setAlignment(Pos.TOP_CENTER);
 
         double scale = getScale();
         main.setStyle(String.format("-fx-font-size: %.2fpx;", 16 * scale));
 
+        // === TITLE ===
         Label title = new Label("Calendar");
         title.setStyle("-fx-font-weight: 700; -fx-text-fill: #5c5470;");
         title.setFont(Font.font("Poppins", 36 * scale));
@@ -102,17 +103,47 @@ public class CalendarView {
         VBox header = new VBox(10, title, subtitle);
         header.setAlignment(Pos.CENTER);
 
-        VBox legend = createLegend();
-        HBox body = new HBox(32);
-        body.setAlignment(Pos.TOP_CENTER);
+        // === LEGEND ===
+        VBox legend = createResponsiveLegend();
+
+        // === RESPONSIVE LAYOUT: Use StackPane with dynamic switching ===
+        StackPane layoutContainer = new StackPane();
+        layoutContainer.setAlignment(Pos.TOP_CENTER);
 
         VBox calendarCard = createCalendarCard();
         VBox sidePanel = createSidePanel();
 
-        body.getChildren().addAll(calendarCard, sidePanel);
-        HBox.setHgrow(calendarCard, Priority.ALWAYS);
+        // Stacked layout (for mobile/small screens)
+        VBox stackedLayout = new VBox(24, calendarCard, sidePanel);
+        stackedLayout.setAlignment(Pos.TOP_CENTER);
+        VBox.setVgrow(calendarCard, Priority.NEVER);
 
-        main.getChildren().addAll(header, legend, body);
+        // Side-by-side layout (for desktop/large screens)
+        HBox sideBySideLayout = new HBox(32, calendarCard, sidePanel);
+        sideBySideLayout.setAlignment(Pos.TOP_CENTER);
+        HBox.setHgrow(calendarCard, Priority.ALWAYS);
+        sidePanel.setMaxWidth(380);
+
+        // Switch layouts based on window width - matching TypeScript breakpoint
+        scene.widthProperty().addListener((obs, old, width) -> {
+            double currentWidth = width.doubleValue();
+            if (currentWidth >= 1024) {
+                layoutContainer.getChildren().setAll(sideBySideLayout);
+                sidePanel.setMaxWidth(380);
+            } else {
+                layoutContainer.getChildren().setAll(stackedLayout);
+                sidePanel.setMaxWidth(Double.MAX_VALUE);
+            }
+        });
+
+        // Initial layout setup
+        if (scene.getWidth() >= 1024) {
+            layoutContainer.getChildren().setAll(sideBySideLayout);
+        } else {
+            layoutContainer.getChildren().setAll(stackedLayout);
+        }
+
+        main.getChildren().addAll(header, legend, layoutContainer);
 
         ScrollPane scroll = new ScrollPane(main);
         scroll.setFitToWidth(true);
@@ -127,23 +158,29 @@ public class CalendarView {
         return Math.max(0.8, Math.min(1.4, width / 1400.0));
     }
 
-    private VBox createLegend() {
+    private VBox createResponsiveLegend() {
         VBox card = new VBox(16);
         card.setPadding(new Insets(20));
-        card.setMaxWidth(600);
-        card.setAlignment(Pos.CENTER);
         card.setBackground(new Background(new BackgroundFill(Color.web("#ffffff", 0.7), new CornerRadii(30), Insets.EMPTY)));
         card.setEffect(new DropShadow(20, Color.gray(0, 0.15)));
+        card.setAlignment(Pos.CENTER);
 
-        HBox row = new HBox(40);
-        row.setAlignment(Pos.CENTER);
-        row.getChildren().addAll(
+        FlowPane flow = new FlowPane(24, 12);
+        flow.setAlignment(Pos.CENTER);
+        flow.setHgap(24);
+        flow.setVgap(12);
+        flow.setPadding(new Insets(8));
+
+        flow.getChildren().addAll(
                 legendItem("High Priority", "#ef4444"),
                 legendItem("Medium Priority", "#f59e0b"),
                 legendItem("Low Priority", "#10b981"),
-                legendItem("Today", "#ec4899")
+                legendItem("Today", "#ec4899"),
+                legendItem("Task Due", "#93c5fd") // Added for the new soft blue color
         );
-        card.getChildren().add(row);
+
+        flow.maxWidthProperty().bind(scene.widthProperty().subtract(100));
+        card.getChildren().add(flow);
         return card;
     }
 
@@ -152,6 +189,7 @@ public class CalendarView {
         Circle dot = new Circle(6, Color.web(color));
         Label label = new Label(text);
         label.setTextFill(Color.web("#4b5563"));
+        label.setFont(Font.font("Poppins", 13));
         item.getChildren().addAll(dot, label);
         return item;
     }
@@ -248,7 +286,6 @@ public class CalendarView {
 
         return grid;
     }
-
     private VBox createDayCell(LocalDate date, boolean isOtherMonth, boolean isToday) {
         List<Todo> dayTodos = getTodosForDate(date);
         List<Todo> pending = dayTodos.stream()
@@ -256,22 +293,30 @@ public class CalendarView {
                 .collect(Collectors.toList());
 
         boolean isSelected = date.equals(selectedDate);
+        boolean hasTasks = pending.size() > 0;
 
-        VBox cell = new VBox(6);
+        VBox cell = new VBox(4); // Reduced spacing for flatter cells
         cell.setAlignment(Pos.TOP_CENTER);
-        cell.setPadding(new Insets(10));
+        cell.setPadding(new Insets(6, 8, 8, 8)); // Adjusted padding for flatter layout
+        cell.setCursor(Cursor.HAND);
 
-        String bg = isSelected ? "#f3e8ff" : isToday ? "#fce7f3" : pending.size() > 0 ? "#fed7aa" : "#ffffff";
-        String border = isSelected ? "#c084fc" : isToday ? "#ec4899" : pending.size() > 0 ? "#fb923c" : "#e5e7eb";
+        String bg = isSelected ? "#f3e8ff" :
+                isToday ? "#fce7f3" :
+                        hasTasks ? "#dbeafe" : "#ffffff"; // Soft blue for tasks
+
+        String border = isSelected ? "#c084fc" :
+                isToday ? "#ec4899" :
+                        hasTasks ? "#93c5fd" : "#e5e7eb"; // Soft blue border for tasks
+
         String opacity = isOtherMonth ? "0.4" : "1.0";
 
         cell.setStyle(String.format("""
             -fx-background-color: %s;
-            -fx-background-radius: 20;
+            -fx-background-radius: 16;
             -fx-border-color: %s;
             -fx-border-width: 2;
-            -fx-border-radius: 20;
-            -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 8, 0, 0, 2);
+            -fx-border-radius: 16;
+            -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 6, 0, 0, 2);
             -fx-opacity: %s;
             -fx-cursor: hand;
             """, bg, border, opacity));
@@ -282,16 +327,17 @@ public class CalendarView {
         });
 
         Label dayLabel = new Label(String.valueOf(date.getDayOfMonth()));
-        dayLabel.setFont(Font.font("Poppins", 13));
+        dayLabel.setFont(Font.font("Poppins", 14));
+        // CHANGED: Text color for days with tasks
         dayLabel.setTextFill(isOtherMonth ? Color.web("#9ca3af") :
                 isToday ? Color.web("#be185d") :
-                        pending.size() > 0 ? Color.web("#ea580c") : Color.web("#374151"));
+                        hasTasks ? Color.web("#1e40af") : Color.web("#374151")); // Darker blue for tasks
         dayLabel.setStyle("-fx-font-weight: bold;");
 
         HBox dots = new HBox(3);
         dots.setAlignment(Pos.CENTER);
         pending.stream().limit(3).forEach(t -> {
-            Circle c = new Circle(3.5, switch (t.getPriority()) {
+            Circle c = new Circle(3, switch (t.getPriority()) {
                 case "high" -> Color.web("#ef4444");
                 case "medium" -> Color.web("#f59e0b");
                 case "low" -> Color.web("#10b981");
@@ -302,7 +348,8 @@ public class CalendarView {
         if (pending.size() > 3) {
             Label more = new Label("+" + (pending.size() - 3));
             more.setTextFill(Color.web("#6b7280"));
-            more.setFont(Font.font(8));
+            more.setFont(Font.font(9));
+            more.setStyle("-fx-font-weight: bold;");
             dots.getChildren().add(more);
         }
 
@@ -312,14 +359,22 @@ public class CalendarView {
 
     private VBox createSidePanel() {
         VBox panel = new VBox(20);
-        panel.setPrefWidth(380);
-        panel.setMaxWidth(380);
-        panel.setMinWidth(380);
+        panel.setAlignment(Pos.TOP_CENTER);
+
+        // Proper responsive width binding using Bindings.when
+        panel.prefWidthProperty().bind(
+                Bindings.when(scene.widthProperty().lessThan(1024))
+                        .then(scene.widthProperty().subtract(80))
+                        .otherwise(380.0)
+        );
 
         VBox taskCard = createTaskCard();
         VBox statsCard = createStatsCard();
 
         panel.getChildren().addAll(taskCard, statsCard);
+        VBox.setVgrow(taskCard, Priority.NEVER);
+        VBox.setVgrow(statsCard, Priority.NEVER);
+
         return panel;
     }
 
@@ -344,12 +399,21 @@ public class CalendarView {
             Label empty = new Label(selectedDate == null ? "Click a date to see tasks" : "No tasks today");
             empty.setTextFill(Color.web("#9ca3af"));
             empty.setFont(Font.font("Poppins", 14 * scale));
+            empty.setAlignment(Pos.CENTER);
             list.getChildren().add(empty);
         } else {
             selected.forEach(t -> list.getChildren().add(createTodoItem(t)));
         }
 
         card.getChildren().addAll(title, list);
+
+        // Proper responsive width binding using Bindings.when
+        card.prefWidthProperty().bind(
+                Bindings.when(scene.widthProperty().lessThan(1024))
+                        .then(scene.widthProperty().subtract(100))
+                        .otherwise(380.0)
+        );
+
         return card;
     }
 
@@ -362,7 +426,6 @@ public class CalendarView {
         item.setStyle("-fx-border-radius: 22; -fx-border-width: 2; -fx-border-color: " +
                 (todo.isCompleted() ? "#86efac" : "#e5e7eb") + ";");
 
-        // === MAIN TEXT ===
         Label text = new Label(todo.getText());
         text.setTextFill(Color.web("#1f2937"));
         text.setFont(Font.font("Poppins", 14));
@@ -370,19 +433,17 @@ public class CalendarView {
             text.setStyle("-fx-strikethrough: true; -fx-opacity: 0.7;");
         }
 
-        // === PRIORITY + COMPLETED BADGES ===
         HBox badges = new HBox(8);
         badges.setAlignment(Pos.CENTER_LEFT);
 
-        // Priority Badge
         Label priority = new Label(todo.getPriority().toUpperCase());
         priority.setFont(Font.font("Poppins", 11));
         priority.setStyle(String.format("""
-        -fx-background-color: %s;
-        -fx-text-fill: %s;
-        -fx-padding: 4 10;
-        -fx-background-radius: 16;
-        """,
+            -fx-background-color: %s;
+            -fx-text-fill: %s;
+            -fx-padding: 4 10;
+            -fx-background-radius: 16;
+            """,
                 todo.getPriority().equals("high") ? "#fecaca" :
                         todo.getPriority().equals("medium") ? "#fde68a" : "#bbf7d0",
                 todo.getPriority().equals("high") ? "#991b1b" :
@@ -391,7 +452,6 @@ public class CalendarView {
 
         badges.getChildren().add(priority);
 
-        // Completed Badge
         if (todo.isCompleted()) {
             Label completed = new Label("Completed");
             completed.setFont(Font.font("Poppins", 11));
@@ -399,7 +459,6 @@ public class CalendarView {
             badges.getChildren().add(completed);
         }
 
-        // === PRIORITY DOT (optional) ===
         Circle dot = new Circle(5, switch (todo.getPriority()) {
             case "high" -> Color.web("#ef4444");
             case "medium" -> Color.web("#f59e0b");
@@ -480,12 +539,12 @@ public class CalendarView {
 
     private List<Todo> getSampleTodos() {
         return Arrays.asList(
-                new Todo("1", "Review presentation slides", false, "high", "2025-09-04"),
-                new Todo("2", "Call team meeting", true, "medium", "2025-09-03"),
-                new Todo("3", "Submit expense reports", false, "high", "2025-09-05"),
-                new Todo("4", "Plan weekend trip", false, "low", "2025-09-07"),
-                new Todo("5", "Doctor appointment", false, "medium", "2025-09-10"),
-                new Todo("6", "Grocery shopping", false, "low", "2025-09-12")
+                new Todo("1", "Review presentation slides", false, "high", "2025-11-04"),
+                new Todo("2", "Call team meeting", true, "medium", "2025-11-03"),
+                new Todo("3", "Submit expense reports", false, "high", "2025-11-05"),
+                new Todo("4", "Plan weekend trip", false, "low", "2025-11-04"),
+                new Todo("5", "Doctor appointment", false, "medium", "2025-11-10"),
+                new Todo("6", "Grocery shopping", false, "low", "2025-11-12")
         );
     }
 
