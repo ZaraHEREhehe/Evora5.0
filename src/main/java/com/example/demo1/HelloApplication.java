@@ -1,5 +1,6 @@
 package com.example.demo1;
 
+import com.example.demo1.Calendar.CalendarView;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -29,11 +30,12 @@ public class HelloApplication extends Application {
 
     // ✅ Method to switch to Dashboard after login
     public static void showDashboard() {
-        CalendarView dashboard = new CalendarView(primaryStage);
+        Dashboard dashboard = new Dashboard(primaryStage);
         dashboard.show();
     }
 
     public static void main(String[] args) {
+
         launch();
     }
 }

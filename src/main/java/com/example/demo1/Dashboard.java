@@ -1,7 +1,9 @@
+// src/main/java/com/example/demo1/Dashboard.java
 package com.example.demo1;
 
 import com.example.demo1.Sidebar.Sidebar;
 import com.example.demo1.Sidebar.SidebarController;
+import com.example.demo1.Calendar.CalendarView;  // FIXED: Correct package
 import javafx.animation.ScaleTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -28,22 +30,25 @@ public class Dashboard {
     public void show() {
         BorderPane root = new BorderPane();
 
-        // ✅ Sidebar
+        // SIDEBAR
         SidebarController sidebarController = new SidebarController();
-        sidebarController.setStage(stage);  // ← ADD THIS
-        sidebarController.setOnTabChange(tab -> System.out.println("Dashboard navigated to: " + tab));
+        sidebarController.setStage(stage);
+
+        // USE goTo() FOR REAL NAVIGATION
+        sidebarController.setOnTabChange(tab -> sidebarController.goTo(tab));
+
         Sidebar sidebar = new Sidebar(sidebarController, "Zara");
         root.setLeft(sidebar);
 
-        // ✅ Main Dashboard content
+        // MAIN CONTENT
         VBox mainContent = new VBox(25);
         mainContent.setPadding(new Insets(30));
         mainContent.setAlignment(Pos.TOP_CENTER);
         mainContent.setBackground(new Background(new BackgroundFill(
                 Color.web("#fdf7ff"), CornerRadii.EMPTY, Insets.EMPTY)));
 
-        // 🌸 Title Section
-        Label title = new Label("Welcome to Your Dashboard! 🌸");
+        // Title
+        Label title = new Label("Welcome to Your Dashboard!");
         title.setFont(Font.font("Poppins", 28));
         title.setTextFill(Color.web("#5c5470"));
 
@@ -54,17 +59,17 @@ public class Dashboard {
         VBox headerBox = new VBox(8, title, subtitle);
         headerBox.setAlignment(Pos.CENTER);
 
-        // 🌈 Quick Stats
+        // Quick Stats
         HBox statsBox = new HBox(20);
         statsBox.setAlignment(Pos.CENTER);
         statsBox.getChildren().addAll(
-                createStatCard("✅", "12", "Tasks Completed", "#a8e6cf", "#dcedc1"),
-                createStatCard("⏰", "4", "Pomodoros Today", "#ffd3b6", "#ffaaa5"),
-                createStatCard("📝", "8", "Notes Created", "#fff5ba", "#ffe8a3"),
-                createStatCard("💖", "😊", "Mood Score", "#ffb6b9", "#fae3d9")
+                createStatCard("Checkmark", "12", "Tasks Completed", "#a8e6cf", "#dcedc1"),
+                createStatCard("Clock", "4", "Pomodoros Today", "#ffd3b6", "#ffaaa5"),
+                createStatCard("Note", "8", "Notes Created", "#fff5ba", "#ffe8a3"),
+                createStatCard("Heart", "Happy", "Mood Score", "#ffb6b9", "#fae3d9")
         );
 
-        // ⚡ Quick Actions
+        // Quick Actions — NOW WORKS!
         VBox quickActionsBox = new VBox(12);
         quickActionsBox.setAlignment(Pos.CENTER);
         Label quickActionsTitle = new Label("Quick Actions");
@@ -74,15 +79,15 @@ public class Dashboard {
         HBox actionsRow = new HBox(15);
         actionsRow.setAlignment(Pos.CENTER);
         actionsRow.getChildren().addAll(
-                createGradientButton("Add New Task", "#a8e6cf", "#dcedc1", () -> sidebarController.navigate("todos")),
-                createGradientButton("Start Timer", "#ffd3b6", "#ffaaa5", () -> sidebarController.navigate("timer")),
-                createGradientButton("Create Note", "#fff5ba", "#ffe8a3", () -> sidebarController.navigate("notes")),
-                createGradientButton("Visit Pet", "#ffb6b9", "#fae3d9", () -> sidebarController.navigate("pet"))
+                createGradientButton("Add New Task", "#a8e6cf", "#dcedc1", () -> sidebarController.goTo("todos")),
+                createGradientButton("Start Timer", "#ffd3b6", "#ffaaa5", () -> sidebarController.goTo("timer")),
+                createGradientButton("Create Note", "#fff5ba", "#ffe8a3", () -> sidebarController.goTo("notes")),
+                createGradientButton("Visit Pet", "#ffb6b9", "#fae3d9", () -> sidebarController.goTo("pet"))
         );
 
         quickActionsBox.getChildren().addAll(quickActionsTitle, actionsRow);
 
-        // 📊 Insights Section
+        // Insights
         HBox insightsBox = new HBox(25);
         insightsBox.setAlignment(Pos.CENTER);
         insightsBox.getChildren().addAll(createFocusBox(), createAnalyticsBox());
@@ -93,11 +98,11 @@ public class Dashboard {
 
         Scene scene = new Scene(root, 1200, 700);
         stage.setScene(scene);
-        stage.setTitle("Pastel Productivity Dashboard");
+        stage.setTitle("Évora • Dashboard");
         stage.show();
     }
 
-    // 🌼 Stat Cards
+    // REST OF YOUR METHODS (unchanged)
     private VBox createStatCard(String emoji, String value, String label, String startColor, String endColor) {
         VBox card = new VBox(5);
         card.setAlignment(Pos.CENTER);
@@ -123,7 +128,6 @@ public class Dashboard {
         descLabel.setFont(Font.font("Poppins", 13));
 
         card.getChildren().addAll(emojiLabel, valueLabel, descLabel);
-
         addHoverAnimation(card);
         return card;
     }
@@ -150,7 +154,7 @@ public class Dashboard {
         box.setBackground(new Background(new BackgroundFill(Color.web("#fae3d9"), new CornerRadii(20), Insets.EMPTY)));
         box.setEffect(new DropShadow(10, Color.gray(0, 0.3)));
 
-        Label title = new Label("🎯 Today's Focus");
+        Label title = new Label("Today's Focus");
         title.setFont(Font.font("Poppins", 20));
         title.setTextFill(Color.web("#5c5470"));
 
@@ -164,8 +168,8 @@ public class Dashboard {
         mainGoal.setStyle("-fx-font-family: 'Poppins'; -fx-text-fill: #756f86;");
 
         HBox subGoals = new HBox(10,
-                createMiniCard("✅ Priority Tasks", "3 high-priority items", "#dcedc1", "#a8e6cf"),
-                createMiniCard("⏰ Time Goal", "6 pomodoro sessions", "#ffd3b6", "#ffaaa5")
+                createMiniCard("Priority Tasks", "3 high-priority items", "#dcedc1", "#a8e6cf"),
+                createMiniCard("Time Goal", "6 pomodoro sessions", "#ffd3b6", "#ffaaa5")
         );
         subGoals.setAlignment(Pos.CENTER);
 
@@ -180,12 +184,12 @@ public class Dashboard {
         box.setBackground(new Background(new BackgroundFill(Color.web("#f3e5f5"), new CornerRadii(20), Insets.EMPTY)));
         box.setEffect(new DropShadow(10, Color.gray(0, 0.3)));
 
-        Label title = new Label("📊 Productivity Insights");
+        Label title = new Label("Productivity Insights");
         title.setFont(Font.font("Poppins", 20));
         title.setTextFill(Color.web("#5c5470"));
 
         VBox weekly = createMiniCard("This Week", "90% Task completion rate", "#c8e6c9", "#81c784");
-        Label change = new Label("↗ +12% vs last week");
+        Label change = new Label("+12% vs last week");
         change.setFont(Font.font("Poppins", 13));
         change.setTextFill(Color.web("#4caf50"));
 
@@ -195,7 +199,7 @@ public class Dashboard {
         );
         miniStats.setAlignment(Pos.CENTER);
 
-        Button analyticsBtn = createGradientButton("Full Analytics Dashboard →", "#a18cd1", "#fbc2eb",
+        Button analyticsBtn = createGradientButton("Full Analytics Dashboard", "#a18cd1", "#fbc2eb",
                 () -> System.out.println("Navigate to stats"));
         analyticsBtn.setPrefWidth(350);
 
@@ -234,9 +238,5 @@ public class Dashboard {
             st.setToY(1.0);
             st.playFromStart();
         });
-    }
-
-    private void navigate(String tab) {
-        System.out.println("Navigating to: " + tab);
     }
 }

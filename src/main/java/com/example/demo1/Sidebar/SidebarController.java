@@ -2,7 +2,7 @@
 package com.example.demo1.Sidebar;
 
 import com.example.demo1.Dashboard;
-import com.example.demo1.CalendarView;
+import com.example.demo1.Calendar.CalendarView;
 import javafx.stage.Stage;
 import java.util.function.Consumer;
 
