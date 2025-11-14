@@ -19,12 +19,28 @@ public class SidebarController {
     }
 
     /**
-     * Trigger navigation
+     * Trigger navigation to a specific tab
      */
     public void navigate(String tabId) {
         if (onTabChange != null) {
             onTabChange.accept(tabId);
         }
-        System.out.println("Navigating to: " + tabId);
+        System.out.println("✨ Navigating to: " + tabId);
+    }
+
+    /**
+     * Programmatically navigate to a tab (useful for initial setup)
+     */
+    public void setActiveTab(String tabId) {
+        navigate(tabId);
+    }
+
+    /**
+     * Get the current active tab (if needed for state management)
+     */
+    public String getCurrentTab() {
+        // This would need to be implemented with state tracking
+        // For now, it's a placeholder for future enhancement
+        return "dashboard";
     }
 }
