@@ -1,3 +1,8 @@
+CREATE LOGIN evora_user WITH PASSWORD = 'password123';
+USE EvoraDB;
+CREATE USER evora_user FOR LOGIN evora_user;
+ALTER ROLE db_owner ADD MEMBER evora_user;
+
 CREATE DATABASE EvoraDB
 GO
 USE EvoraDB
@@ -169,3 +174,8 @@ CREATE TABLE Preferences (
     CONSTRAINT FK_Preferences_Sound 
         FOREIGN KEY (default_sound_id) REFERENCES Sounds(sound_id) ON DELETE SET NULL
 );
+
+select * from Users
+
+INSERT INTO Users(username, email, password)
+VALUES ('test', 'test', 'test')
