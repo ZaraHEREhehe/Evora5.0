@@ -29,9 +29,9 @@ public class HelloApplication extends Application {
     }
 
     // Updated method to accept username
-    public static void showDashboard(String username) {
+    public static void showDashboard(String username, int userId) {
         BorderPane root = new BorderPane();
-        MainController mainController = new MainController(root, username);
+        MainController mainController = new MainController(root, username, userId); //pass user id
 
         Scene scene = new Scene(root, 1200, 700);
         primaryStage.setScene(scene);

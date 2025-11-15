@@ -11,9 +11,13 @@ public class MainController {
     private BorderPane root;
     private Sidebar sidebar;
     private SidebarController sidebarController;
+    private String userName;
+    private int userId;
 
-    public MainController(BorderPane root, String userName) {
+    public MainController(BorderPane root, String userName, int userId) {
         this.root = root;
+        this.userName = userName;
+        this.userId = userId;
         setupSidebar(userName);
         showDashboard(); // Start with dashboard
     }
@@ -34,7 +38,6 @@ public class MainController {
                 showNotes();
                 break;
             case "todos":
-                // Add your other modules here
                 System.out.println("TODO: Implement " + tabId);
                 break;
             default:
@@ -49,7 +52,7 @@ public class MainController {
     }
 
     private void showNotes() {
-        NotesController notesController = new NotesController();
+        NotesController notesController = new NotesController(userId);
         NotesView notesView = new NotesView(notesController);
 
         // Create a proper container for the notes view

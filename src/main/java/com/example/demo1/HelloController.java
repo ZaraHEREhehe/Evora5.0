@@ -40,9 +40,10 @@ public class HelloController {
 
         // Perform database authentication
         try {
-            if (authenticateUser(email, password)) {
+            int userId = authenticateUser(email, password);
+            if (userId != -1) {
                 String username = getUsername(email);
-                HelloApplication.showDashboard(username);
+                HelloApplication.showDashboard(username, userId); // Pass user ID
             } else {
                 showAlert(Alert.AlertType.ERROR, "Login Failed", "Invalid email or password.");
             }
@@ -63,7 +64,7 @@ public class HelloController {
     }
 
     // Database authentication method
-    private boolean authenticateUser(String email, String password) throws SQLException {
+    private int authenticateUser(String email, String password) throws SQLException {
         String sql = "SELECT user_id FROM Users WHERE email = ? AND password = ?";
 
         try (Connection conn = DatabaseConnection.getConnection();
@@ -73,9 +74,12 @@ public class HelloController {
             stmt.setString(2, password);
 
             try (ResultSet rs = stmt.executeQuery()) {
-                return rs.next(); // Returns true if user exists with these credentials
+                if (rs.next()) { //return true if user exists w credentials
+                    return rs.getInt("user_id"); // Return user ID
+                }
             }
         }
+        return -1; //user not found
     }
 
     // Get username from email
