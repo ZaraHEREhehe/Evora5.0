@@ -36,3 +36,6 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+# Database configuration - leaving in for now lol
+# src/main/resources/database.properties
