@@ -19,23 +19,24 @@ import javafx.util.Duration;
 
 public class Dashboard {
 
-    private final Stage stage;
+    private VBox mainContent;
+    private SidebarController sidebarController;
 
-    public Dashboard(Stage stage) {
-        this.stage = stage;
+    public Dashboard() {
+        this.sidebarController = new SidebarController();
+        createContent();
     }
 
-    public void show() {
-        BorderPane root = new BorderPane();
+    public Dashboard(SidebarController sidebarController) {
+        this.sidebarController = sidebarController;
+        createContent();
+    }
 
-        // ✅ Sidebar
-        SidebarController sidebarController = new SidebarController();
-        sidebarController.setOnTabChange(tab -> System.out.println("Dashboard navigated to: " + tab));
-        Sidebar sidebar = new Sidebar(sidebarController, "Zara");
-        root.setLeft(sidebar);
+    public void createContent() {
+
 
         // ✅ Main Dashboard content
-        VBox mainContent = new VBox(25);
+         mainContent = new VBox(25);
         mainContent.setPadding(new Insets(30));
         mainContent.setAlignment(Pos.TOP_CENTER);
         mainContent.setBackground(new Background(new BackgroundFill(
@@ -88,12 +89,12 @@ public class Dashboard {
 
         mainContent.getChildren().addAll(headerBox, statsBox, quickActionsBox, insightsBox);
 
-        root.setCenter(mainContent);
+      //  root.setCenter(mainContent);
 
-        Scene scene = new Scene(root, 1200, 700);
-        stage.setScene(scene);
-        stage.setTitle("Pastel Productivity Dashboard");
-        stage.show();
+        //Scene scene = new Scene(root, 1200, 700);
+        //stage.setScene(scene);
+        //stage.setTitle("Pastel Productivity Dashboard");
+        //stage.show();
     }
 
     // 🌼 Stat Cards
@@ -125,6 +126,16 @@ public class Dashboard {
 
         addHoverAnimation(card);
         return card;
+    }
+
+    public VBox getContent() {
+        return mainContent;
+    }
+
+    private void navigateTo(String tab) {
+        if (sidebarController != null) {
+            sidebarController.navigate(tab);
+        }
     }
 
     private Button createGradientButton(String text, String startColor, String endColor, Runnable action) {

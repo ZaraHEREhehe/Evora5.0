@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * JavaFX Sidebar component (like React Sidebar)
+ * JavaFX Sidebar component
  */
 public class Sidebar extends VBox {
 
