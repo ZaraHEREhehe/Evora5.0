@@ -34,6 +34,21 @@ public class NotesView extends BorderPane {
                 "-fx-background-radius: 30; -fx-border-radius: 30;");
 
         createView();
+        loadExistingNotes(); //from db
+    }
+
+    private void loadExistingNotes()
+    {
+        List<NotesController.Note> dbNotes = controller.getNotes();
+        for (NotesController.Note dbNote : dbNotes) {
+            // Convert color_id (1-6) to colorIndex (0-5)
+            int colorIndex = dbNote.getColorId() - 1;
+            StickyNote note = new StickyNote(controller, dbNote.getNoteId(), dbNote.getContent(), colorIndex);
+            note.setLayoutX(dbNote.getPositionX());
+            note.setLayoutY(dbNote.getPositionY());
+            boardPane.getChildren().add(note);
+            notes.add(note);
+        }
     }
 
     private void createView() {
@@ -302,12 +317,19 @@ public class NotesView extends BorderPane {
 
 
     private void addNewNote(String content, int colorIndex) {
-        StickyNote note = new StickyNote(controller, content, colorIndex);
-        // Position notes within board boundaries
-        note.setLayoutX(Math.random() * 400 + 50);
-        note.setLayoutY(Math.random() * 300 + 50);
-        boardPane.getChildren().add(note);
-        notes.add(note);
+        // color_ids start at 1
+        int colorId = colorIndex + 1;
+        double x = Math.random() * 400 + 50;
+        double y = Math.random() * 300 + 50;
+
+        int noteId = controller.addNote(content, colorId, x, y);
+        if (noteId != -1) {
+            StickyNote note = new StickyNote(controller, noteId, content, colorIndex);
+            note.setLayoutX(x);
+            note.setLayoutY(y);
+            boardPane.getChildren().add(note);
+            notes.add(note);
+        }
     }
 
     /** Inner class for realistic pin effect */
@@ -346,6 +368,8 @@ public class NotesView extends BorderPane {
         private double mouseX, mouseY;
         private final TextArea textArea;
         private int colorIndex;
+        private int noteId;
+        private final NotesController controller;
 
         private static final String[] COLORS = new String[6];
         static {
@@ -357,7 +381,9 @@ public class NotesView extends BorderPane {
             COLORS[5] = "#fed7aa";
         }
 
-        public StickyNote(NotesController controller, String content, int colorIndex) {
+        public StickyNote(NotesController controller, int noteId, String content, int colorIndex) {
+            this.controller = controller;
+            this.noteId = noteId;
             this.colorIndex = colorIndex;
 
             this.setPrefSize(220, 180);
@@ -383,6 +409,18 @@ public class NotesView extends BorderPane {
             textArea.setPrefSize(200, 150);
             textArea.setPadding(new Insets(15, 10, 10, 10));
             textArea.setFocusTraversable(false);
+            // Save text changes to database when user stops typing
+            textArea.textProperty().addListener((observable, oldValue, newValue) -> {
+                // Use a timer to avoid saving on every keystroke
+                javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(
+                        javafx.util.Duration.seconds(3) //save after every 3 s to avoid many updates
+                );
+                pause.setOnFinished(event -> {
+                    controller.updateNote(noteId, newValue, colorIndex + 1, getLayoutX(), getLayoutY());
+                });
+                pause.playFromStart();
+            });
+
 
             // Delete button
             Button deleteBtn = new Button("✕");
@@ -402,6 +440,7 @@ public class NotesView extends BorderPane {
                     parent.getChildren().remove(this);
                     notes.remove(this);
                 }
+                controller.deleteNote(noteId);
             });
 
             StackPane.setAlignment(deleteBtn, Pos.TOP_RIGHT);
@@ -429,6 +468,11 @@ public class NotesView extends BorderPane {
                     this.setBackground(new Background(new BackgroundFill(
                             Color.web(COLORS[index]), new CornerRadii(15), Insets.EMPTY)));
                     colorPicker.setOpacity(0);
+
+                    // Save color change to database
+                    int newColorId = index + 1; // Convert to database color_id
+                    controller.updateNote(noteId, textArea.getText(), newColorId,
+                            getLayoutX(), getLayoutY());
                 });
                 colorPicker.getChildren().add(colorBtn);
             }
@@ -497,7 +541,10 @@ public class NotesView extends BorderPane {
 
                 setLayoutX(newX);
                 setLayoutY(newY);
+
+                controller.updateNotePosition(noteId, newX, newY);
             }
         }
+
     }
 }
