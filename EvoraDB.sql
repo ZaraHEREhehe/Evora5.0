@@ -175,7 +175,31 @@ CREATE TABLE Preferences (
         FOREIGN KEY (default_sound_id) REFERENCES Sounds(sound_id) ON DELETE SET NULL
 );
 
+/* actual important changes */
+
+-- default theme for sticky notes
+INSERT INTO Themes (theme_name, description) 
+VALUES ('StickyNotes', 'Default sticky notes color theme');
+
+-- 6 sticky note colors will always be the same
+INSERT INTO ThemeColors (theme_id, color_name, color_hex) VALUES
+(1, 'Yellow', '#fef08a'),
+(1, 'Pink', '#fecaca'),
+(1, 'Green', '#bbf7d0'),
+(1, 'Blue', '#bfdbfe'),
+(1, 'Purple', '#e9d5ff'),
+(1, 'Orange', '#fed7aa');
+
 select * from Users
 
 INSERT INTO Users(username, email, password)
 VALUES ('test', 'test', 'test')
+
+
+select * from StickyNotes
+select * from ThemeColors
+select * from Themes
+
+Select note_id, user_id, content, color_name, position_x, position_y, created_at
+From StickyNotes s
+Inner Join ThemeColors ts on s.color_id = ts.color_id
