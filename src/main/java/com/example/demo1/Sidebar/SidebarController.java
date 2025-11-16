@@ -3,6 +3,7 @@ package com.example.demo1.Sidebar;
 
 import com.example.demo1.Dashboard;
 import com.example.demo1.Calendar.CalendarView;
+import com.example.demo1.ToDoList.TodoView;
 import javafx.stage.Stage;
 import java.util.function.Consumer;
 
@@ -43,7 +44,7 @@ public class SidebarController {
             case "dashboard" -> new Dashboard(stage).show();
             case "calendar" -> new CalendarView(stage).show();
             // Add more later:
-            // case "todos" -> new TodosView(stage).show();
+             case "todos" -> new TodoView(stage).show();
             // case "pet" -> new PetView(stage).show();
             default -> System.out.println("No page for: " + page);
         }
