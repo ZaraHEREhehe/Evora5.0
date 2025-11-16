@@ -4,6 +4,7 @@ package com.example.demo1.ToDoList;
 import com.example.demo1.Sidebar.Sidebar;
 import com.example.demo1.Sidebar.SidebarController;
 import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.geometry.*;
@@ -11,9 +12,7 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.effect.DropShadow;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.Dragboard;
-import javafx.scene.input.TransferMode;
+import javafx.scene.input.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
@@ -21,18 +20,19 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.sql.Timestamp;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+import javafx.scene.image.Image;
+import javafx.scene.SnapshotParameters;
 
 import org.kordamp.ikonli.javafx.FontIcon;
 import org.kordamp.ikonli.fontawesome6.FontAwesomeSolid;
 
 import javax.sound.sampled.*;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.Serializable;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 public class TodoView {
 
@@ -44,7 +44,8 @@ public class TodoView {
     private boolean isFirstShow = true;
     private VBox todoList;
     private StackPane overlayRoot;
-    private final int CURRENT_USER_ID = 1; // 'test' user
+    private final int CURRENT_USER_ID = 1;
+    private static final DataFormat TODO_FORMAT = new DataFormat("application/x-todo-object");
 
     public TodoView(Stage stage) {
         this.stage = stage;
@@ -194,9 +195,7 @@ public class TodoView {
         String text = input.getText().trim();
         if (!text.isEmpty()) {
             Todo todo = new Todo(
-                    "", // DB will assign task_id
-                    text,
-                    false,
+                    "", text, false,
                     priorityBox.getValue().toLowerCase(),
                     datePicker.getValue() != null ? datePicker.getValue().toString() : null
             );
@@ -236,73 +235,141 @@ public class TodoView {
     private void enableDragAndDrop(VBox list) {
         list.getChildren().forEach(node -> {
             if (node instanceof VBox item) {
+                // Remove existing handlers to avoid duplicates
+                item.setOnDragDetected(null);
+                item.setOnDragOver(null);
+                item.setOnDragExited(null);
+                item.setOnDragDropped(null);
+                item.setOnDragDone(null);
+
                 item.setOnDragDetected(event -> {
                     if (list.getChildren().contains(item)) {
-                        Dragboard db = item.startDragAndDrop(TransferMode.MOVE);
+                        Dragboard dragboard = item.startDragAndDrop(TransferMode.MOVE);
                         ClipboardContent content = new ClipboardContent();
-                        content.putString(String.valueOf(list.getChildren().indexOf(item)));
-                        db.setContent(content);
 
+                        int index = list.getChildren().indexOf(item);
+                        Todo draggedTodo = todos.get(index);
+                        content.put(TODO_FORMAT, draggedTodo);
+                        dragboard.setContent(content);
+
+                        SnapshotParameters snapParams = new SnapshotParameters();
+                        snapParams.setFill(Color.TRANSPARENT);
+                        Image snapshot = item.snapshot(snapParams, null);
+                        dragboard.setDragView(snapshot, event.getX(), event.getY());
+                        dragboard.setDragViewOffsetX(event.getX());
+                        dragboard.setDragViewOffsetY(event.getY());
+
+                        item.setOpacity(0.4);
                         item.setEffect(new DropShadow(30, Color.gray(0, 0.3)));
-                        item.setTranslateY(-8);
-                        item.toFront();
 
                         Timeline wiggle = new Timeline(
-                                new KeyFrame(Duration.millis(0),   new javafx.animation.KeyValue(item.rotateProperty(), 0)),
-                                new KeyFrame(Duration.millis(80),  new javafx.animation.KeyValue(item.rotateProperty(), -6)),
-                                new KeyFrame(Duration.millis(160), new javafx.animation.KeyValue(item.rotateProperty(), 6)),
-                                new KeyFrame(Duration.millis(240), new javafx.animation.KeyValue(item.rotateProperty(), -4)),
-                                new KeyFrame(Duration.millis(320), new javafx.animation.KeyValue(item.rotateProperty(), 4)),
-                                new KeyFrame(Duration.millis(400), new javafx.animation.KeyValue(item.rotateProperty(), 0))
+                                new KeyFrame(Duration.millis(0),   new KeyValue(item.rotateProperty(), 0)),
+                                new KeyFrame(Duration.millis(80),  new KeyValue(item.rotateProperty(), -6)),
+                                new KeyFrame(Duration.millis(160), new KeyValue(item.rotateProperty(), 6)),
+                                new KeyFrame(Duration.millis(240), new KeyValue(item.rotateProperty(), -4)),
+                                new KeyFrame(Duration.millis(320), new KeyValue(item.rotateProperty(), 4)),
+                                new KeyFrame(Duration.millis(400), new KeyValue(item.rotateProperty(), 0))
                         );
+                        wiggle.setCycleCount(Timeline.INDEFINITE);
                         wiggle.play();
+                        item.getProperties().put("wiggle", wiggle);
+
+                        // Store the dragged item and index
+                        list.getProperties().put("draggedItem", item);
+                        list.getProperties().put("draggedIndex", index);
+
+                        event.consume();
                     }
-                    event.consume();
                 });
 
                 item.setOnDragOver(event -> {
-                    if (event.getGestureSource() != item && event.getDragboard().hasString()) {
+                    if (event.getGestureSource() != item && event.getDragboard().hasContent(TODO_FORMAT)) {
                         event.acceptTransferModes(TransferMode.MOVE);
-                        item.setStyle(item.getStyle() + "-fx-border-color: #a78bfa; -fx-border-width: 2; -fx-border-radius: 26;");
+
+                        // Store original style if not already stored
+                        String originalStyle = (String) item.getProperties().get("originalStyle");
+                        if (originalStyle == null) {
+                            originalStyle = item.getStyle();
+                            item.getProperties().put("originalStyle", originalStyle);
+                        }
+
+                        // Highlight drop target
+                        item.setStyle(originalStyle + "-fx-border-color: #a78bfa; -fx-border-width: 2; -fx-border-radius: 26;");
                     }
                     event.consume();
                 });
 
                 item.setOnDragExited(event -> {
-                    String style = item.getStyle();
-                    style = style.replaceAll("-fx-border-color:[^;]+;", "")
-                            .replaceAll("-fx-border-width:[^;]+;", "");
-                    item.setStyle(style);
+                    // Restore original style when drag exits
+                    String originalStyle = (String) item.getProperties().get("originalStyle");
+                    if (originalStyle != null) {
+                        item.setStyle(originalStyle);
+                    }
                     event.consume();
                 });
 
                 item.setOnDragDropped(event -> {
-                    Dragboard db = event.getDragboard();
+                    Dragboard dragboard = event.getDragboard();
                     boolean success = false;
-                    if (db.hasString() && list.getChildren().contains(item)) {
-                        int draggedIdx = Integer.parseInt(db.getString());
-                        int thisIdx = list.getChildren().indexOf(item);
-                        if (draggedIdx >= 0 && draggedIdx < todos.size() && thisIdx >= 0 && thisIdx < todos.size()) {
-                            Todo dragged = todos.get(draggedIdx);
-                            todos.remove(draggedIdx);
-                            int targetIdx = thisIdx > draggedIdx ? thisIdx - 1 : thisIdx;
-                            todos.add(targetIdx, dragged);
-                            success = true;
-                            refreshTodoList();
+
+                    if (dragboard.hasContent(TODO_FORMAT) && list.getChildren().contains(item)) {
+                        Todo draggedTodo = (Todo) dragboard.getContent(TODO_FORMAT);
+                        int targetIndex = list.getChildren().indexOf(item);
+                        Integer sourceIndex = (Integer) list.getProperties().get("draggedIndex");
+
+                        if (sourceIndex != null && sourceIndex != targetIndex) {
+                            VBox draggedItem = (VBox) list.getProperties().get("draggedItem");
+
+                            if (draggedItem != null) {
+                                // Remove from old position
+                                list.getChildren().remove(draggedItem);
+                                todos.remove(draggedTodo);
+
+                                // Calculate adjusted target index
+                                int adjustedTargetIndex = sourceIndex < targetIndex ? targetIndex : targetIndex;
+
+                                // Add to new position
+                                list.getChildren().add(adjustedTargetIndex, draggedItem);
+                                todos.add(adjustedTargetIndex, draggedTodo);
+
+                                // Update database with new order
+                                db.updateTaskOrder(CURRENT_USER_ID, todos);
+                                success = true;
+
+                                System.out.println("Moved task from position " + sourceIndex + " to " + adjustedTargetIndex);
+                            }
                         }
                     }
+
                     event.setDropCompleted(success);
                     event.consume();
                 });
 
                 item.setOnDragDone(event -> {
+                    // Clean up visual effects
+                    item.setOpacity(1.0);
                     item.setEffect(null);
-                    item.setTranslateY(0);
                     item.setRotate(0);
-                    String style = item.getStyle();
-                    style = style.replaceAll("-fx-border-color:[^;]+;", "")
-                            .replaceAll("-fx-border-width:[^;]+;", "");
-                    item.setStyle(style);
+
+                    // Stop wiggle animation
+                    Timeline wiggle = (Timeline) item.getProperties().get("wiggle");
+                    if (wiggle != null) {
+                        wiggle.stop();
+                        item.getProperties().remove("wiggle");
+                    }
+
+                    // Restore original style
+                    String originalStyle = (String) item.getProperties().get("originalStyle");
+                    if (originalStyle != null) {
+                        item.setStyle(originalStyle);
+                        item.getProperties().remove("originalStyle");
+                    }
+
+                    // Clear dragged properties
+                    list.getProperties().remove("draggedItem");
+                    list.getProperties().remove("draggedIndex");
+
+                    event.consume();
                 });
             }
         });
@@ -438,13 +505,8 @@ public class TodoView {
             }
         }
 
-        Platform.runLater(() -> {
-            ScrollPane newContent = buildMainContent();
-            Node overlay = overlayRoot.getChildren().size() > 1 ? overlayRoot.getChildren().get(1) : null;
-            overlayRoot.getChildren().setAll(newContent);
-            if (overlay != null) overlayRoot.getChildren().add(overlay);
-            enableDragAndDrop(todoList);
-        });
+        // Re-enable drag and drop after refresh
+        enableDragAndDrop(todoList);
     }
 
     private void showConfetti() {
@@ -465,12 +527,12 @@ public class TodoView {
 
             Timeline fall = new Timeline(
                     new KeyFrame(Duration.ZERO,
-                            new javafx.animation.KeyValue(c.centerYProperty(), -20),
-                            new javafx.animation.KeyValue(c.opacityProperty(), 1.0)
+                            new KeyValue(c.centerYProperty(), -20),
+                            new KeyValue(c.opacityProperty(), 1.0)
                     ),
                     new KeyFrame(Duration.seconds(1.8 + r.nextDouble() * 0.5),
-                            new javafx.animation.KeyValue(c.centerYProperty(), scene.getHeight() + 20),
-                            new javafx.animation.KeyValue(c.opacityProperty(), 0.0)
+                            new KeyValue(c.centerYProperty(), scene.getHeight() + 20),
+                            new KeyValue(c.opacityProperty(), 0.0)
                     )
             );
             fall.setOnFinished(e -> confettiPane.getChildren().remove(c));
@@ -510,17 +572,21 @@ public class TodoView {
 
         } catch (Exception e) {
             System.out.println("Could not play chime: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 
-    static class Todo {
+    static class Todo implements Serializable {
+        private static final long serialVersionUID = 1L;
+
         private final String id, text, priority, dueDate;
         private boolean completed;
 
         Todo(String id, String text, boolean completed, String priority, String dueDate) {
-            this.id = id; this.text = text; this.completed = completed;
-            this.priority = priority; this.dueDate = dueDate;
+            this.id = id;
+            this.text = text;
+            this.completed = completed;
+            this.priority = priority;
+            this.dueDate = dueDate;
         }
 
         public String getId() { return id; }

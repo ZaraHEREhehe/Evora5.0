@@ -34,8 +34,14 @@ public class Database {
 
     public List<TodoView.Todo> getTodos(int userId) {
         List<TodoView.Todo> todos = new ArrayList<>();
-        String sql = "SELECT task_id, description, priority, due_date, is_completed FROM ToDoTasks WHERE user_id = ? ORDER BY is_completed ASC, due_date ASC";
+        if (!isConnected()) return todos;
 
+        String sql = """
+        SELECT task_id, description, priority, due_date, is_completed 
+        FROM ToDoTasks 
+        WHERE user_id = ? 
+        ORDER BY sort_order ASC, task_id ASC
+        """;
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, userId);
             ResultSet rs = ps.executeQuery();
@@ -52,14 +58,36 @@ public class Database {
         return todos;
     }
 
+    public void updateTaskOrder(int userId, List<TodoView.Todo> todos) {
+        if (!isConnected()) return;
+
+        String sql = "UPDATE ToDoTasks SET sort_order = ? WHERE task_id = ? AND user_id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            for (int i = 0; i < todos.size(); i++) {
+                ps.setInt(1, i); // sort_order = position
+                ps.setInt(2, Integer.parseInt(todos.get(i).getId()));
+                ps.setInt(3, userId);
+                ps.addBatch();
+            }
+            ps.executeBatch();
+            System.out.println("Task order saved to DB!");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
     public void addTodo(int userId, TodoView.Todo todo) {
-        String sql = "INSERT INTO ToDoTasks (user_id, description, priority, due_date, is_completed) VALUES (?, ?, ?, ?, ?)";
+        if (!isConnected()) return;
+        String sql = """
+        INSERT INTO ToDoTasks (user_id, description, priority, due_date, is_completed, sort_order)
+        VALUES (?, ?, ?, ?, ?, (SELECT COALESCE(MAX(sort_order), -1) + 1 FROM ToDoTasks WHERE user_id = ?))
+        """;
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, userId);
             ps.setString(2, todo.getText());
-            ps.setString(3, todo.getPriority().substring(0, 1).toUpperCase() + todo.getPriority().substring(1));
+            ps.setString(3, todo.getPriority().substring(0,1).toUpperCase() + todo.getPriority().substring(1));
             ps.setString(4, todo.getDueDate());
             ps.setBoolean(5, todo.isCompleted());
+            ps.setInt(6, userId);
             ps.executeUpdate();
         } catch (SQLException e) { e.printStackTrace(); }
     }
