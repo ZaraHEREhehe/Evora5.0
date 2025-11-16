@@ -11,6 +11,7 @@ module com.example.demo1 {
     requires eu.hansolo.tilesfx;
     requires org.kordamp.ikonli.fontawesome6;
     requires java.desktop;
+    requires java.sql;
 
     opens com.example.demo1 to javafx.fxml;
     exports com.example.demo1;

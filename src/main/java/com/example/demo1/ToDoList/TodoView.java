@@ -24,6 +24,7 @@ import javafx.util.Duration;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -31,24 +32,24 @@ import java.util.*;
 import org.kordamp.ikonli.javafx.FontIcon;
 import org.kordamp.ikonli.fontawesome6.FontAwesomeSolid;
 
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
-import javax.sound.sampled.LineEvent;
+import javax.sound.sampled.*;
 
 public class TodoView {
 
     private final Stage stage;
-    private final List<Todo> todos;
+    private Database db;
+    private List<Todo> todos;
     private BorderPane root;
     private Scene scene;
     private boolean isFirstShow = true;
     private VBox todoList;
-    private StackPane overlayRoot; // ← ADD THIS LINE
+    private StackPane overlayRoot;
+    private final int CURRENT_USER_ID = 1; // 'test' user
 
     public TodoView(Stage stage) {
         this.stage = stage;
-        this.todos = new ArrayList<>(getSampleTodos()); // ← NOW MUTABLE
+        this.db = new Database();
+        this.todos = db.getTodos(CURRENT_USER_ID);
     }
 
     public void show() {
@@ -72,11 +73,9 @@ public class TodoView {
             root.prefWidthProperty().bind(scene.widthProperty());
             root.prefHeightProperty().bind(scene.heightProperty());
 
-            // === CREATE overlayRoot ONCE ===
             overlayRoot = new StackPane();
             overlayRoot.setAlignment(Pos.TOP_CENTER);
 
-            // Initial content
             overlayRoot.getChildren().add(buildMainContent());
             root.setCenter(overlayRoot);
 
@@ -91,7 +90,6 @@ public class TodoView {
 
             isFirstShow = false;
         } else {
-            // Rebuild content inside overlayRoot
             ScrollPane newContent = buildMainContent();
             overlayRoot.getChildren().setAll(newContent);
         }
@@ -157,11 +155,11 @@ public class TodoView {
         DatePicker datePicker = new DatePicker();
         datePicker.setPromptText("Due Date (optional)");
         datePicker.setStyle(
-                        "-fx-background-radius: 20; " +
+                "-fx-background-radius: 20; " +
                         "-fx-border-radius: 20; " +
                         "-fx-border-color: #d8b4fe; " +
                         "-fx-background-color: white; " +
-                        "-fx-padding: 0 12 0 12;" // top, right, bottom, left → vertical = 0, horizontal = 12
+                        "-fx-padding: 0 12 0 12;"
         );
         datePicker.setPrefWidth(300);
 
@@ -196,18 +194,18 @@ public class TodoView {
         String text = input.getText().trim();
         if (!text.isEmpty()) {
             Todo todo = new Todo(
-                    UUID.randomUUID().toString(),
+                    "", // DB will assign task_id
                     text,
                     false,
                     priorityBox.getValue().toLowerCase(),
                     datePicker.getValue() != null ? datePicker.getValue().toString() : null
             );
-            todos.add(0, todo);
+            db.addTodo(CURRENT_USER_ID, todo);
+            todos = db.getTodos(CURRENT_USER_ID);
             input.clear();
             datePicker.setValue(null);
             priorityBox.setValue("Medium");
             refreshTodoList();
-            showConfetti();
         }
     }
 
@@ -238,8 +236,6 @@ public class TodoView {
     private void enableDragAndDrop(VBox list) {
         list.getChildren().forEach(node -> {
             if (node instanceof VBox item) {
-
-                // === DRAG DETECTED: LIFT + WIGGLE ===
                 item.setOnDragDetected(event -> {
                     if (list.getChildren().contains(item)) {
                         Dragboard db = item.startDragAndDrop(TransferMode.MOVE);
@@ -247,12 +243,10 @@ public class TodoView {
                         content.putString(String.valueOf(list.getChildren().indexOf(item)));
                         db.setContent(content);
 
-                        // Visual: lift + shadow + wiggle
                         item.setEffect(new DropShadow(30, Color.gray(0, 0.3)));
                         item.setTranslateY(-8);
                         item.toFront();
 
-                        // Wiggle animation
                         Timeline wiggle = new Timeline(
                                 new KeyFrame(Duration.millis(0),   new javafx.animation.KeyValue(item.rotateProperty(), 0)),
                                 new KeyFrame(Duration.millis(80),  new javafx.animation.KeyValue(item.rotateProperty(), -6)),
@@ -266,7 +260,6 @@ public class TodoView {
                     event.consume();
                 });
 
-                // === DRAG OVER: HIGHLIGHT DROP ZONE ===
                 item.setOnDragOver(event -> {
                     if (event.getGestureSource() != item && event.getDragboard().hasString()) {
                         event.acceptTransferModes(TransferMode.MOVE);
@@ -275,7 +268,6 @@ public class TodoView {
                     event.consume();
                 });
 
-                // === DRAG EXIT: REMOVE HIGHLIGHT ===
                 item.setOnDragExited(event -> {
                     String style = item.getStyle();
                     style = style.replaceAll("-fx-border-color:[^;]+;", "")
@@ -284,7 +276,6 @@ public class TodoView {
                     event.consume();
                 });
 
-                // === DRAG DROPPED: RESET STYLE + REBUILD ===
                 item.setOnDragDropped(event -> {
                     Dragboard db = event.getDragboard();
                     boolean success = false;
@@ -304,7 +295,6 @@ public class TodoView {
                     event.consume();
                 });
 
-                // === DRAG DONE: RESET TRANSFORM ===
                 item.setOnDragDone(event -> {
                     item.setEffect(null);
                     item.setTranslateY(0);
@@ -319,13 +309,12 @@ public class TodoView {
     }
 
     private VBox createTodoItem(Todo todo) {
-        VBox item = new VBox(0); // ← ZERO spacing between rows
+        VBox item = new VBox(0);
         item.setPadding(new Insets(8, 12, 8, 12));
         item.setStyle(getGradientStyle(todo.getPriority()) +
                 "-fx-background-radius: 26; -fx-border-radius: 26; -fx-border-width: 2; " +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 12, 0, 0, 3);");
 
-        // === CLIP ===
         Rectangle clip = new Rectangle();
         clip.widthProperty().bind(item.widthProperty());
         clip.heightProperty().bind(item.heightProperty());
@@ -335,14 +324,13 @@ public class TodoView {
 
         if (todo.isCompleted()) item.setOpacity(0.6);
 
-        // === CHECKBOX + TEXT (WRAPS!) ===
         CheckBox check = new CheckBox();
         check.setSelected(todo.isCompleted());
         check.setStyle("-fx-border-width: 2;");
 
         Label text = new Label(todo.getText());
-        text.setWrapText(true);                    // ← WRAP LONG TEXT
-        text.setMaxWidth(Double.MAX_VALUE);        // ← Allow full width
+        text.setWrapText(true);
+        text.setMaxWidth(Double.MAX_VALUE);
         text.setStyle("-fx-text-fill: #1f2937;");
         text.setFont(Font.font("Poppins", 14));
         if (todo.isCompleted()) {
@@ -353,7 +341,6 @@ public class TodoView {
         top.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(text, Priority.ALWAYS);
 
-        // === BADGES (TIGHT, NO GAP BELOW) ===
         Label priority = new Label(todo.getPriority().substring(0, 1).toUpperCase() +
                 todo.getPriority().substring(1));
         priority.setStyle(getBadgeStyle(todo.getPriority()));
@@ -372,9 +359,8 @@ public class TodoView {
         HBox badges = new HBox(6, priority);
         if (todo.getDueDate() != null) badges.getChildren().add(due);
         badges.setAlignment(Pos.CENTER_LEFT);
-        badges.setPadding(new Insets(0, 0, 0, 0)); // ← No extra padding
+        badges.setPadding(new Insets(0));
 
-        // === DELETE BUTTON ===
         Button delete = new Button();
         FontIcon trash = new FontIcon(FontAwesomeSolid.TRASH);
         trash.setIconSize(16);
@@ -386,21 +372,22 @@ public class TodoView {
         actions.setAlignment(Pos.CENTER_RIGHT);
         HBox.setHgrow(actions.getChildren().get(0), Priority.ALWAYS);
 
-        // === FINAL LAYOUT: top + badges + actions in VBox with 0 spacing ===
         item.getChildren().addAll(top, badges, actions);
 
-        // === EVENTS ===
         check.setOnAction(e -> {
             todo.setCompleted(check.isSelected());
+            db.updateTodo(todo);
+            todos = db.getTodos(CURRENT_USER_ID);
             refreshTodoList();
-            if (check.isSelected()){
+            if (check.isSelected()) {
                 showConfetti();
                 playChime();
-            };
+            }
         });
 
         delete.setOnAction(e -> {
-            todos.remove(todo);
+            db.deleteTodo(todo.getId());
+            todos = db.getTodos(CURRENT_USER_ID);
             refreshTodoList();
         });
 
@@ -423,19 +410,17 @@ public class TodoView {
             case "low" -> "#10b981";
             default -> "#6b7280";
         };
-
-        // 70% opacity → softer, less aggressive
-        String bgColor = color + "B3"; // B3 = 70% opacity in hex
-
+        String bgColor = color + "B3";
         return "-fx-background-color: " + bgColor + "; " +
                 "-fx-text-fill: white; " +
                 "-fx-font-weight: bold; " +
-                "-fx-padding: 2 8; " +           // ← Smaller padding
-                "-fx-font-size: 11; " +          // ← Smaller text
-                "-fx-background-radius: 16;";   // ← Slightly smaller radius
+                "-fx-padding: 2 8; " +
+                "-fx-font-size: 11; " +
+                "-fx-background-radius: 16;";
     }
 
     private void refreshTodoList() {
+        todos = db.getTodos(CURRENT_USER_ID);
         todoList.getChildren().clear();
         if (todos.isEmpty()) {
             VBox empty = new VBox(16);
@@ -455,25 +440,18 @@ public class TodoView {
 
         Platform.runLater(() -> {
             ScrollPane newContent = buildMainContent();
-
-            // === PRESERVE OVERLAYS (LIKE CONFETTI) ===
             Node overlay = overlayRoot.getChildren().size() > 1 ? overlayRoot.getChildren().get(1) : null;
             overlayRoot.getChildren().setAll(newContent);
-            if (overlay != null) {
-                overlayRoot.getChildren().add(overlay);
-            }
-
+            if (overlay != null) overlayRoot.getChildren().add(overlay);
             enableDragAndDrop(todoList);
         });
     }
 
     private void showConfetti() {
         if (overlayRoot == null || scene == null) return;
-
         Pane confettiPane = new Pane();
         confettiPane.setMouseTransparent(true);
         confettiPane.setPickOnBounds(false);
-
         overlayRoot.getChildren().add(confettiPane);
 
         Random r = new Random();
@@ -481,7 +459,6 @@ public class TodoView {
             Circle c = new Circle(4 + r.nextDouble() * 3);
             String[] colors = {"#f59e0b", "#10b981", "#3b82f6", "#8b5cf6", "#ec4899"};
             c.setFill(Color.web(colors[r.nextInt(colors.length)]));
-
             c.setCenterX(r.nextDouble() * scene.getWidth());
             c.setCenterY(-20);
             confettiPane.getChildren().add(c);
@@ -515,11 +492,9 @@ public class TodoView {
                 return;
             }
 
-            // Read entire file into byte array
             byte[] audioBytes = inputStream.readAllBytes();
             inputStream.close();
 
-            // Use ByteArrayInputStream (supports mark/reset)
             ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(audioBytes);
             AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(byteArrayInputStream);
 
@@ -527,7 +502,6 @@ public class TodoView {
             clip.open(audioInputStream);
             clip.start();
 
-            // Optional: wait for sound to finish (prevents early GC)
             clip.addLineListener(event -> {
                 if (event.getType() == LineEvent.Type.STOP) {
                     clip.close();
@@ -539,16 +513,8 @@ public class TodoView {
             e.printStackTrace();
         }
     }
-    private List<Todo> getSampleTodos() {
-        return new ArrayList<>(Arrays.asList(
-                new Todo("1", "Review presentation slides", false, "high", "2025-09-04"),
-                new Todo("2", "Call team meeting", true, "medium", "2025-09-03"),
-                new Todo("3", "Organize desk workspace", false, "low", null),
-                new Todo("4", "Submit expense reports", false, "high", "2025-09-05")
-        ));
-    }
 
-    private static class Todo {
+    static class Todo {
         private final String id, text, priority, dueDate;
         private boolean completed;
 
