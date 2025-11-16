@@ -115,7 +115,7 @@ CREATE TABLE PetMascot (
     pet_id INT IDENTITY(1,1) PRIMARY KEY,
     user_id INT,
     pet_gif VARCHAR(200) DEFAULT 'ourcatgif.com',
-    pet_name VARCHAR(50) DEFAULT 'Évoro',
+    pet_name VARCHAR(50) DEFAULT 'Ã‰voro',
     experience INT DEFAULT 0,
     level INT DEFAULT 1,
     tokens_cost INT DEFAULT 1,
@@ -203,3 +203,41 @@ select * from Themes
 Select note_id, user_id, content, color_name, position_x, position_y, created_at
 From StickyNotes s
 Inner Join ThemeColors ts on s.color_id = ts.color_id
+
+
+
+-- ADDED sort_order column to enable drag and drop feature
+
+-- Drop the table if it exists to start fresh
+IF OBJECT_ID('ToDoTasks', 'U') IS NOT NULL
+    DROP TABLE ToDoTasks;
+
+-- Create the ToDoTasks table with proper structure
+CREATE TABLE ToDoTasks (
+    task_id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id INT NOT NULL,
+    description NVARCHAR(500) NOT NULL,
+    priority NVARCHAR(10) NOT NULL CHECK (priority IN ('Low', 'Medium', 'High')),
+    due_date DATE NULL,
+    is_completed BIT NOT NULL DEFAULT 0,
+    completed_at DATETIME NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT GETDATE(),
+    FOREIGN KEY (user_id) REFERENCES Users(user_id)
+);
+
+-- Insert Sample To-Do Tasks for user_id = 1 with proper sort_order
+INSERT INTO ToDoTasks (user_id, description, priority, due_date, is_completed, completed_at, sort_order)
+VALUES
+(1, 'Review presentation slides', 'High', '2025-09-04', 0, NULL, 1),
+(1, 'Call team meeting', 'Medium', '2025-09-03', 1, '2025-09-03 14:30:00', 2),
+(1, 'Organize desk workspace', 'Low', NULL, 0, NULL, 3),
+(1, 'Submit expense reports', 'High', '2025-09-05', 0, NULL, 4),
+(1, 'Plan weekend trip', 'Low', '2025-09-07', 0, NULL, 5),
+(1, 'Update project documentation', 'Medium', '2025-09-06', 0, NULL, 6),
+(1, 'Email client feedback', 'High', '2025-09-02', 1, '2025-09-02 10:15:00', 7),
+(1, 'Backup important files', 'Medium', NULL, 0, NULL, 8);
+
+
+
+Select * from ToDoTasks
