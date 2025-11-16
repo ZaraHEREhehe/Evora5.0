@@ -81,4 +81,18 @@ public class Database {
             ps.executeUpdate();
         } catch (SQLException e) { e.printStackTrace(); }
     }
+
+    // REQUIRED FOR CalendarView
+    public boolean isConnected() {
+        try {
+            return conn != null && !conn.isClosed();
+        } catch (SQLException e) {
+            return false;
+        }
+    }
+
+    // REQUIRED FOR CalendarView
+    public Connection getConnection() {
+        return conn;
+    }
 }

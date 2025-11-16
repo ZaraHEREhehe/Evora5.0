@@ -3,6 +3,7 @@ package com.example.demo1.Calendar;
 
 import com.example.demo1.Sidebar.Sidebar;
 import com.example.demo1.Sidebar.SidebarController;
+import com.example.demo1.ToDoList.Database;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.*;
@@ -22,6 +23,7 @@ import javafx.scene.effect.DropShadow;
 import javafx.scene.Cursor;
 import org.kordamp.ikonli.javafx.FontIcon;
 
+import java.sql.*;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
@@ -34,6 +36,8 @@ public class CalendarView {
     private LocalDate currentDate;
     private LocalDate selectedDate;
     private final List<Todo> todos;
+    private final Database db;
+    private final int CURRENT_USER_ID = 1; // Change later with login system
     private BorderPane root;
     private Scene scene;
     private boolean isFirstShow = true;
@@ -43,7 +47,8 @@ public class CalendarView {
         this.stage = stage;
         this.currentDate = LocalDate.now();
         this.selectedDate = null;
-        this.todos = getSampleTodos();
+        this.db = new Database();
+        this.todos = loadTodosFromDB(); // ← NOW FROM DATABASE
     }
 
     public void show() {
@@ -181,7 +186,7 @@ public class CalendarView {
                 legendItem("Medium Priority", "#f59e0b"),
                 legendItem("Low Priority", "#10b981"),
                 legendItem("Today", "#ec4899"),
-                legendItem("Task Due", "#93c5fd") // Added for the new soft blue color
+                legendItem("Task Due", "#93c5fd")
         );
 
         flow.maxWidthProperty().bind(scene.widthProperty().subtract(100));
@@ -231,16 +236,15 @@ public class CalendarView {
         GridPane grid = createCalendarGrid();
         card.getChildren().addAll(nav, dayHeaders, grid);
 
-// === FULLY CUSTOMIZABLE CELL SIZE & SHAPE ===
-        double minCellSize = 50;     // ← Try 50–75
-        double sideSpace   = 600;    // ← Space for sidebar + side panel
-        double cellGap     = 14;     // ← Gap between cells
+        // === CELL SIZE & SHAPE (UNCHANGED) ===
+        double minCellSize = 50;
+        double sideSpace   = 600;
+        double cellGap     = 14;
 
         double availableWidth = scene.getWidth() - sideSpace;
         double cellWidth  = Math.max(minCellSize, (availableWidth / 7) - cellGap);
-        double cellHeight = cellWidth * 0.6;  // ← 0.6–1.0 (flatter = lower)
+        double cellHeight = cellWidth * 0.6;
 
-// Apply to all cells
         for (Node node : grid.getChildren()) {
             if (node instanceof VBox cell) {
                 cell.setMinSize(cellWidth, cellHeight);
@@ -301,18 +305,18 @@ public class CalendarView {
         boolean isSelected = date.equals(selectedDate);
         boolean hasTasks = pending.size() > 0;
 
-        VBox cell = new VBox(4); // Reduced spacing for flatter cells
+        VBox cell = new VBox(4);
         cell.setAlignment(Pos.TOP_CENTER);
-        cell.setPadding(new Insets(6, 8, 8, 8)); // Adjusted padding for flatter layout
+        cell.setPadding(new Insets(6, 8, 8, 8));
         cell.setCursor(Cursor.HAND);
 
         String bg = isSelected ? "#f3e8ff" :
                 isToday ? "#fce7f3" :
-                        hasTasks ? "#dbeafe" : "#ffffff"; // Soft blue for tasks
+                        hasTasks ? "#dbeafe" : "#ffffff";
 
         String border = isSelected ? "#c084fc" :
                 isToday ? "#ec4899" :
-                        hasTasks ? "#93c5fd" : "#e5e7eb"; // Soft blue border for tasks
+                        hasTasks ? "#93c5fd" : "#e5e7eb";
 
         String opacity = isOtherMonth ? "0.4" : "1.0";
 
@@ -334,10 +338,9 @@ public class CalendarView {
 
         Label dayLabel = new Label(String.valueOf(date.getDayOfMonth()));
         dayLabel.setFont(Font.font("Poppins", 14));
-        // CHANGED: Text color for days with tasks
         dayLabel.setTextFill(isOtherMonth ? Color.web("#9ca3af") :
                 isToday ? Color.web("#be185d") :
-                        hasTasks ? Color.web("#1e40af") : Color.web("#374151")); // Darker blue for tasks
+                        hasTasks ? Color.web("#1e40af") : Color.web("#374151"));
         dayLabel.setStyle("-fx-font-weight: bold;");
 
         HBox dots = new HBox(3);
@@ -367,7 +370,6 @@ public class CalendarView {
         VBox panel = new VBox(20);
         panel.setAlignment(Pos.TOP_CENTER);
 
-        // Proper responsive width binding using Bindings.when
         panel.prefWidthProperty().bind(
                 Bindings.when(scene.widthProperty().lessThan(1024))
                         .then(scene.widthProperty().subtract(80))
@@ -392,38 +394,31 @@ public class CalendarView {
 
         double scale = getScale();
 
-        // Create header with icon
         HBox header = new HBox(12);
         header.setAlignment(Pos.CENTER_LEFT);
 
-        // Calendar icon with checkmark
         StackPane iconContainer = new StackPane();
         iconContainer.setMinSize(24, 24);
         iconContainer.setPrefSize(24, 24);
         iconContainer.setMaxSize(24, 24);
 
-        // Create a group to hold both calendar and checkmark
         Group iconGroup = new Group();
 
-        // Calendar outline
         SVGPath calendarOutline = new SVGPath();
         calendarOutline.setContent("M8 2v4M16 2v4M3 10h18M5 2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z");
-        calendarOutline.setStroke(Color.web("#6b7280")); // Gray color
+        calendarOutline.setStroke(Color.web("#6b7280"));
         calendarOutline.setStrokeWidth(2);
         calendarOutline.setFill(Color.TRANSPARENT);
         calendarOutline.setStrokeLineCap(StrokeLineCap.ROUND);
         calendarOutline.setStrokeLineJoin(StrokeLineJoin.ROUND);
 
-        // Checkmark inside calendar
         SVGPath checkmark = new SVGPath();
-        checkmark.setContent("M9 12.75L11.25 15 15 9.75"); // Checkmark path
-        checkmark.setStroke(Color.web("#6b7280")); // Same gray color
+        checkmark.setContent("M9 12.75L11.25 15 15 9.75");
+        checkmark.setStroke(Color.web("#6b7280"));
         checkmark.setStrokeWidth(2);
         checkmark.setFill(Color.TRANSPARENT);
         checkmark.setStrokeLineCap(StrokeLineCap.ROUND);
         checkmark.setStrokeLineJoin(StrokeLineJoin.ROUND);
-
-        // Position the checkmark inside the calendar
         checkmark.setTranslateX(2);
         checkmark.setTranslateY(2);
 
@@ -447,7 +442,6 @@ public class CalendarView {
             emptyState.setAlignment(Pos.CENTER);
             emptyState.setPadding(new Insets(20, 0, 20, 0));
 
-            // Empty state icon
             StackPane emptyIconContainer = new StackPane();
             emptyIconContainer.setMinSize(48, 48);
             emptyIconContainer.setPrefSize(48, 48);
@@ -456,14 +450,11 @@ public class CalendarView {
 
             SVGPath emptyIcon = new SVGPath();
             if (selectedDate == null) {
-                // Calendar icon for "select a date"
                 emptyIcon.setContent("M8 2v4M16 2v4M3 10h18M5 2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z");
-                emptyIcon.setStroke(Color.web("#9ca3af"));
             } else {
-                // Checkmark icon for "no tasks"
                 emptyIcon.setContent("M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z");
-                emptyIcon.setStroke(Color.web("#9ca3af"));
             }
+            emptyIcon.setStroke(Color.web("#9ca3af"));
             emptyIcon.setStrokeWidth(2);
             emptyIcon.setFill(Color.TRANSPARENT);
             emptyIcon.setStrokeLineCap(StrokeLineCap.ROUND);
@@ -505,7 +496,6 @@ public class CalendarView {
         HBox top = new HBox(10);
         top.setAlignment(Pos.CENTER_LEFT);
 
-        // Simple circle dot for pending tasks, checkmark for completed
         Circle dot = new Circle(5, switch (todo.getPriority()) {
             case "high" -> Color.web("#ef4444");
             case "medium" -> Color.web("#f59e0b");
@@ -603,9 +593,9 @@ public class CalendarView {
         icon.setIconSize(16);
 
         if (type.equals("Previous")) {
-            icon.setIconLiteral("fas-chevron-left"); // FontAwesome solid chevron-left
-        } else  {
-            icon.setIconLiteral("fas-chevron-right"); // FontAwesome solid chevron-right
+            icon.setIconLiteral("fas-chevron-left");
+        } else {
+            icon.setIconLiteral("fas-chevron-right");
         }
 
         btn.setGraphic(icon);
@@ -623,10 +613,52 @@ public class CalendarView {
 
     private List<Todo> getTodosForDate(LocalDate date) {
         return todos.stream()
-                .filter(t -> t.getDueDate() != null && t.getDueDate().equals(date.toString()))
+                .filter(t -> t.getDueDate() != null &&
+                        LocalDate.parse(t.getDueDate()).equals(date))
                 .collect(Collectors.toList());
     }
 
+    // === DATABASE LOADER (REPLACES getSampleTodos) ===
+    private List<Todo> loadTodosFromDB() {
+        List<Todo> todoList = new ArrayList<>();
+
+        if (!db.isConnected()) {
+            System.out.println("DB not connected → Using sample data");
+            return getSampleTodos(); // fallback
+        }
+
+        String sql = """
+            SELECT task_id, description, is_completed, priority, due_date 
+            FROM ToDoTasks 
+            WHERE user_id = ? AND due_date IS NOT NULL
+            ORDER BY due_date
+            """;
+
+        try (PreparedStatement ps = db.getConnection().prepareStatement(sql)) {
+            ps.setInt(1, CURRENT_USER_ID);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                todoList.add(new Todo(
+                        String.valueOf(rs.getInt("task_id")),
+                        rs.getString("description"),
+                        rs.getBoolean("is_completed"),
+                        rs.getString("priority").toLowerCase(),
+                        rs.getDate("due_date") != null ?
+                                rs.getDate("due_date").toLocalDate().toString() : null
+                ));
+            }
+            System.out.println("Loaded " + todoList.size() + " tasks from DB");
+        } catch (SQLException e) {
+            System.out.println("Failed to load tasks from DB");
+            e.printStackTrace();
+            return getSampleTodos(); // fallback on error
+        }
+
+        return todoList;
+    }
+
+    // === FALLBACK SAMPLE DATA (UNCHANGED) ===
     private List<Todo> getSampleTodos() {
         return Arrays.asList(
                 new Todo("1", "Review presentation slides", false, "high", "2025-11-04"),
@@ -638,6 +670,7 @@ public class CalendarView {
         );
     }
 
+    // === INNER CLASS (UNCHANGED) ===
     private static class Todo {
         private final String id, text, priority, dueDate;
         private final boolean completed;
