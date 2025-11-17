@@ -1,6 +1,8 @@
 // MainController.java
 package com.example.demo1;
 
+import com.example.demo1.Mood.MoodController;
+import com.example.demo1.Mood.MoodView;
 import com.example.demo1.Sidebar.Sidebar;
 import com.example.demo1.Sidebar.SidebarController;
 import com.example.demo1.Notes.NotesView;
@@ -37,6 +39,9 @@ public class MainController {
             case "notes":
                 showNotes();
                 break;
+            case "mood":
+                showMood();
+                break;
             case "todos":
                 System.out.println("TODO: Implement " + tabId);
                 break;
@@ -61,5 +66,11 @@ public class MainController {
         notesContainer.setStyle("-fx-background-color: #fdf7ff;");
 
         root.setCenter(notesView);
+    }
+
+    private void showMood() {
+        MoodController moodController = new MoodController(userId);
+        MoodView moodView = new MoodView(moodController);
+        root.setCenter(moodView);
     }
 }
