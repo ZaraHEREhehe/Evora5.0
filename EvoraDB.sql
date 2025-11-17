@@ -115,7 +115,7 @@ CREATE TABLE PetMascot (
     pet_id INT IDENTITY(1,1) PRIMARY KEY,
     user_id INT,
     pet_gif VARCHAR(200) DEFAULT 'ourcatgif.com',
-    pet_name VARCHAR(50) DEFAULT 'Ã‰voro',
+    pet_name VARCHAR(50) DEFAULT 'Évoro',
     experience INT DEFAULT 0,
     level INT DEFAULT 1,
     tokens_cost INT DEFAULT 1,
@@ -175,7 +175,11 @@ CREATE TABLE Preferences (
         FOREIGN KEY (default_sound_id) REFERENCES Sounds(sound_id) ON DELETE SET NULL
 );
 
-/* actual important changes */
+
+
+/******************************************************
+*** 	     	Important Changes                   ***
+*******************************************************/
 
 -- default theme for sticky notes
 INSERT INTO Themes (theme_name, description) 
@@ -194,15 +198,6 @@ select * from Users
 
 INSERT INTO Users(username, email, password)
 VALUES ('test', 'test', 'test')
-
-
-select * from StickyNotes
-select * from ThemeColors
-select * from Themes
-
-Select note_id, user_id, content, color_name, position_x, position_y, created_at
-From StickyNotes s
-Inner Join ThemeColors ts on s.color_id = ts.color_id
 
 
 
@@ -238,6 +233,28 @@ VALUES
 (1, 'Email client feedback', 'High', '2025-09-02', 1, '2025-09-02 10:15:00', 7),
 (1, 'Backup important files', 'Medium', NULL, 0, NULL, 8);
 
-
-
 Select * from ToDoTasks
+
+
+-- for mood module
+INSERT INTO MoodLogger(user_id, mood_icon, mood_value, note, entry_date)
+VALUES (1, '??', 1, 'hate it here', '2025-11-10'),
+(1, '??', 3, 'meow', '2025-11-11'),
+(1, '??', 2,'' , '2025-11-12'),
+(1, '??', 5, '', '2025-11-16');
+		
+
+
+/****************************************************
+*** 			Useless Queries                   ***
+*****************************************************/
+
+
+
+select * from StickyNotes
+select * from ThemeColors
+select * from Themes
+
+Select note_id, user_id, content, color_name, position_x, position_y, created_at
+From StickyNotes s
+Inner Join ThemeColors ts on s.color_id = ts.color_id
