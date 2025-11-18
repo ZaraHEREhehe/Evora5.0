@@ -1,21 +1,12 @@
 // src/main/java/com/example/demo1/ToDoList/Database.java
 package com.example.demo1.ToDoList;
 
+import com.example.demo1.Database.DatabaseConnection;
 import java.sql.*;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Database {
-    private static final String URL =
-            "jdbc:sqlserver://AABIA\\SQLEXPRESS:1433;" +
-                    "databaseName=EvoraDB;" +
-                    "encrypt=true;" +
-                    "trustServerCertificate=true;";
-
-    private static final String USER = "aabia";
-    private static final String PASS = "12345678";
-
     private Connection conn;
 
     public Database() {
@@ -24,7 +15,7 @@ public class Database {
 
     private void connect() {
         try {
-            conn = DriverManager.getConnection(URL, USER, PASS);
+            conn = DatabaseConnection.getConnection();
             System.out.println("Connected to EvoraDB!");
         } catch (SQLException e) {
             System.out.println("DB Connection failed: " + e.getMessage());
@@ -75,6 +66,7 @@ public class Database {
             e.printStackTrace();
         }
     }
+
     public void addTodo(int userId, TodoView.Todo todo) {
         if (!isConnected()) return;
         String sql = """
@@ -85,7 +77,7 @@ public class Database {
             ps.setInt(1, userId);
             ps.setString(2, todo.getText());
             ps.setString(3, todo.getPriority().substring(0,1).toUpperCase() + todo.getPriority().substring(1));
-            ps.setString(4, todo.getDueDate());
+            ps.setDate(4, todo.getDueDate() != null ? Date.valueOf(todo.getDueDate()) : null);
             ps.setBoolean(5, todo.isCompleted());
             ps.setInt(6, userId);
             ps.executeUpdate();

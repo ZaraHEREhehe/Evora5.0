@@ -1,14 +1,11 @@
 // src/main/java/com/example/demo1/calendar/CalendarView.java
 package com.example.demo1.Calendar;
 
-import com.example.demo1.Sidebar.Sidebar;
-import com.example.demo1.Sidebar.SidebarController;
 import com.example.demo1.ToDoList.Database;
-import javafx.application.Platform;
-import javafx.beans.binding.Bindings;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.geometry.*;
 import javafx.scene.Group;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -17,7 +14,6 @@ import javafx.scene.shape.SVGPath;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.text.Font;
-import javafx.stage.Stage;
 import javafx.scene.Node;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.Cursor;
@@ -32,16 +28,13 @@ import java.util.stream.Collectors;
 
 public class CalendarView {
 
-    private Stage stage;
     private LocalDate currentDate;
     private LocalDate selectedDate;
     private final List<Todo> todos;
     private final Database db;
-    private final int CURRENT_USER_ID = 1; // Change later with login system
-    private BorderPane root;
-    private Scene scene;
-    private boolean isFirstShow = true;
-    private double lastWidth = 1400;
+    private final int CURRENT_USER_ID = 1;
+    private Runnable onContentChange;
+    private DoubleProperty widthProperty = new SimpleDoubleProperty(1400);
 
     public CalendarView() {
         this.currentDate = LocalDate.now();
@@ -50,72 +43,50 @@ public class CalendarView {
         this.todos = loadTodosFromDB();
     }
 
-    // Keep the stage constructor for backward compatibility
-    public CalendarView(Stage stage) {
-        this(); // Call the no-arg constructor
-        this.stage = stage;
+    public void setOnContentChange(Runnable callback) {
+        this.onContentChange = callback;
     }
 
-    public void show() {
-        if (scene == null) {
-            root = new BorderPane();
-            root.setStyle("-fx-background-color: #fdf7ff;");
-
-            // === SIDEBAR ===
-            SidebarController sidebarController = new SidebarController();
-            sidebarController.setStage(stage);
-            sidebarController.setOnTabChange(tab -> {
-                // Handle navigation directly or leave empty if Dashboard handles it
-                System.out.println("Navigating to: " + tab);
-            });
-
-            Sidebar sidebar = new Sidebar(sidebarController, "Zara");
-            root.setLeft(sidebar);
-
-            // === SCENE FIRST ===
-            scene = new Scene(root, 1400, 900);
-            stage.setMinWidth(1000);
-            stage.setMinHeight(600);
-            stage.setScene(scene);
-            stage.setTitle("Évora • Calendar");
-
-            root.prefWidthProperty().bind(scene.widthProperty());
-            root.prefHeightProperty().bind(scene.heightProperty());
-
-            // === BUILD CONTENT AFTER SCENE ===
-            root.setCenter(buildMainContent());
-
-            // === RESPONSIVE REBUILD ON RESIZE ===
-            scene.widthProperty().addListener((obs, old, width) -> {
-                if (!isFirstShow && width.doubleValue() > 0) {
-                    lastWidth = width.doubleValue();
-                    Platform.runLater(() -> root.setCenter(buildMainContent()));
-                }
-            });
-
-            isFirstShow = false;
-        } else {
-            root.setCenter(buildMainContent());
-        }
-
-        stage.show();
+    // Add this method to handle width changes from parent
+    public void setWidth(double width) {
+        widthProperty.set(width);
     }
+
+    public ScrollPane getContent() {
+        return buildMainContent();
+    }
+
     private ScrollPane buildMainContent() {
         VBox main = new VBox(24);
         main.setPadding(new Insets(40));
         main.setAlignment(Pos.TOP_CENTER);
 
-        double scale = getScale();
-        main.setStyle(String.format("-fx-font-size: %.2fpx;", 16 * scale));
+        // Bind font scaling to width property
+        main.styleProperty().bind(
+                javafx.beans.binding.Bindings.createStringBinding(() ->
+                                String.format("-fx-font-size: %.2fpx;", 16 * getScale()),
+                        widthProperty
+                )
+        );
 
         // === TITLE ===
         Label title = new Label("Calendar");
         title.setStyle("-fx-font-weight: 700; -fx-text-fill: #5c5470;");
-        title.setFont(Font.font("Poppins", 36 * scale));
+        title.fontProperty().bind(
+                javafx.beans.binding.Bindings.createObjectBinding(() ->
+                                Font.font("Poppins", 36 * getScale()),
+                        widthProperty
+                )
+        );
 
         Label subtitle = new Label("See your tasks at a glance on the calendar!");
         subtitle.setStyle("-fx-text-fill: #9189a5;");
-        subtitle.setFont(Font.font("Poppins", 16 * scale));
+        subtitle.fontProperty().bind(
+                javafx.beans.binding.Bindings.createObjectBinding(() ->
+                                Font.font("Poppins", 16 * getScale()),
+                        widthProperty
+                )
+        );
 
         VBox header = new VBox(10, title, subtitle);
         header.setAlignment(Pos.CENTER);
@@ -123,10 +94,11 @@ public class CalendarView {
         // === LEGEND ===
         VBox legend = createResponsiveLegend();
 
-        // === RESPONSIVE LAYOUT: Use StackPane with dynamic switching ===
+        // === RESPONSIVE LAYOUT CONTAINER ===
         StackPane layoutContainer = new StackPane();
         layoutContainer.setAlignment(Pos.TOP_CENTER);
 
+        // Create the main components
         VBox calendarCard = createCalendarCard();
         VBox sidePanel = createSidePanel();
 
@@ -139,26 +111,32 @@ public class CalendarView {
         HBox sideBySideLayout = new HBox(32, calendarCard, sidePanel);
         sideBySideLayout.setAlignment(Pos.TOP_CENTER);
         HBox.setHgrow(calendarCard, Priority.ALWAYS);
-        sidePanel.setMaxWidth(380);
 
-        // Switch layouts based on window width - matching TypeScript breakpoint
-        scene.widthProperty().addListener((obs, old, width) -> {
-            double currentWidth = width.doubleValue();
-            if (currentWidth >= 1024) {
-                layoutContainer.getChildren().setAll(sideBySideLayout);
-                sidePanel.setMaxWidth(380);
-            } else {
-                layoutContainer.getChildren().setAll(stackedLayout);
-                sidePanel.setMaxWidth(Double.MAX_VALUE);
-            }
-        });
+        // Responsive binding for side panel width
+        sidePanel.maxWidthProperty().bind(
+                javafx.beans.binding.Bindings.createDoubleBinding(() ->
+                                widthProperty.get() >= 1024 ? 380.0 : Double.MAX_VALUE,
+                        widthProperty
+                )
+        );
 
-        // Initial layout setup
-        if (scene.getWidth() >= 1024) {
-            layoutContainer.getChildren().setAll(sideBySideLayout);
-        } else {
-            layoutContainer.getChildren().setAll(stackedLayout);
-        }
+        // Responsive layout switching
+        layoutContainer.getChildren().add(sideBySideLayout);
+        layoutContainer.getChildren().add(stackedLayout);
+
+        // Show/hide layouts based on screen width
+        sideBySideLayout.visibleProperty().bind(
+                javafx.beans.binding.Bindings.createBooleanBinding(() ->
+                                widthProperty.get() >= 1024,
+                        widthProperty
+                )
+        );
+        stackedLayout.visibleProperty().bind(
+                javafx.beans.binding.Bindings.createBooleanBinding(() ->
+                                widthProperty.get() < 1024,
+                        widthProperty
+                )
+        );
 
         main.getChildren().addAll(header, legend, layoutContainer);
 
@@ -171,8 +149,7 @@ public class CalendarView {
     }
 
     private double getScale() {
-        double width = scene != null ? scene.getWidth() : lastWidth;
-        return Math.max(0.8, Math.min(1.4, width / 1400.0));
+        return Math.max(0.8, Math.min(1.4, widthProperty.get() / 1400.0));
     }
 
     private VBox createResponsiveLegend() {
@@ -196,7 +173,6 @@ public class CalendarView {
                 legendItem("Task Due", "#93c5fd")
         );
 
-        flow.maxWidthProperty().bind(scene.widthProperty().subtract(100));
         card.getChildren().add(flow);
         return card;
     }
@@ -221,9 +197,15 @@ public class CalendarView {
         nav.setAlignment(Pos.CENTER);
 
         Button prev = createNavButton("Previous", () -> changeMonth(-1));
+
         Label monthLabel = new Label(getMonthYear());
         monthLabel.setStyle("-fx-font-weight: 600; -fx-text-fill: #1f2937;");
-        monthLabel.setFont(Font.font("Poppins", 28 * getScale()));
+        monthLabel.fontProperty().bind(
+                javafx.beans.binding.Bindings.createObjectBinding(() ->
+                                Font.font("Poppins", 28 * getScale()),
+                        widthProperty
+                )
+        );
 
         Button next = createNavButton("Next", () -> changeMonth(1));
         nav.getChildren().addAll(prev, monthLabel, next);
@@ -243,22 +225,31 @@ public class CalendarView {
         GridPane grid = createCalendarGrid();
         card.getChildren().addAll(nav, dayHeaders, grid);
 
-        // === CELL SIZE & SHAPE (UNCHANGED) ===
+        // === DYNAMIC CELL SIZING WITH BINDING ===
         double minCellSize = 50;
-        double sideSpace   = 600;
-        double cellGap     = 14;
+        double sideSpace = 600;
+        double cellGap = 14;
 
-        double availableWidth = scene.getWidth() - sideSpace;
-        double cellWidth  = Math.max(minCellSize, (availableWidth / 7) - cellGap);
-        double cellHeight = cellWidth * 0.6;
-
-        for (Node node : grid.getChildren()) {
+        // Calculate cell size based on current width
+        grid.getChildren().forEach(node -> {
             if (node instanceof VBox cell) {
-                cell.setMinSize(cellWidth, cellHeight);
-                cell.setPrefSize(cellWidth, cellHeight);
-                cell.setMaxSize(cellWidth, cellHeight);
+                cell.minWidthProperty().bind(
+                        javafx.beans.binding.Bindings.createDoubleBinding(() -> {
+                            double availableWidth = widthProperty.get() - sideSpace;
+                            return Math.max(minCellSize, (availableWidth / 7) - cellGap);
+                        }, widthProperty)
+                );
+                cell.minHeightProperty().bind(
+                        javafx.beans.binding.Bindings.createDoubleBinding(() -> {
+                            double availableWidth = widthProperty.get() - sideSpace;
+                            double cellWidth = Math.max(minCellSize, (availableWidth / 7) - cellGap);
+                            return cellWidth * 0.6;
+                        }, widthProperty)
+                );
+                cell.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
+                cell.setMaxSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
             }
-        }
+        });
 
         return card;
     }
@@ -277,6 +268,7 @@ public class CalendarView {
         int row = 0, col = 0;
         LocalDate today = LocalDate.now();
 
+        // Previous month days
         LocalDate prev = currentDate.minusMonths(1);
         int prevDays = YearMonth.from(prev).lengthOfMonth();
         for (int i = firstDayOffset - 1; i >= 0; i--) {
@@ -285,6 +277,7 @@ public class CalendarView {
             if (col == 7) { col = 0; row++; }
         }
 
+        // Current month days
         for (int day = 1; day <= daysInMonth; day++) {
             if (col == 7) { col = 0; row++; }
             LocalDate d = yearMonth.atDay(day);
@@ -292,6 +285,7 @@ public class CalendarView {
             grid.add(createDayCell(d, false, isToday), col++, row);
         }
 
+        // Next month days
         int remaining = 42 - grid.getChildren().size();
         LocalDate next = currentDate.plusMonths(1);
         for (int day = 1; day <= remaining; day++) {
@@ -340,7 +334,9 @@ public class CalendarView {
 
         cell.setOnMouseClicked(e -> {
             selectedDate = date;
-            Platform.runLater(() -> root.setCenter(buildMainContent()));
+            if (onContentChange != null) {
+                onContentChange.run();
+            }
         });
 
         Label dayLabel = new Label(String.valueOf(date.getDayOfMonth()));
@@ -377,10 +373,12 @@ public class CalendarView {
         VBox panel = new VBox(20);
         panel.setAlignment(Pos.TOP_CENTER);
 
-        panel.prefWidthProperty().bind(
-                Bindings.when(scene.widthProperty().lessThan(1024))
-                        .then(scene.widthProperty().subtract(80))
-                        .otherwise(380.0)
+        // Responsive width binding
+        panel.maxWidthProperty().bind(
+                javafx.beans.binding.Bindings.createDoubleBinding(() ->
+                                widthProperty.get() < 1024 ? widthProperty.get() - 80 : 380.0,
+                        widthProperty
+                )
         );
 
         VBox taskCard = createTaskCard();
@@ -398,8 +396,6 @@ public class CalendarView {
         card.setPadding(new Insets(24));
         card.setBackground(new Background(new BackgroundFill(Color.web("#ffffff", 0.7), new CornerRadii(30), Insets.EMPTY)));
         card.setEffect(new DropShadow(20, Color.gray(0, 0.15)));
-
-        double scale = getScale();
 
         HBox header = new HBox(12);
         header.setAlignment(Pos.CENTER_LEFT);
@@ -436,7 +432,12 @@ public class CalendarView {
                 "Tasks for " + selectedDate.format(DateTimeFormatter.ofPattern("MMM d, yyyy")) :
                 "Select a date");
         title.setStyle("-fx-font-weight: 600; -fx-text-fill: #1f2937;");
-        title.setFont(Font.font("Poppins", 18 * scale));
+        title.fontProperty().bind(
+                javafx.beans.binding.Bindings.createObjectBinding(() ->
+                                Font.font("Poppins", 18 * getScale()),
+                        widthProperty
+                )
+        );
 
         header.getChildren().addAll(iconContainer, title);
 
@@ -471,7 +472,12 @@ public class CalendarView {
 
             Label emptyText = new Label(selectedDate == null ? "Click a date to see tasks" : "No tasks for this date");
             emptyText.setTextFill(Color.web("#9ca3af"));
-            emptyText.setFont(Font.font("Poppins", 14 * scale));
+            emptyText.fontProperty().bind(
+                    javafx.beans.binding.Bindings.createObjectBinding(() ->
+                                    Font.font("Poppins", 14 * getScale()),
+                            widthProperty
+                    )
+            );
             emptyText.setAlignment(Pos.CENTER);
 
             emptyState.getChildren().addAll(emptyIconContainer, emptyText);
@@ -482,10 +488,12 @@ public class CalendarView {
 
         card.getChildren().addAll(header, list);
 
-        card.prefWidthProperty().bind(
-                Bindings.when(scene.widthProperty().lessThan(1024))
-                        .then(scene.widthProperty().subtract(100))
-                        .otherwise(380.0)
+        // Responsive card width
+        card.maxWidthProperty().bind(
+                javafx.beans.binding.Bindings.createDoubleBinding(() ->
+                                widthProperty.get() < 1024 ? widthProperty.get() - 100 : 380.0,
+                        widthProperty
+                )
         );
 
         return card;
@@ -554,10 +562,14 @@ public class CalendarView {
         card.setBackground(new Background(new BackgroundFill(Color.web("#ffffff", 0.7), new CornerRadii(30), Insets.EMPTY)));
         card.setEffect(new DropShadow(20, Color.gray(0, 0.15)));
 
-        double scale = getScale();
         Label title = new Label("Quick Stats");
         title.setStyle("-fx-font-weight: 600; -fx-text-fill: #1f2937;");
-        title.setFont(Font.font("Poppins", 17 * scale));
+        title.fontProperty().bind(
+                javafx.beans.binding.Bindings.createObjectBinding(() ->
+                                Font.font("Poppins", 17 * getScale()),
+                        widthProperty
+                )
+        );
 
         VBox stats = new VBox(10);
         stats.getChildren().addAll(
@@ -611,7 +623,9 @@ public class CalendarView {
 
     private void changeMonth(int delta) {
         currentDate = currentDate.plusMonths(delta);
-        root.setCenter(buildMainContent());
+        if (onContentChange != null) {
+            onContentChange.run();
+        }
     }
 
     private String getMonthYear() {
@@ -625,13 +639,13 @@ public class CalendarView {
                 .collect(Collectors.toList());
     }
 
-    // === DATABASE LOADER (REPLACES getSampleTodos) ===
+    // === DATABASE LOADER ===
     private List<Todo> loadTodosFromDB() {
         List<Todo> todoList = new ArrayList<>();
 
         if (!db.isConnected()) {
             System.out.println("DB not connected → Using sample data");
-            return getSampleTodos(); // fallback
+            return getSampleTodos();
         }
 
         String sql = """
@@ -659,13 +673,13 @@ public class CalendarView {
         } catch (SQLException e) {
             System.out.println("Failed to load tasks from DB");
             e.printStackTrace();
-            return getSampleTodos(); // fallback on error
+            return getSampleTodos();
         }
 
         return todoList;
     }
 
-    // === FALLBACK SAMPLE DATA (UNCHANGED) ===
+    // === FALLBACK SAMPLE DATA ===
     private List<Todo> getSampleTodos() {
         return Arrays.asList(
                 new Todo("1", "Review presentation slides", false, "high", "2025-11-04"),
@@ -677,7 +691,7 @@ public class CalendarView {
         );
     }
 
-    // === INNER CLASS (UNCHANGED) ===
+    // === INNER CLASS ===
     private static class Todo {
         private final String id, text, priority, dueDate;
         private final boolean completed;
@@ -692,10 +706,5 @@ public class CalendarView {
         public boolean isCompleted() { return completed; }
         public String getPriority() { return priority; }
         public String getDueDate() { return dueDate; }
-
-    }
-    public Pane getContent() {
-        // Return the main content pane
-        return root; // or whatever your main container is
     }
 }

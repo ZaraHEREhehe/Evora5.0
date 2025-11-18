@@ -60,8 +60,8 @@ public class Dashboard {
 
         showDashboardContent();
 
-        // Remove scroll pane and use fixed layout
-        Scene scene = new Scene(root, 1200, 800);
+        // Dynamic layout with minimum size
+        Scene scene = new Scene(root, 1200, 800); // Default size
         scene.getRoot().setStyle("-fx-background-color: " + PASTEL_BLUSH + ";");
 
         // Apply theme
@@ -69,9 +69,15 @@ public class Dashboard {
 
         stage.setScene(scene);
         stage.setTitle("Pastel Productivity Dashboard");
-        stage.setResizable(false); // Fixed window size
+
+        // Set minimum size and allow resizing
+        stage.setMinWidth(1000);
+        stage.setMinHeight(600);
+        stage.setResizable(true); // Allow users to resize the window
+
         stage.show();
     }
+
     private void handleNavigation(String tab) {
         switch (tab) {
             case "dashboard":
@@ -81,10 +87,10 @@ public class Dashboard {
                 showPomodoroTimer();
                 break;
             case "todos":
-                showTodoList();  // ← ADD THIS
+                showTodoList();
                 break;
             case "calendar":
-                showCalendar();  // ← ADD THIS
+                showCalendar();
                 break;
             case "notes":
                 System.out.println("Navigating to Notes");
@@ -105,10 +111,16 @@ public class Dashboard {
                 System.out.println("Navigating to: " + tab);
         }
     }
+
     private void showTodoList() {
         try {
             TodoView todoView = new TodoView();
             ScrollPane todoContent = todoView.getContent();
+
+            // Make todo content fill available space
+            todoContent.prefWidthProperty().bind(root.widthProperty().subtract(200)); // sidebar width
+            todoContent.prefHeightProperty().bind(root.heightProperty());
+
             root.setCenter(todoContent);
 
         } catch (Exception e) {
@@ -121,6 +133,10 @@ public class Dashboard {
             fallbackContent.setAlignment(Pos.CENTER);
             fallbackContent.setStyle("-fx-background-color: " + PASTEL_BLUSH + ";");
 
+            // Make fallback content responsive
+            fallbackContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
+            fallbackContent.prefHeightProperty().bind(root.heightProperty());
+
             Label title = new Label("To-Do List 📝");
             title.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-size: 32px; -fx-font-weight: bold;");
 
@@ -131,11 +147,39 @@ public class Dashboard {
             root.setCenter(fallbackContent);
         }
     }
-
     private void showCalendar() {
         try {
             CalendarView calendarView = new CalendarView();
-            Pane calendarContent = calendarView.getContent();
+
+            // Set the initial width for responsive calculations
+            calendarView.setWidth(root.getWidth() - 200); // Account for sidebar
+
+            // Update calendar width when root container resizes
+            root.widthProperty().addListener((obs, oldVal, newVal) -> {
+                calendarView.setWidth(newVal.doubleValue() - 200); // Account for sidebar
+            });
+
+            // Set up callback - when calendar content changes, refresh the center
+            calendarView.setOnContentChange(() -> {
+                // This will be called when dates are clicked or month changes
+                ScrollPane refreshedContent = calendarView.getContent();
+
+                // Make refreshed content fill available space
+                refreshedContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
+                refreshedContent.prefHeightProperty().bind(root.heightProperty());
+
+                root.setCenter(refreshedContent);
+
+                // Update the width for the refreshed content
+                calendarView.setWidth(root.getWidth() - 200);
+            });
+
+            ScrollPane calendarContent = calendarView.getContent();
+
+            // Make calendar content fill available space
+            calendarContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
+            calendarContent.prefHeightProperty().bind(root.heightProperty());
+
             root.setCenter(calendarContent);
 
         } catch (Exception e) {
@@ -148,6 +192,10 @@ public class Dashboard {
             fallbackContent.setAlignment(Pos.CENTER);
             fallbackContent.setStyle("-fx-background-color: " + PASTEL_BLUSH + ";");
 
+            // Make fallback content responsive
+            fallbackContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
+            fallbackContent.prefHeightProperty().bind(root.heightProperty());
+
             Label title = new Label("Calendar 📅");
             title.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-size: 32px; -fx-font-weight: bold;");
 
@@ -158,7 +206,6 @@ public class Dashboard {
             root.setCenter(fallbackContent);
         }
     }
-    // Add this method to Dashboard.java
     private void showSettings() {
         try {
             Settings settings = new Settings();
@@ -167,6 +214,10 @@ public class Dashboard {
             ScrollPane scrollPane = new ScrollPane(settingsContent);
             scrollPane.setFitToWidth(true);
             scrollPane.setStyle("-fx-background: " + PASTEL_BLUSH + "; -fx-border-color: " + PASTEL_BLUSH + ";");
+
+            // Make settings content responsive
+            scrollPane.prefWidthProperty().bind(root.widthProperty().subtract(200));
+            scrollPane.prefHeightProperty().bind(root.heightProperty());
 
             root.setCenter(scrollPane);
 
@@ -179,6 +230,10 @@ public class Dashboard {
             fallbackContent.setPadding(new Insets(40));
             fallbackContent.setAlignment(Pos.CENTER);
             fallbackContent.setStyle("-fx-background-color: " + PASTEL_BLUSH + ";");
+
+            // Make fallback content responsive
+            fallbackContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
+            fallbackContent.prefHeightProperty().bind(root.heightProperty());
 
             Label title = new Label("Settings ⚙️");
             title.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-size: 32px; -fx-font-weight: bold;");
@@ -205,6 +260,10 @@ public class Dashboard {
             scrollPane.setStyle("-fx-background: " + PASTEL_BLUSH + "; -fx-border-color: " + PASTEL_BLUSH + ";");
             scrollPane.setPadding(new Insets(20));
 
+            // Make white noise content responsive
+            scrollPane.prefWidthProperty().bind(root.widthProperty().subtract(200));
+            scrollPane.prefHeightProperty().bind(root.heightProperty());
+
             root.setCenter(scrollPane);
 
         } catch (Exception e) {
@@ -216,6 +275,10 @@ public class Dashboard {
             fallbackContent.setPadding(new Insets(40));
             fallbackContent.setAlignment(Pos.CENTER);
             fallbackContent.setStyle("-fx-background-color: " + PASTEL_BLUSH + ";");
+
+            // Make fallback content responsive
+            fallbackContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
+            fallbackContent.prefHeightProperty().bind(root.heightProperty());
 
             Label title = new Label("White Noise Player 🎵");
             title.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-size: 32px; -fx-font-weight: bold; -fx-font-family: 'Segoe UI';");
@@ -229,13 +292,16 @@ public class Dashboard {
     }
 
     private void showDashboardContent() {
-        VBox mainContent = new VBox(15); // Reduced overall spacing
-        mainContent.setPadding(new Insets(20, 30, 20, 30)); // Reduced padding
+        VBox mainContent = new VBox(15);
+        mainContent.setPadding(new Insets(20, 30, 20, 30));
         mainContent.setAlignment(Pos.TOP_CENTER);
         mainContent.setStyle("-fx-background-color: " + PASTEL_BLUSH + ";");
-        mainContent.setMinHeight(Region.USE_PREF_SIZE);
 
-        // Header - More compact
+        // Make main content responsive
+        mainContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
+        mainContent.prefHeightProperty().bind(root.heightProperty());
+
+        // Header
         VBox headerBox = new VBox(8);
         headerBox.setAlignment(Pos.CENTER);
         headerBox.setPadding(new Insets(10, 0, 15, 0));
@@ -250,17 +316,16 @@ public class Dashboard {
 
         headerBox.getChildren().addAll(title, subtitle);
 
-        // Container for cards and buttons - Moved upwards
-        VBox cardsAndButtonsContainer = new VBox(12); // Reduced spacing
+        // Container for cards and buttons
+        VBox cardsAndButtonsContainer = new VBox(12);
         cardsAndButtonsContainer.setAlignment(Pos.CENTER);
         cardsAndButtonsContainer.setPadding(new Insets(0, 0, 15, 0));
 
-        // Quick Stats - Smaller Cards
-        HBox statsRow = new HBox(20); // Reduced spacing between cards
+        // Quick Stats - Dynamic Cards
+        HBox statsRow = new HBox(20);
         statsRow.setAlignment(Pos.CENTER);
         statsRow.setPadding(new Insets(10, 0, 12, 0));
 
-        // CORRECTED: Updated image paths to match your file structure
         String[][] statsData = {
                 {"12", "Tasks Completed", PASTEL_PINK, "/com/example/demo1/Images/Tasks Icon.png"},
                 {"4", "Pomodoros Today", PASTEL_LAVENDER, "/com/example/demo1/Images/Timer Icon.png"},
@@ -273,8 +338,8 @@ public class Dashboard {
             statsRow.getChildren().add(statCard);
         }
 
-        // Action Button aligned with cards - Smaller buttons
-        HBox actionButtonsRow = new HBox(20); // Reduced spacing
+        // Action Buttons
+        HBox actionButtonsRow = new HBox(20);
         actionButtonsRow.setAlignment(Pos.CENTER);
         actionButtonsRow.setPadding(new Insets(5, 0, 0, 0));
 
@@ -285,13 +350,15 @@ public class Dashboard {
 
         actionButtonsRow.getChildren().addAll(addTaskBtn, startTimerBtn, createNoteBtn, visitPetBtn);
 
-        // Add cards and buttons to container
         cardsAndButtonsContainer.getChildren().addAll(statsRow, actionButtonsRow);
 
-        // Productivity Insights - More compact
-        HBox insightsBox = new HBox(25); // Reduced spacing
+        // Productivity Insights
+        HBox insightsBox = new HBox(25);
         insightsBox.setAlignment(Pos.CENTER);
-        insightsBox.setMaxWidth(1000); // Smaller max width
+
+        // Make insights box responsive
+        insightsBox.prefWidthProperty().bind(root.widthProperty().subtract(250));
+        insightsBox.setMaxWidth(Region.USE_PREF_SIZE);
 
         VBox focusBox = createFocusBox();
         VBox analyticsBox = createAnalyticsBox();
@@ -303,66 +370,60 @@ public class Dashboard {
     }
 
     private VBox createStatCard(String value, String label, String color, String imagePath) {
-        VBox card = new VBox(6); // Reduced spacing
+        VBox card = new VBox(6);
         card.setAlignment(Pos.CENTER);
-        card.setPadding(new Insets(12, 15, 15, 15)); // Reduced padding
-        card.setPrefSize(180, 200); // Smaller card size (180x200 instead of 240x260)
+        card.setPadding(new Insets(12, 15, 15, 15));
+
+        // Use preferred size with proper max size constraints
+        card.setPrefSize(180, 200);
+        card.setMaxWidth(Region.USE_PREF_SIZE);
+        card.setMaxHeight(Region.USE_PREF_SIZE);
+
         card.setStyle("-fx-background-color: " + color + "; -fx-background-radius: 15; " +
                 "-fx-border-radius: 15; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 15, 0, 0, 6);");
 
-        // Image/Icon - Smaller
+        // Image/Icon
         StackPane imageContainer = new StackPane();
-        imageContainer.setPrefSize(150, 120); // Smaller container (150x120)
+        imageContainer.setPrefSize(150, 120);
         imageContainer.setMaxSize(150, 120);
         imageContainer.setStyle("-fx-background-radius: 12; -fx-border-radius: 12;");
 
         try {
-            // Load image from resources
             InputStream imageStream = getClass().getResourceAsStream(imagePath);
             if (imageStream != null) {
                 Image image = new Image(imageStream);
 
                 if (!image.isError()) {
-                    // Create ImageView with smaller image
                     ImageView imageView = new ImageView(image);
-
-                    // Make image fill the smaller container space
                     imageView.setFitWidth(140);
                     imageView.setFitHeight(110);
                     imageView.setPreserveRatio(false);
                     imageView.setSmooth(true);
-
-                    // Apply rounded corners directly to the image
                     imageView.setStyle("-fx-background-radius: 12; -fx-border-radius: 12;");
 
-                    // Create a clip for rounded corners
                     javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle(140, 110);
                     clip.setArcWidth(12);
                     clip.setArcHeight(12);
                     imageView.setClip(clip);
 
                     imageContainer.getChildren().add(imageView);
-
                 } else {
-                    // Fallback to emoji if image loading fails
                     setupFallbackEmoji(imageContainer, label);
                 }
                 imageStream.close();
             } else {
-                // Fallback to emoji if image not found
                 setupFallbackEmoji(imageContainer, label);
             }
         } catch (Exception e) {
             System.out.println("❌ Error loading image: " + imagePath + " - " + e.getMessage());
-            // Fallback to emoji
             setupFallbackEmoji(imageContainer, label);
         }
 
-        // Text content - compact section at bottom
+        // Text content
         VBox textContainer = new VBox(4);
         textContainer.setAlignment(Pos.CENTER);
         textContainer.setPadding(new Insets(8, 0, 0, 0));
-        textContainer.setMaxWidth(150); // Smaller text container
+        textContainer.setMaxWidth(150);
 
         Label valueLabel = new Label(value);
         valueLabel.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-size: 20px; -fx-font-weight: bold; -fx-font-family: 'Segoe UI';");
@@ -373,7 +434,7 @@ public class Dashboard {
         descLabel.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 12));
         descLabel.setWrapText(true);
         descLabel.setAlignment(Pos.CENTER);
-        descLabel.setMaxWidth(140); // Smaller text
+        descLabel.setMaxWidth(140);
 
         textContainer.getChildren().addAll(valueLabel, descLabel);
         card.getChildren().addAll(imageContainer, textContainer);
@@ -383,7 +444,7 @@ public class Dashboard {
 
     private Button createSmallActionButton(String text, String color) {
         Button button = new Button(text);
-        button.setPrefSize(140, 40); // Smaller buttons to match card width
+        button.setPrefSize(140, 40);
         button.setStyle("-fx-background-color: " + color + "; " +
                 "-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-weight: bold; -fx-font-size: 13px; " +
                 "-fx-background-radius: 15; -fx-border-radius: 15; -fx-font-family: 'Segoe UI'; " +
@@ -398,9 +459,8 @@ public class Dashboard {
         Label emojiLabel = new Label(getFallbackEmoji(label));
         emojiLabel.setStyle("-fx-font-size: 50px; -fx-text-fill: " + PASTEL_FOREST + ";");
 
-        // Create a rounded background for the emoji
         StackPane emojiBackground = new StackPane();
-        emojiBackground.setPrefSize(140, 110); // Smaller background to match image size
+        emojiBackground.setPrefSize(140, 110);
         emojiBackground.setStyle("-fx-background-color: rgba(255,255,255,0.4); -fx-background-radius: 12;");
         emojiBackground.getChildren().add(emojiLabel);
 
@@ -409,40 +469,32 @@ public class Dashboard {
 
     private String getFallbackEmoji(String label) {
         switch (label) {
-            case "Tasks Completed":
-                return "✅";
-            case "Pomodoros Today":
-                return "⏰";
-            case "Notes Created":
-                return "📝";
-            case "Mood Score":
-                return "😊";
-            default:
-                return "✨";
+            case "Tasks Completed": return "✅";
+            case "Pomodoros Today": return "⏰";
+            case "Notes Created": return "📝";
+            case "Mood Score": return "😊";
+            default: return "✨";
         }
     }
 
     private void handleActionButton(String action) {
         switch (action) {
-            case "Add Task":
-                sidebarController.navigate("todos");
-                break;
-            case "Start Timer":
-                sidebarController.navigate("timer");
-                break;
-            case "Create Note":
-                sidebarController.navigate("notes");
-                break;
-            case "Visit Pet":
-                sidebarController.navigate("pet");
-                break;
+            case "Add Task": sidebarController.navigate("todos"); break;
+            case "Start Timer": sidebarController.navigate("timer"); break;
+            case "Create Note": sidebarController.navigate("notes"); break;
+            case "Visit Pet": sidebarController.navigate("pet"); break;
         }
     }
 
     private VBox createFocusBox() {
-        VBox box = new VBox(15); // Reduced spacing
-        box.setPadding(new Insets(20)); // Reduced padding
-        box.setPrefWidth(400); // Smaller width
+        VBox box = new VBox(15);
+        box.setPadding(new Insets(20));
+
+        // Use preferred width with proper max size constraints
+        box.setPrefWidth(400);
+        box.setMaxWidth(Region.USE_PREF_SIZE);
+        box.setMaxHeight(Region.USE_PREF_SIZE);
+
         box.setStyle("-fx-background-color: " + PASTEL_IVORY + "; -fx-background-radius: 15; " +
                 "-fx-border-radius: 15; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 12, 0, 0, 5);");
 
@@ -467,7 +519,7 @@ public class Dashboard {
         mainGoal.getChildren().addAll(goalTitle, goalDesc);
 
         // Sub Goals
-        HBox subGoals = new HBox(15); // Reduced spacing
+        HBox subGoals = new HBox(15);
         subGoals.setAlignment(Pos.CENTER);
 
         VBox priorityCard = createMiniCard("✅ Priority Tasks", "3 high-priority items", PASTEL_PINK);
@@ -480,15 +532,20 @@ public class Dashboard {
     }
 
     private VBox createAnalyticsBox() {
-        VBox box = new VBox(15); // Reduced spacing
-        box.setPadding(new Insets(20)); // Reduced padding
-        box.setPrefWidth(400); // Smaller width
+        VBox box = new VBox(15);
+        box.setPadding(new Insets(20));
+
+        // Use preferred width with proper max size constraints
+        box.setPrefWidth(400);
+        box.setMaxWidth(Region.USE_PREF_SIZE);
+        box.setMaxHeight(Region.USE_PREF_SIZE);
+
         box.setStyle("-fx-background-color: " + PASTEL_IVORY + "; -fx-background-radius: 15; " +
                 "-fx-border-radius: 15; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 12, 0, 0, 5);");
 
         HBox titleBox = new HBox();
         titleBox.setAlignment(Pos.CENTER_LEFT);
-        titleBox.setSpacing(10); // Reduced spacing
+        titleBox.setSpacing(10);
 
         Label title = new Label("📊 Productivity Insights");
         title.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-size: 20px; -fx-font-weight: bold; -fx-font-family: 'Segoe UI';");
@@ -503,7 +560,7 @@ public class Dashboard {
         titleBox.getChildren().addAll(title, viewAnalytics);
 
         // Weekly Progress
-        HBox weeklyBox = new HBox(15); // Reduced spacing
+        HBox weeklyBox = new HBox(15);
         weeklyBox.setPadding(new Insets(12));
         weeklyBox.setStyle("-fx-background-color: " + PASTEL_ROSE + "; -fx-background-radius: 12; -fx-border-radius: 12;");
         weeklyBox.setAlignment(Pos.CENTER);
@@ -536,7 +593,7 @@ public class Dashboard {
         weeklyBox.getChildren().addAll(progressText, progressStats);
 
         // Mini Stats
-        HBox miniStats = new HBox(15); // Reduced spacing
+        HBox miniStats = new HBox(15);
         miniStats.setAlignment(Pos.CENTER);
 
         VBox focusSessions = createMiniCard("Focus Sessions", "23", PASTEL_BLUE);
@@ -546,7 +603,7 @@ public class Dashboard {
 
         // Analytics Button
         Button analyticsBtn = new Button("Full Analytics Dashboard");
-        analyticsBtn.setPrefWidth(300); // Smaller button
+        analyticsBtn.setPrefWidth(300);
         analyticsBtn.setStyle("-fx-background-color: " + PASTEL_LAVENDER + "; " +
                 "-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-weight: bold; -fx-font-size: 14px; " +
                 "-fx-background-radius: 15; -fx-border-radius: 15; -fx-font-family: 'Segoe UI'; " +
@@ -562,8 +619,13 @@ public class Dashboard {
     private VBox createMiniCard(String title, String value, String color) {
         VBox mini = new VBox(5);
         mini.setAlignment(Pos.CENTER);
-        mini.setPadding(new Insets(12)); // Reduced padding
-        mini.setPrefWidth(140); // Smaller mini cards
+        mini.setPadding(new Insets(12));
+
+        // Use preferred width with proper max size constraints
+        mini.setPrefWidth(140);
+        mini.setMaxWidth(Region.USE_PREF_SIZE);
+        mini.setMaxHeight(Region.USE_PREF_SIZE);
+
         mini.setStyle("-fx-background-color: " + color + "; -fx-background-radius: 10; -fx-border-radius: 10;");
 
         Label valueLabel = new Label(value);
@@ -580,23 +642,30 @@ public class Dashboard {
 
     private void showPomodoroTimer() {
         try {
-            // Load the Pomodoro FXML file
             FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/example/demo1/Pomodoro/Pomodoro.fxml"));
             Pane pomodoroContent = fxmlLoader.load();
 
             // Apply the pastel theme to the loaded content
             pomodoroContent.setStyle("-fx-background-color: " + PASTEL_BLUSH + ";");
 
+            // Make pomodoro content responsive
+            pomodoroContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
+            pomodoroContent.prefHeightProperty().bind(root.heightProperty());
+
             root.setCenter(pomodoroContent);
         } catch (Exception e) {
             System.out.println("❌ Error loading Pomodoro FXML: " + e.getMessage());
             e.printStackTrace();
 
-            // Fallback to placeholder content if FXML fails to load
+            // Fallback content
             VBox fallbackContent = new VBox(20);
             fallbackContent.setPadding(new Insets(40));
             fallbackContent.setAlignment(Pos.CENTER);
             fallbackContent.setStyle("-fx-background-color: " + PASTEL_BLUSH + ";");
+
+            // Make fallback content responsive
+            fallbackContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
+            fallbackContent.prefHeightProperty().bind(root.heightProperty());
 
             Label timerTitle = new Label("Pomodoro Timer 🍅");
             timerTitle.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-size: 32px; -fx-font-weight: bold; -fx-font-family: 'Segoe UI';");

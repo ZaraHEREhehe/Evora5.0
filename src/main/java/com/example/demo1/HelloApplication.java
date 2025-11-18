@@ -23,7 +23,7 @@ public class HelloApplication extends Application {
         stage.setTitle("Pomodoro Timer");
         stage.setScene(scene);
         stage.setResizable(true);
-        stage.setMinWidth(400);
+        stage.setMinWidth(500);
         stage.setMinHeight(500);
         stage.show();
     }
