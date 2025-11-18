@@ -1,0 +1,44 @@
+/* nature.css — Earthy Calm Theme */
+
+:root {
+    /* Nature Palette */
+    -fx-color-ivory: #FDF5E7;
+    -fx-color-khaki: #CDBFAA;
+    -fx-color-slate-light: #ADB697;
+    -fx-color-slate-dark: #483C2B;
+    -fx-color-powder-pink: #F1DBD0;
+    -fx-color-dusty-pink: #D3A29D;
+    -fx-color-burgundy: #A36361;
+    -fx-color-muted-green: #8D9383;
+    -fx-color-deep-green: #343A26;
+
+    /* Semantic Mappings */
+    -fx-bg-color: -fx-color-ivory;
+    -fx-text-color: -fx-color-slate-dark;
+    -fx-accent-color: -fx-color-burgundy;
+    -fx-button-color: -fx-color-powder-pink;
+}
+
+/* Base UI Styles */
+.root {
+    -fx-background-color: linear-gradient(to bottom right, -fx-color-ivory, -fx-color-slate-light);
+    -fx-font-family: 'Georgia', serif;
+}
+
+.label {
+    -fx-text-fill: -fx-text-color;
+}
+
+.button {
+    -fx-background-color: -fx-button-color;
+    -fx-text-fill: -fx-text-color;
+    -fx-font-weight: bold;
+    -fx-background-radius: 10;
+    -fx-padding: 8 18 8 18;
+    -fx-border-color: -fx-accent-color;
+    -fx-border-radius: 10;
+}
+
+.button:hover {
+    -fx-background-color: derive(-fx-button-color, -10%);
+}

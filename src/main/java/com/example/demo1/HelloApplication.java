@@ -4,13 +4,14 @@ import com.example.demo1.Theme.ThemeManager;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 
 import java.io.IOException;
 
 public class HelloApplication extends Application {
 
-    private static Stage primaryStage;  // store reference to stage
+    private static Stage primaryStage;
 
     @Override
     public void start(Stage stage) throws IOException {
@@ -28,10 +29,15 @@ public class HelloApplication extends Application {
         stage.show();
     }
 
-    // ✅ Method to switch to Dashboard after login
-    public static void showDashboard() {
-        Dashboard dashboard = new Dashboard(primaryStage);
-        dashboard.show();
+    // Updated method to accept username
+    public static void showDashboard(String username, int userId) {
+        BorderPane root = new BorderPane();
+        MainController mainController = new MainController(root, username, userId); //pass user id
+
+        Scene scene = new Scene(root, 1200, 700);
+        primaryStage.setScene(scene);
+        primaryStage.setTitle("Pastel Productivity Dashboard - Welcome, " + username);
+        primaryStage.show();
     }
 
     public static void main(String[] args) {

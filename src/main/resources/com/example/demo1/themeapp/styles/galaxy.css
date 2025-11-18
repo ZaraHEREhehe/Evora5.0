@@ -1,0 +1,42 @@
+/* galaxy.css — Dark Cosmic Theme */
+
+:root {
+    /* Galaxy Palette */
+    -fx-color-1: #0D1E4C;
+    -fx-color-2: #83A6CE;
+    -fx-color-3: #26415E;
+    -fx-color-4: #C48CB3;
+    -fx-color-5: #E5C9D7;
+    -fx-color-6: #0B1B32;
+    -fx-color-7: #8A79B4;
+    -fx-color-8: #FACEEA;
+    -fx-color-9: #F0D2F7;
+
+    /* Common Semantic Colors */
+    -fx-bg-color: -fx-color-6;
+    /*-fx-text-color: #EAEAEA;*/
+    -fx-accent-color: -fx-color-4;
+    -fx-button-color: -fx-color-3;
+}
+
+/* Base UI Styles */
+.root {
+    -fx-background-color: linear-gradient(to bottom right, -fx-color-1, -fx-color-6);
+    -fx-font-family: 'Segoe UI', sans-serif;
+}
+/*
+.label {
+    -fx-text-fill: -fx-text-color;
+}*/
+
+.button {
+    -fx-background-color: -fx-button-color;
+    -fx-text-fill: -fx-text-color;
+    -fx-font-weight: bold;
+    -fx-background-radius: 12;
+    -fx-padding: 8 18 8 18;
+}
+
+.button:hover {
+    -fx-background-color: derive(-fx-accent-color, -10%);
+}
