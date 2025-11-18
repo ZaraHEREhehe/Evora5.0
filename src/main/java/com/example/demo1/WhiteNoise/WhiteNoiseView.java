@@ -1,19 +1,16 @@
-// File: src/main/java/com/example/demo1/WhiteNoise/WhiteNoiseView.java
+// File: src/main/java/com/example/demo1/WhiteNoise/WhiteNoisePlayer.java
 package com.example.demo1.WhiteNoise;
 
-import com.example.demo1.Sidebar.Sidebar;
-import com.example.demo1.Sidebar.SidebarController;
 import javafx.animation.*;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.*;
 import javafx.geometry.*;
-import javafx.scene.*;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.media.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
-import javafx.stage.Stage;
 import javafx.util.Duration;
 import java.net.URL;
 import java.util.*;
@@ -43,52 +40,11 @@ public class WhiteNoiseView {
                     "linear-gradient(from 0% 0% to 100% 100%, #e0d4ff 0%, #d4c2ff 50%, #c9b0ff 100%)", "#e0d4ff")
     };
 
-    public void createAndShow(Stage stage, SidebarController sidebarController, String userName) {
-        BorderPane root = new BorderPane();
-        // Soft blue to soft lilac background
-        root.setStyle("-fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #e6f0ff 0%, #f0e6ff 100%);");
-
-        Sidebar sidebar = new Sidebar(sidebarController, userName);
-        root.setLeft(sidebar);
-
-        Node whiteNoiseContent = create();
-        root.setCenter(whiteNoiseContent);
-
-        Scene scene = stage.getScene();
-        if (scene == null) {
-            scene = new Scene(root, 1400, 900);
-            stage.setScene(scene);
-        } else {
-            scene.setRoot(root);
-        }
-
-        stage.setTitle("Évora • White Noise");
-        stage.show();
-    }
-
-    public void createAndShow(Stage stage) {
-        SidebarController tempController = new SidebarController() {
-            @Override
-            public void navigate(String destination) {
-                System.out.println("Navigating to: " + destination);
-            }
-
-            @Override
-            public void goTo(String destination) {
-                System.out.println("Going to: " + destination);
-            }
-        };
-
-        createAndShow(stage, tempController, "User");
-    }
-
-    public Node create() {
+    public VBox getContent() {
         loadAllSounds();
 
         VBox mainContent = new VBox(20);
         mainContent.setPadding(new Insets(20));
-        // Soft blue to soft lilac background
-        mainContent.setStyle("-fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #e6f0ff 0%, #f0e6ff 100%);");
         mainContent.setAlignment(Pos.TOP_CENTER);
 
         VBox header = createHeader();
@@ -99,13 +55,7 @@ public class WhiteNoiseView {
 
         mainContent.getChildren().addAll(header, masterControls, soundGrid, nowPlaying, presets);
 
-        ScrollPane scrollPane = new ScrollPane(mainContent);
-        scrollPane.setFitToWidth(true);
-        scrollPane.setStyle("-fx-background-color: transparent; -fx-border-color: transparent;");
-        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-
-        return scrollPane;
+        return mainContent;
     }
 
     private VBox createHeader() {
@@ -137,7 +87,6 @@ public class WhiteNoiseView {
         Slider masterSlider = new Slider(0, 100, masterVolume.get());
         masterSlider.setPrefWidth(300);
         masterSlider.valueProperty().bindBidirectional(masterVolume);
-        // Updated slider style with pastel colors
         masterSlider.setStyle(
                 "-fx-background-color: #e6e6fa; " +
                         "-fx-background-radius: 10; " +
@@ -312,7 +261,6 @@ public class WhiteNoiseView {
         DoubleProperty volumeProp = volumes.get(sound.id());
         Slider volumeSlider = new Slider(0, 100, volumeProp != null ? volumeProp.get() : 50);
         volumeSlider.setPrefWidth(80);
-        // Updated sound slider style
         volumeSlider.setStyle(
                 "-fx-background-color: rgba(255,255,255,0.3); " +
                         "-fx-background-radius: 5; " +

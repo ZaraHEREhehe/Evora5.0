@@ -3,7 +3,7 @@ import com.example.demo1.Calendar.CalendarView;
 import com.example.demo1.Sidebar.Sidebar;
 import com.example.demo1.Sidebar.SidebarController;
 import com.example.demo1.ToDoList.TodoView;
-//import com.example.demo1.Whitenoise.WhiteNoisePlayer;
+import com.example.demo1.WhiteNoise.WhiteNoiseView;
 import com.example.demo1.Theme.ThemeManager;
 import javafx.animation.ScaleTransition;
 import javafx.fxml.FXMLLoader;
@@ -102,7 +102,7 @@ public class Dashboard {
                 System.out.println("Navigating to Analytics");
                 break;
             case "whitenoise":
-                //showWhiteNoisePlayer();
+                showWhiteNoisePlayer();
                 break;
             case "settings":
                 showSettings();
@@ -246,9 +246,9 @@ public class Dashboard {
         }
     }
 
-/*    private void showWhiteNoisePlayer() {
+    private void showWhiteNoisePlayer() {
         try {
-            WhiteNoisePlayer whiteNoisePlayer = new WhiteNoisePlayer();
+            WhiteNoiseView whiteNoisePlayer = new WhiteNoiseView();
             VBox whiteNoiseContent = whiteNoisePlayer.getContent();
 
             // Apply your dashboard theme to match the rest of the app
@@ -289,7 +289,7 @@ public class Dashboard {
             fallbackContent.getChildren().addAll(title, subtitle);
             root.setCenter(fallbackContent);
         }
-    }*/
+    }
 
     private void showDashboardContent() {
         VBox mainContent = new VBox(15);

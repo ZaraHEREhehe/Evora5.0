@@ -14,12 +14,11 @@ module com.example.demo1 {
     requires java.sql;
     requires javafx.media;
 
-    requires java.sql;  // for sql
     requires java.naming; // needed for JDBC
     requires com.microsoft.sqlserver.jdbc; // module name for SQL Server driver
 
     //requires com.example.demo1;
-    exports com.example.demo1.Whitenoise;
+    //exports com.example.demo1.Whitenoise;
     opens com.example.demo1 to javafx.fxml;
     opens com.example.demo1.Pomodoro to javafx.fxml; //
     exports com.example.demo1.Theme;
