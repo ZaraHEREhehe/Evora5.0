@@ -71,7 +71,7 @@ public class Dashboard {
         stage.setTitle("Pastel Productivity Dashboard");
 
         // Set minimum size and allow resizing
-        stage.setMinWidth(1000);
+        stage.setMinWidth(1300);
         stage.setMinHeight(600);
         stage.setResizable(true); // Allow users to resize the window
 
