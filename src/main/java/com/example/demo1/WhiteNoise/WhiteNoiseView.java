@@ -1,6 +1,8 @@
 // File: src/main/java/com/example/demo1/WhiteNoise/WhiteNoiseView.java
 package com.example.demo1.WhiteNoise;
 
+import com.example.demo1.Sidebar.Sidebar;
+import com.example.demo1.Sidebar.SidebarController;
 import javafx.animation.*;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.*;
@@ -36,9 +38,18 @@ public class WhiteNoiseView {
             new Sound("piano", "Piano", "🎹", "linear-gradient(to bottom right, #e9d5ff, #c084fc)")
     };
 
-    public void createAndShow(Stage stage) {
-        StackPane root = new StackPane(create());
+    public void createAndShow(Stage stage, SidebarController sidebarController, String userName) {
+        // Create main layout with sidebar and content
+        BorderPane root = new BorderPane();
         root.setStyle("-fx-background-color: #fdf7ff;");
+
+        // Create and add sidebar
+        Sidebar sidebar = new Sidebar(sidebarController, userName);
+        root.setLeft(sidebar);
+
+        // Create white noise content
+        Node whiteNoiseContent = create();
+        root.setCenter(whiteNoiseContent);
 
         Scene scene = stage.getScene();
         if (scene == null) {
@@ -50,6 +61,24 @@ public class WhiteNoiseView {
 
         stage.setTitle("Évora • White Noise");
         stage.show();
+    }
+
+    // Update your existing createAndShow method to be compatible
+    public void createAndShow(Stage stage) {
+        // Create a temporary sidebar controller for backward compatibility
+        SidebarController tempController = new SidebarController() {
+            @Override
+            public void navigate(String destination) {
+                System.out.println("Navigating to: " + destination);
+            }
+
+            @Override
+            public void goTo(String destination) {
+                System.out.println("Going to: " + destination);
+            }
+        };
+
+        createAndShow(stage, tempController, "User");
     }
 
     public Node create() {
@@ -84,6 +113,7 @@ public class WhiteNoiseView {
         return root;
     }
 
+    // ... rest of your existing methods remain exactly the same ...
     private void loadAllSounds() {
         String[] files = {"rain.wav", "coffee_shop.wav", "ocean_waves.wav", "wind.wav", "forest.wav", "piano_ambient.wav"};
         for (int i = 0; i < SOUNDS.length; i++) {

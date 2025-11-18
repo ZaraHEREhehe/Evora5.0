@@ -44,8 +44,8 @@ public class SidebarController {
         switch (page) {
             case "dashboard" -> new Dashboard(stage).show();
             case "calendar" -> new CalendarView(stage).show();
-            case "music" -> new WhiteNoiseView().createAndShow(stage);
-             case "todos" -> new TodoView(stage).show();
+            case "music" -> new WhiteNoiseView().createAndShow(stage, this, "Aabia");
+            case "todos" -> new TodoView(stage).show();
             // case "pet" -> new PetView(stage).show();
             default -> System.out.println("No page for: " + page);
         }
