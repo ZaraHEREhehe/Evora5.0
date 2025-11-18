@@ -12,6 +12,7 @@ module com.example.demo1 {
     requires org.kordamp.ikonli.fontawesome6;
     requires java.desktop;
     requires java.sql;
+    requires javafx.media;
 
     opens com.example.demo1 to javafx.fxml;
     exports com.example.demo1;
