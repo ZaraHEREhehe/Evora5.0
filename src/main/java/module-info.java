@@ -11,6 +11,7 @@ module com.example.demo1 {
     requires eu.hansolo.tilesfx;
     requires org.kordamp.ikonli.fontawesome6;
     requires java.desktop;
+    requires java.sql;
     requires javafx.media;
 
     requires java.sql;  // for sql
