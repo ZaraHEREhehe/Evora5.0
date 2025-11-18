@@ -9,6 +9,9 @@ module com.example.demo1 {
     requires org.kordamp.ikonli.javafx;
     requires org.kordamp.bootstrapfx.core;
     requires eu.hansolo.tilesfx;
+    requires org.kordamp.ikonli.fontawesome6;
+    requires java.desktop;
+    requires java.sql;
     requires javafx.media;
 
     requires java.sql;  // for sql
@@ -21,4 +24,6 @@ module com.example.demo1 {
     opens com.example.demo1.Pomodoro to javafx.fxml; //
     exports com.example.demo1.Theme;
     exports com.example.demo1;
+    exports com.example.demo1.Calendar;
+    opens com.example.demo1.Calendar to javafx.fxml;
 }

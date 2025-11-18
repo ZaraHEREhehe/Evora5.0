@@ -1,33 +1,42 @@
 package com.example.demo1.Sidebar;
 
+import com.example.demo1.Dashboard;
+import com.example.demo1.Calendar.CalendarView;
+import com.example.demo1.ToDoList.TodoView;
+import javafx.stage.Stage;
 import java.util.function.Consumer;
 
-/**
- * Sidebar controller to handle navigation callbacks
- */
 public class SidebarController {
 
     private Consumer<String> onTabChange;
+    private Stage stage;
 
     public SidebarController() {}
 
-    /**
-     * Set the callback to handle navigation when a sidebar item is clicked
-     */
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
+
+    public Stage getStage() {
+        return stage;
+    }
+
     public void setOnTabChange(Consumer<String> callback) {
         this.onTabChange = callback;
     }
 
-    /**
-     * Trigger navigation to a specific tab
-     */
     public void navigate(String tabId) {
         if (onTabChange != null) {
             onTabChange.accept(tabId);
         }
-        System.out.println("✨ Navigating to: " + tabId);
     }
 
+    // ← THIS IS THE MAGIC METHOD
+    public void goTo(String page) {
+        if (stage == null) {
+            System.err.println("ERROR: Stage not set in SidebarController!");
+            return;
+        }
     /**
      * Programmatically navigate to a tab (useful for initial setup)
      */
@@ -35,6 +44,14 @@ public class SidebarController {
         navigate(tabId);
     }
 
+        switch (page) {
+            case "dashboard" -> new Dashboard(stage).show();
+            case "calendar" -> new CalendarView(stage).show();
+            // Add more later:
+             case "todos" -> new TodoView(stage).show();
+            // case "pet" -> new PetView(stage).show();
+            default -> System.out.println("No page for: " + page);
+        }
     /**
      * Get the current active tab (if needed for state management)
      */
