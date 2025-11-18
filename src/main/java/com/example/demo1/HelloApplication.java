@@ -1,5 +1,6 @@
 package com.example.demo1;
 
+import com.example.demo1.Theme.ThemeManager;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -14,12 +15,12 @@ public class HelloApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         primaryStage = stage;
-
+//Pomodoro/Pomodoro.fxml
         // Load the login page
         FXMLLoader fxmlLoader = new FXMLLoader(HelloApplication.class.getResource("hello-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
-
-        stage.setTitle("Évora - Login");
+        ThemeManager.applyTheme(scene, ThemeManager.Theme.PASTEL);
+        stage.setTitle("Pomodoro Timer");
         stage.setScene(scene);
         stage.setResizable(true);
         stage.setMinWidth(400);

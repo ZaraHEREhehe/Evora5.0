@@ -1,0 +1,117 @@
+/* 🌸 Pastel Theme CSS */
+
+/* Background */
+.main-content {
+    -fx-background-color: #fdf7ff;
+}
+
+/* Titles */
+.dashboard-title {
+    -fx-font-size: 28px;
+    -fx-font-family: "Poppins";
+    -fx-text-fill: #5c5470;
+}
+
+.dashboard-subtitle {
+    -fx-font-size: 16px;
+    -fx-font-family: "Poppins";
+    -fx-text-fill: #9189a5;
+}
+
+.section-title {
+    -fx-font-size: 20px;
+    -fx-font-family: "Poppins";
+    -fx-text-fill: #5c5470;
+    -fx-font-weight: bold;
+}
+
+/* Stat cards */
+.stat-card {
+    -fx-background-radius: 25;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 0);
+}
+
+.emoji-label {
+    -fx-font-size: 26px;
+}
+
+.value-label {
+    -fx-font-size: 26px;
+    -fx-font-family: "Poppins";
+    -fx-text-fill: #5c5470;
+}
+
+.desc-label {
+    -fx-font-size: 13px;
+    -fx-text-fill: #756f86;
+}
+
+/* Gradient color cards */
+.green-card { -fx-background-color: linear-gradient(to bottom right, #a8e6cf, #dcedc1); }
+.orange-card { -fx-background-color: linear-gradient(to bottom right, #ffd3b6, #ffaaa5); }
+.yellow-card { -fx-background-color: linear-gradient(to bottom right, #fff5ba, #ffe8a3); }
+.pink-card { -fx-background-color: linear-gradient(to bottom right, #ffb6b9, #fae3d9); }
+.purple-card { -fx-background-color: linear-gradient(to bottom right, #d1c4e9, #9575cd); }
+.blue-card { -fx-background-color: linear-gradient(to bottom right, #bbdefb, #64b5f6); }
+
+/* Buttons */
+.dashboard-btn {
+    -fx-font-family: "Poppins";
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+    -fx-pref-height: 60px;
+    -fx-pref-width: 160px;
+    -fx-background-radius: 20;
+    -fx-cursor: hand;
+}
+
+.green-btn { -fx-background-color: linear-gradient(to right, #a8e6cf, #dcedc1); }
+.orange-btn { -fx-background-color: linear-gradient(to right, #ffd3b6, #ffaaa5); }
+.yellow-btn { -fx-background-color: linear-gradient(to right, #fff5ba, #ffe8a3); }
+.pink-btn { -fx-background-color: linear-gradient(to right, #ffb6b9, #fae3d9); }
+.purple-btn { -fx-background-color: linear-gradient(to right, #a18cd1, #fbc2eb); }
+
+/* Boxes */
+.focus-box {
+    -fx-background-color: #fae3d9;
+    -fx-background-radius: 20;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 0);
+}
+
+.analytics-box {
+    -fx-background-color: #f3e5f5;
+    -fx-background-radius: 20;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 0);
+}
+
+.main-goal {
+    -fx-background-color: #f6f0ff;
+    -fx-background-radius: 15;
+    -fx-padding: 15;
+    -fx-font-family: "Poppins";
+    -fx-text-fill: #756f86;
+}
+
+/* Mini cards */
+.mini-card {
+    -fx-background-radius: 15;
+    -fx-pref-width: 180;
+}
+
+.mini-title {
+    -fx-font-size: 13px;
+    -fx-text-fill: #5c5470;
+    -fx-font-family: "Poppins";
+}
+
+.mini-desc {
+    -fx-font-size: 12px;
+    -fx-text-fill: #756f86;
+    -fx-font-family: "Poppins";
+}
+
+.positive-change {
+    -fx-text-fill: #4caf50;
+    -fx-font-size: 13px;
+    -fx-font-family: "Poppins";
+}
