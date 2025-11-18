@@ -1,15 +1,8 @@
 package com.example.demo1;
-import com.example.demo1.Calendar.CalendarView;
-import com.example.demo1.Sidebar.Sidebar;
 import com.example.demo1.Sidebar.SidebarController;
-import com.example.demo1.ToDoList.TodoView;
-import com.example.demo1.WhiteNoise.WhiteNoiseView;
-import com.example.demo1.Theme.ThemeManager;
 import javafx.animation.ScaleTransition;
-import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
@@ -19,15 +12,10 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import javafx.stage.Stage;
 import javafx.util.Duration;
 import java.io.InputStream;
 
 public class Dashboard {
-
-    private final Stage stage;
-    private BorderPane root;
-    private SidebarController sidebarController;
 
     // Pastel color palette - single colors
     private final String PASTEL_PINK = "#FACEEA";
@@ -45,261 +33,44 @@ public class Dashboard {
     private final String PASTEL_SAGE = "#8D9383";
     private final String PASTEL_FOREST = "#343A26";
 
-    public Dashboard(Stage stage) {
-        this.stage = stage;
+    private SidebarController sidebarController;
+
+    public Dashboard() {
+        // Constructor can be empty or used for initialization
     }
 
-    public void show() {
-        root = new BorderPane();
-
-        // Sidebar
-        sidebarController = new SidebarController();
-        sidebarController.setOnTabChange(this::handleNavigation);
-        Sidebar sidebar = new Sidebar(sidebarController, "Zara");
-        root.setLeft(sidebar);
-
-        showDashboardContent();
-
-        // Dynamic layout with minimum size
-        Scene scene = new Scene(root, 1200, 800); // Default size
-        scene.getRoot().setStyle("-fx-background-color: " + PASTEL_BLUSH + ";");
-
-        // Apply theme
-        ThemeManager.applyTheme(scene, ThemeManager.Theme.PASTEL);
-
-        stage.setScene(scene);
-        stage.setTitle("Pastel Productivity Dashboard");
-
-        // Set minimum size and allow resizing
-        stage.setMinWidth(1300);
-        stage.setMinHeight(600);
-        stage.setResizable(true); // Allow users to resize the window
-
-        stage.show();
+    // Add this method to set the sidebar controller
+    public void setSidebarController(SidebarController sidebarController) {
+        this.sidebarController = sidebarController;
     }
 
-    private void handleNavigation(String tab) {
-        switch (tab) {
-            case "dashboard":
-                showDashboardContent();
-                break;
-            case "timer":
-                showPomodoroTimer();
-                break;
-            case "todos":
-                showTodoList();
-                break;
-            case "calendar":
-                showCalendar();
-                break;
-            case "notes":
-                System.out.println("Navigating to Notes");
-                break;
-            case "pet":
-                System.out.println("Navigating to Pet");
-                break;
-            case "stats":
-                System.out.println("Navigating to Analytics");
-                break;
-            case "whitenoise":
-                showWhiteNoisePlayer();
-                break;
-            case "settings":
-                showSettings();
-                break;
-            default:
-                System.out.println("Navigating to: " + tab);
+    // Add this method to handle action button clicks
+    private void handleActionButton(String action) {
+        if (sidebarController != null) {
+            switch (action) {
+                case "Add Task":
+                    sidebarController.navigate("todos");
+                    break;
+                case "Start Timer":
+                    sidebarController.navigate("timer");
+                    break;
+                case "Create Note":
+                    sidebarController.navigate("notes");
+                    break;
+                case "Visit Pet":
+                    sidebarController.navigate("pet");
+                    break;
+            }
+        } else {
+            System.out.println("SidebarController not set for action: " + action);
         }
     }
 
-    private void showTodoList() {
-        try {
-            TodoView todoView = new TodoView();
-            ScrollPane todoContent = todoView.getContent();
-
-            // Make todo content fill available space
-            todoContent.prefWidthProperty().bind(root.widthProperty().subtract(200)); // sidebar width
-            todoContent.prefHeightProperty().bind(root.heightProperty());
-
-            root.setCenter(todoContent);
-
-        } catch (Exception e) {
-            System.out.println("❌ Error loading Todo List: " + e.getMessage());
-            e.printStackTrace();
-
-            // Fallback content
-            VBox fallbackContent = new VBox(20);
-            fallbackContent.setPadding(new Insets(40));
-            fallbackContent.setAlignment(Pos.CENTER);
-            fallbackContent.setStyle("-fx-background-color: " + PASTEL_BLUSH + ";");
-
-            // Make fallback content responsive
-            fallbackContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
-            fallbackContent.prefHeightProperty().bind(root.heightProperty());
-
-            Label title = new Label("To-Do List 📝");
-            title.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-size: 32px; -fx-font-weight: bold;");
-
-            Label subtitle = new Label("Error loading to-do list.");
-            subtitle.setStyle("-fx-text-fill: " + PASTEL_SAGE + "; -fx-font-size: 16px;");
-
-            fallbackContent.getChildren().addAll(title, subtitle);
-            root.setCenter(fallbackContent);
-        }
-    }
-    private void showCalendar() {
-        try {
-            CalendarView calendarView = new CalendarView();
-
-            // Set the initial width for responsive calculations
-            calendarView.setWidth(root.getWidth() - 200); // Account for sidebar
-
-            // Update calendar width when root container resizes
-            root.widthProperty().addListener((obs, oldVal, newVal) -> {
-                calendarView.setWidth(newVal.doubleValue() - 200); // Account for sidebar
-            });
-
-            // Set up callback - when calendar content changes, refresh the center
-            calendarView.setOnContentChange(() -> {
-                // This will be called when dates are clicked or month changes
-                ScrollPane refreshedContent = calendarView.getContent();
-
-                // Make refreshed content fill available space
-                refreshedContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
-                refreshedContent.prefHeightProperty().bind(root.heightProperty());
-
-                root.setCenter(refreshedContent);
-
-                // Update the width for the refreshed content
-                calendarView.setWidth(root.getWidth() - 200);
-            });
-
-            ScrollPane calendarContent = calendarView.getContent();
-
-            // Make calendar content fill available space
-            calendarContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
-            calendarContent.prefHeightProperty().bind(root.heightProperty());
-
-            root.setCenter(calendarContent);
-
-        } catch (Exception e) {
-            System.out.println("❌ Error loading Calendar: " + e.getMessage());
-            e.printStackTrace();
-
-            // Fallback content
-            VBox fallbackContent = new VBox(20);
-            fallbackContent.setPadding(new Insets(40));
-            fallbackContent.setAlignment(Pos.CENTER);
-            fallbackContent.setStyle("-fx-background-color: " + PASTEL_BLUSH + ";");
-
-            // Make fallback content responsive
-            fallbackContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
-            fallbackContent.prefHeightProperty().bind(root.heightProperty());
-
-            Label title = new Label("Calendar 📅");
-            title.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-size: 32px; -fx-font-weight: bold;");
-
-            Label subtitle = new Label("Error loading calendar.");
-            subtitle.setStyle("-fx-text-fill: " + PASTEL_SAGE + "; -fx-font-size: 16px;");
-
-            fallbackContent.getChildren().addAll(title, subtitle);
-            root.setCenter(fallbackContent);
-        }
-    }
-    private void showSettings() {
-        try {
-            Settings settings = new Settings();
-            VBox settingsContent = settings.getContent();
-
-            ScrollPane scrollPane = new ScrollPane(settingsContent);
-            scrollPane.setFitToWidth(true);
-            scrollPane.setStyle("-fx-background: " + PASTEL_BLUSH + "; -fx-border-color: " + PASTEL_BLUSH + ";");
-
-            // Make settings content responsive
-            scrollPane.prefWidthProperty().bind(root.widthProperty().subtract(200));
-            scrollPane.prefHeightProperty().bind(root.heightProperty());
-
-            root.setCenter(scrollPane);
-
-        } catch (Exception e) {
-            System.out.println("❌ Error loading Settings: " + e.getMessage());
-            e.printStackTrace();
-
-            // Fallback content
-            VBox fallbackContent = new VBox(20);
-            fallbackContent.setPadding(new Insets(40));
-            fallbackContent.setAlignment(Pos.CENTER);
-            fallbackContent.setStyle("-fx-background-color: " + PASTEL_BLUSH + ";");
-
-            // Make fallback content responsive
-            fallbackContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
-            fallbackContent.prefHeightProperty().bind(root.heightProperty());
-
-            Label title = new Label("Settings ⚙️");
-            title.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-size: 32px; -fx-font-weight: bold;");
-
-            Label subtitle = new Label("Error loading settings page.");
-            subtitle.setStyle("-fx-text-fill: " + PASTEL_SAGE + "; -fx-font-size: 16px;");
-
-            fallbackContent.getChildren().addAll(title, subtitle);
-            root.setCenter(fallbackContent);
-        }
-    }
-
-    private void showWhiteNoisePlayer() {
-        try {
-            WhiteNoiseView whiteNoisePlayer = new WhiteNoiseView();
-            VBox whiteNoiseContent = whiteNoisePlayer.getContent();
-
-            // Apply your dashboard theme to match the rest of the app
-            whiteNoiseContent.setStyle("-fx-background-color: " + PASTEL_BLUSH + ";");
-
-            // Create a scroll pane for the content (since white noise player is tall)
-            ScrollPane scrollPane = new ScrollPane(whiteNoiseContent);
-            scrollPane.setFitToWidth(true);
-            scrollPane.setStyle("-fx-background: " + PASTEL_BLUSH + "; -fx-border-color: " + PASTEL_BLUSH + ";");
-            scrollPane.setPadding(new Insets(20));
-
-            // Make white noise content responsive
-            scrollPane.prefWidthProperty().bind(root.widthProperty().subtract(200));
-            scrollPane.prefHeightProperty().bind(root.heightProperty());
-
-            root.setCenter(scrollPane);
-
-        } catch (Exception e) {
-            System.out.println("❌ Error loading White Noise Player: " + e.getMessage());
-            e.printStackTrace();
-
-            // Fallback content
-            VBox fallbackContent = new VBox(20);
-            fallbackContent.setPadding(new Insets(40));
-            fallbackContent.setAlignment(Pos.CENTER);
-            fallbackContent.setStyle("-fx-background-color: " + PASTEL_BLUSH + ";");
-
-            // Make fallback content responsive
-            fallbackContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
-            fallbackContent.prefHeightProperty().bind(root.heightProperty());
-
-            Label title = new Label("White Noise Player 🎵");
-            title.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-size: 32px; -fx-font-weight: bold; -fx-font-family: 'Segoe UI';");
-
-            Label subtitle = new Label("Error loading white noise player. Please check the console for details.");
-            subtitle.setStyle("-fx-text-fill: " + PASTEL_SAGE + "; -fx-font-size: 16px; -fx-font-family: 'Segoe UI';");
-
-            fallbackContent.getChildren().addAll(title, subtitle);
-            root.setCenter(fallbackContent);
-        }
-    }
-
-    private void showDashboardContent() {
+    public VBox getContent() {
         VBox mainContent = new VBox(15);
         mainContent.setPadding(new Insets(20, 30, 20, 30));
         mainContent.setAlignment(Pos.TOP_CENTER);
         mainContent.setStyle("-fx-background-color: " + PASTEL_BLUSH + ";");
-
-        // Make main content responsive
-        mainContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
-        mainContent.prefHeightProperty().bind(root.heightProperty());
 
         // Header
         VBox headerBox = new VBox(8);
@@ -356,17 +127,14 @@ public class Dashboard {
         HBox insightsBox = new HBox(25);
         insightsBox.setAlignment(Pos.CENTER);
 
-        // Make insights box responsive
-        insightsBox.prefWidthProperty().bind(root.widthProperty().subtract(250));
-        insightsBox.setMaxWidth(Region.USE_PREF_SIZE);
-
         VBox focusBox = createFocusBox();
         VBox analyticsBox = createAnalyticsBox();
 
         insightsBox.getChildren().addAll(focusBox, analyticsBox);
 
         mainContent.getChildren().addAll(headerBox, cardsAndButtonsContainer, insightsBox);
-        root.setCenter(mainContent);
+
+        return mainContent;
     }
 
     private VBox createStatCard(String value, String label, String color, String imagePath) {
@@ -450,7 +218,7 @@ public class Dashboard {
                 "-fx-background-radius: 15; -fx-border-radius: 15; -fx-font-family: 'Segoe UI'; " +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 10, 0, 0, 3);");
         button.setFont(Font.font("Segoe UI", FontWeight.BOLD, 13));
-        button.setOnAction(e -> handleActionButton(text));
+        button.setOnAction(e -> handleActionButton(text)); // UNCOMMENTED AND FIXED
         addHoverAnimation(button);
         return button;
     }
@@ -477,18 +245,10 @@ public class Dashboard {
         }
     }
 
-    private void handleActionButton(String action) {
-        switch (action) {
-            case "Add Task": sidebarController.navigate("todos"); break;
-            case "Start Timer": sidebarController.navigate("timer"); break;
-            case "Create Note": sidebarController.navigate("notes"); break;
-            case "Visit Pet": sidebarController.navigate("pet"); break;
-        }
-    }
     private VBox createFocusBox() {
-        VBox box = new VBox(15); // Reduced spacing
-        box.setPadding(new Insets(20)); // Reduced padding
-        box.setPrefWidth(400); // Smaller width
+        VBox box = new VBox(15);
+        box.setPadding(new Insets(20));
+        box.setPrefWidth(400);
         box.setStyle("-fx-background-color: " + PASTEL_IVORY + "; -fx-background-radius: 15; " +
                 "-fx-border-radius: 15; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 12, 0, 0, 5);");
 
@@ -513,7 +273,7 @@ public class Dashboard {
         mainGoal.getChildren().addAll(goalTitle, goalDesc);
 
         // Sub Goals
-        HBox subGoals = new HBox(15); // Reduced spacing
+        HBox subGoals = new HBox(15);
         subGoals.setAlignment(Pos.CENTER);
 
         VBox priorityCard = createMiniCard("✅ Priority Tasks", "3 high-priority items", PASTEL_PINK);
@@ -526,15 +286,15 @@ public class Dashboard {
     }
 
     private VBox createAnalyticsBox() {
-        VBox box = new VBox(15); // Reduced spacing
-        box.setPadding(new Insets(20)); // Reduced padding
-        box.setPrefWidth(400); // Smaller width
+        VBox box = new VBox(15);
+        box.setPadding(new Insets(20));
+        box.setPrefWidth(400);
         box.setStyle("-fx-background-color: " + PASTEL_IVORY + "; -fx-background-radius: 15; " +
                 "-fx-border-radius: 15; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 12, 0, 0, 5);");
 
         HBox titleBox = new HBox();
         titleBox.setAlignment(Pos.CENTER_LEFT);
-        titleBox.setSpacing(10); // Reduced spacing
+        titleBox.setSpacing(10);
 
         Label title = new Label("📊 Productivity Insights");
         title.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-size: 20px; -fx-font-weight: bold; -fx-font-family: 'Segoe UI';");
@@ -543,13 +303,13 @@ public class Dashboard {
         Button viewAnalytics = new Button("View Analytics →");
         viewAnalytics.setStyle("-fx-text-fill: " + PASTEL_PURPLE + "; -fx-background-color: transparent; -fx-font-family: 'Segoe UI'; " +
                 "-fx-font-size: 12px; -fx-underline: true; -fx-cursor: hand; -fx-font-weight: bold;");
-        viewAnalytics.setOnAction(e -> sidebarController.navigate("stats"));
+        // This button can remain without action for now, or you can add navigation to "stats"
 
         HBox.setHgrow(titleBox, Priority.ALWAYS);
         titleBox.getChildren().addAll(title, viewAnalytics);
 
         // Weekly Progress
-        HBox weeklyBox = new HBox(15); // Reduced spacing
+        HBox weeklyBox = new HBox(15);
         weeklyBox.setPadding(new Insets(12));
         weeklyBox.setStyle("-fx-background-color: " + PASTEL_ROSE + "; -fx-background-radius: 12; -fx-border-radius: 12;");
         weeklyBox.setAlignment(Pos.CENTER);
@@ -582,7 +342,7 @@ public class Dashboard {
         weeklyBox.getChildren().addAll(progressText, progressStats);
 
         // Mini Stats
-        HBox miniStats = new HBox(15); // Reduced spacing
+        HBox miniStats = new HBox(15);
         miniStats.setAlignment(Pos.CENTER);
 
         VBox focusSessions = createMiniCard("Focus Sessions", "23", PASTEL_BLUE);
@@ -592,13 +352,13 @@ public class Dashboard {
 
         // Analytics Button
         Button analyticsBtn = new Button("Full Analytics Dashboard");
-        analyticsBtn.setPrefWidth(300); // Smaller button
+        analyticsBtn.setPrefWidth(300);
         analyticsBtn.setStyle("-fx-background-color: " + PASTEL_LAVENDER + "; " +
                 "-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-weight: bold; -fx-font-size: 14px; " +
                 "-fx-background-radius: 15; -fx-border-radius: 15; -fx-font-family: 'Segoe UI'; " +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 10, 0, 0, 3);");
         analyticsBtn.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-        analyticsBtn.setOnAction(e -> sidebarController.navigate("stats"));
+        // This button can remain without action for now, or you can add navigation to "stats"
         addHoverAnimation(analyticsBtn);
 
         box.getChildren().addAll(titleBox, weeklyBox, miniStats, analyticsBtn);
@@ -610,7 +370,6 @@ public class Dashboard {
         mini.setAlignment(Pos.CENTER);
         mini.setPadding(new Insets(12));
 
-        // Use preferred width with proper max size constraints
         mini.setPrefWidth(140);
         mini.setMaxWidth(Region.USE_PREF_SIZE);
         mini.setMaxHeight(Region.USE_PREF_SIZE);
@@ -627,44 +386,6 @@ public class Dashboard {
 
         mini.getChildren().addAll(valueLabel, titleLabel);
         return mini;
-    }
-
-    private void showPomodoroTimer() {
-        try {
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/example/demo1/Pomodoro/Pomodoro.fxml"));
-            Pane pomodoroContent = fxmlLoader.load();
-
-            // Apply the pastel theme to the loaded content
-            pomodoroContent.setStyle("-fx-background-color: " + PASTEL_BLUSH + ";");
-
-            // Make pomodoro content responsive
-            pomodoroContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
-            pomodoroContent.prefHeightProperty().bind(root.heightProperty());
-
-            root.setCenter(pomodoroContent);
-        } catch (Exception e) {
-            System.out.println("❌ Error loading Pomodoro FXML: " + e.getMessage());
-            e.printStackTrace();
-
-            // Fallback content
-            VBox fallbackContent = new VBox(20);
-            fallbackContent.setPadding(new Insets(40));
-            fallbackContent.setAlignment(Pos.CENTER);
-            fallbackContent.setStyle("-fx-background-color: " + PASTEL_BLUSH + ";");
-
-            // Make fallback content responsive
-            fallbackContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
-            fallbackContent.prefHeightProperty().bind(root.heightProperty());
-
-            Label timerTitle = new Label("Pomodoro Timer 🍅");
-            timerTitle.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-size: 32px; -fx-font-weight: bold; -fx-font-family: 'Segoe UI';");
-
-            Label timerSubtitle = new Label("Error loading timer. Please check the FXML file.");
-            timerSubtitle.setStyle("-fx-text-fill: " + PASTEL_SAGE + "; -fx-font-size: 16px; -fx-font-family: 'Segoe UI';");
-
-            fallbackContent.getChildren().addAll(timerTitle, timerSubtitle);
-            root.setCenter(fallbackContent);
-        }
     }
 
     private void addHoverAnimation(Region region) {

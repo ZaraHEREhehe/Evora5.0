@@ -16,7 +16,7 @@ public class HelloApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         primaryStage = stage;
-//Pomodoro/Pomodoro.fxml
+
         // Load the login page
         FXMLLoader fxmlLoader = new FXMLLoader(HelloApplication.class.getResource("hello-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
@@ -29,15 +29,18 @@ public class HelloApplication extends Application {
         stage.show();
     }
 
-    // Updated method to accept username
+    // Updated method to accept username - Reusing same stage
     public static void showDashboard(String username, int userId) {
-        BorderPane root = new BorderPane();
-        MainController mainController = new MainController(root, username, userId); //pass user id
+        try {
+            MainController mainController = new MainController(primaryStage, username, userId);
 
-        Scene scene = new Scene(root, 1200, 700);
-        primaryStage.setScene(scene);
-        primaryStage.setTitle("Pastel Productivity Dashboard - Welcome, " + username);
-        primaryStage.show();
+            // Update the title
+            primaryStage.setTitle("Pastel Productivity Dashboard - Welcome, " + username);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("❌ Error loading dashboard: " + e.getMessage());
+        }
     }
 
     public static void main(String[] args) {
