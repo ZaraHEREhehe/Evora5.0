@@ -1,6 +1,8 @@
 package com.example.demo1;
+import com.example.demo1.Calendar.CalendarView;
 import com.example.demo1.Sidebar.Sidebar;
 import com.example.demo1.Sidebar.SidebarController;
+import com.example.demo1.ToDoList.TodoView;
 import com.example.demo1.Whitenoise.WhiteNoisePlayer;
 import com.example.demo1.Theme.ThemeManager;
 import javafx.animation.ScaleTransition;
@@ -70,7 +72,6 @@ public class Dashboard {
         stage.setResizable(false); // Fixed window size
         stage.show();
     }
-
     private void handleNavigation(String tab) {
         switch (tab) {
             case "dashboard":
@@ -80,7 +81,10 @@ public class Dashboard {
                 showPomodoroTimer();
                 break;
             case "todos":
-                System.out.println("Navigating to To-Do List");
+                showTodoList();  // ← ADD THIS
+                break;
+            case "calendar":
+                showCalendar();  // ← ADD THIS
                 break;
             case "notes":
                 System.out.println("Navigating to Notes");
@@ -91,7 +95,7 @@ public class Dashboard {
             case "stats":
                 System.out.println("Navigating to Analytics");
                 break;
-            case "whitenoise": // ADD THIS CASE
+            case "whitenoise":
                 showWhiteNoisePlayer();
                 break;
             case "settings":
@@ -99,6 +103,59 @@ public class Dashboard {
                 break;
             default:
                 System.out.println("Navigating to: " + tab);
+        }
+    }
+    private void showTodoList() {
+        try {
+            TodoView todoView = new TodoView();
+            ScrollPane todoContent = todoView.getContent();
+            root.setCenter(todoContent);
+
+        } catch (Exception e) {
+            System.out.println("❌ Error loading Todo List: " + e.getMessage());
+            e.printStackTrace();
+
+            // Fallback content
+            VBox fallbackContent = new VBox(20);
+            fallbackContent.setPadding(new Insets(40));
+            fallbackContent.setAlignment(Pos.CENTER);
+            fallbackContent.setStyle("-fx-background-color: " + PASTEL_BLUSH + ";");
+
+            Label title = new Label("To-Do List 📝");
+            title.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-size: 32px; -fx-font-weight: bold;");
+
+            Label subtitle = new Label("Error loading to-do list.");
+            subtitle.setStyle("-fx-text-fill: " + PASTEL_SAGE + "; -fx-font-size: 16px;");
+
+            fallbackContent.getChildren().addAll(title, subtitle);
+            root.setCenter(fallbackContent);
+        }
+    }
+
+    private void showCalendar() {
+        try {
+            CalendarView calendarView = new CalendarView();
+            Pane calendarContent = calendarView.getContent();
+            root.setCenter(calendarContent);
+
+        } catch (Exception e) {
+            System.out.println("❌ Error loading Calendar: " + e.getMessage());
+            e.printStackTrace();
+
+            // Fallback content
+            VBox fallbackContent = new VBox(20);
+            fallbackContent.setPadding(new Insets(40));
+            fallbackContent.setAlignment(Pos.CENTER);
+            fallbackContent.setStyle("-fx-background-color: " + PASTEL_BLUSH + ";");
+
+            Label title = new Label("Calendar 📅");
+            title.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-size: 32px; -fx-font-weight: bold;");
+
+            Label subtitle = new Label("Error loading calendar.");
+            subtitle.setStyle("-fx-text-fill: " + PASTEL_SAGE + "; -fx-font-size: 16px;");
+
+            fallbackContent.getChildren().addAll(title, subtitle);
+            root.setCenter(fallbackContent);
         }
     }
     // Add this method to Dashboard.java

@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 
 public class CalendarView {
 
-    private final Stage stage;
+    private Stage stage;
     private LocalDate currentDate;
     private LocalDate selectedDate;
     private final List<Todo> todos;
@@ -43,12 +43,17 @@ public class CalendarView {
     private boolean isFirstShow = true;
     private double lastWidth = 1400;
 
-    public CalendarView(Stage stage) {
-        this.stage = stage;
+    public CalendarView() {
         this.currentDate = LocalDate.now();
         this.selectedDate = null;
         this.db = new Database();
-        this.todos = loadTodosFromDB(); // ← NOW FROM DATABASE
+        this.todos = loadTodosFromDB();
+    }
+
+    // Keep the stage constructor for backward compatibility
+    public CalendarView(Stage stage) {
+        this(); // Call the no-arg constructor
+        this.stage = stage;
     }
 
     public void show() {
@@ -59,7 +64,10 @@ public class CalendarView {
             // === SIDEBAR ===
             SidebarController sidebarController = new SidebarController();
             sidebarController.setStage(stage);
-            sidebarController.setOnTabChange(tab -> sidebarController.goTo(tab));
+            sidebarController.setOnTabChange(tab -> {
+                // Handle navigation directly or leave empty if Dashboard handles it
+                System.out.println("Navigating to: " + tab);
+            });
 
             Sidebar sidebar = new Sidebar(sidebarController, "Zara");
             root.setLeft(sidebar);
@@ -92,7 +100,6 @@ public class CalendarView {
 
         stage.show();
     }
-
     private ScrollPane buildMainContent() {
         VBox main = new VBox(24);
         main.setPadding(new Insets(40));
@@ -685,5 +692,10 @@ public class CalendarView {
         public boolean isCompleted() { return completed; }
         public String getPriority() { return priority; }
         public String getDueDate() { return dueDate; }
+
+    }
+    public Pane getContent() {
+        // Return the main content pane
+        return root; // or whatever your main container is
     }
 }

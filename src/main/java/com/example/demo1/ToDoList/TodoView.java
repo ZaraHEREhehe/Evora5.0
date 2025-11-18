@@ -36,7 +36,7 @@ import java.util.*;
 
 public class TodoView {
 
-    private final Stage stage;
+    private Stage stage;
     private Database db;
     private List<Todo> todos;
     private BorderPane root;
@@ -47,12 +47,16 @@ public class TodoView {
     private final int CURRENT_USER_ID = 1;
     private static final DataFormat TODO_FORMAT = new DataFormat("application/x-todo-object");
 
-    public TodoView(Stage stage) {
-        this.stage = stage;
+    public TodoView() {
         this.db = new Database();
         this.todos = db.getTodos(CURRENT_USER_ID);
     }
 
+    // Keep the stage constructor for backward compatibility
+    public TodoView(Stage stage) {
+        this(); // Call the no-arg constructor
+        this.stage = stage;
+    }
     public void show() {
         if (scene == null) {
             root = new BorderPane();
@@ -60,7 +64,12 @@ public class TodoView {
 
             SidebarController sidebarController = new SidebarController();
             sidebarController.setStage(stage);
-            sidebarController.setOnTabChange(tab -> sidebarController.goTo(tab));
+
+            // Remove the goTo callback and use the navigation directly
+            sidebarController.setOnTabChange(tab -> {
+                System.out.println("Sidebar navigation to: " + tab);
+                // The Dashboard will handle the actual navigation
+            });
 
             Sidebar sidebar = new Sidebar(sidebarController, "Zara");
             root.setLeft(sidebar);
@@ -573,6 +582,9 @@ public class TodoView {
         } catch (Exception e) {
             System.out.println("Could not play chime: " + e.getMessage());
         }
+    }
+    public ScrollPane getContent() {
+        return buildMainContent();
     }
 
     static class Todo implements Serializable {

@@ -21,22 +21,18 @@ public class SidebarController {
         return stage;
     }
 
+    // ← REMOVE THE goTo METHOD COMPLETELY and use this instead:
     public void setOnTabChange(Consumer<String> callback) {
         this.onTabChange = callback;
     }
 
     public void navigate(String tabId) {
+        System.out.println("✨ Navigating to: " + tabId);
         if (onTabChange != null) {
             onTabChange.accept(tabId);
         }
     }
 
-    // ← THIS IS THE MAGIC METHOD
-    public void goTo(String page) {
-        if (stage == null) {
-            System.err.println("ERROR: Stage not set in SidebarController!");
-            return;
-        }
     /**
      * Programmatically navigate to a tab (useful for initial setup)
      */
@@ -44,20 +40,10 @@ public class SidebarController {
         navigate(tabId);
     }
 
-        switch (page) {
-            case "dashboard" -> new Dashboard(stage).show();
-            case "calendar" -> new CalendarView(stage).show();
-            // Add more later:
-             case "todos" -> new TodoView(stage).show();
-            // case "pet" -> new PetView(stage).show();
-            default -> System.out.println("No page for: " + page);
-        }
-    /**
-     * Get the current active tab (if needed for state management)
-     */
+
     public String getCurrentTab() {
         // This would need to be implemented with state tracking
         // For now, it's a placeholder for future enhancement
         return "dashboard";
     }
-}
+} // ← This is the class closing brace
