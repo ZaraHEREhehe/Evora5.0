@@ -485,16 +485,10 @@ public class Dashboard {
             case "Visit Pet": sidebarController.navigate("pet"); break;
         }
     }
-
     private VBox createFocusBox() {
-        VBox box = new VBox(15);
-        box.setPadding(new Insets(20));
-
-        // Use preferred width with proper max size constraints
-        box.setPrefWidth(400);
-        box.setMaxWidth(Region.USE_PREF_SIZE);
-        box.setMaxHeight(Region.USE_PREF_SIZE);
-
+        VBox box = new VBox(15); // Reduced spacing
+        box.setPadding(new Insets(20)); // Reduced padding
+        box.setPrefWidth(400); // Smaller width
         box.setStyle("-fx-background-color: " + PASTEL_IVORY + "; -fx-background-radius: 15; " +
                 "-fx-border-radius: 15; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 12, 0, 0, 5);");
 
@@ -519,7 +513,7 @@ public class Dashboard {
         mainGoal.getChildren().addAll(goalTitle, goalDesc);
 
         // Sub Goals
-        HBox subGoals = new HBox(15);
+        HBox subGoals = new HBox(15); // Reduced spacing
         subGoals.setAlignment(Pos.CENTER);
 
         VBox priorityCard = createMiniCard("✅ Priority Tasks", "3 high-priority items", PASTEL_PINK);
@@ -532,20 +526,15 @@ public class Dashboard {
     }
 
     private VBox createAnalyticsBox() {
-        VBox box = new VBox(15);
-        box.setPadding(new Insets(20));
-
-        // Use preferred width with proper max size constraints
-        box.setPrefWidth(400);
-        box.setMaxWidth(Region.USE_PREF_SIZE);
-        box.setMaxHeight(Region.USE_PREF_SIZE);
-
+        VBox box = new VBox(15); // Reduced spacing
+        box.setPadding(new Insets(20)); // Reduced padding
+        box.setPrefWidth(400); // Smaller width
         box.setStyle("-fx-background-color: " + PASTEL_IVORY + "; -fx-background-radius: 15; " +
                 "-fx-border-radius: 15; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 12, 0, 0, 5);");
 
         HBox titleBox = new HBox();
         titleBox.setAlignment(Pos.CENTER_LEFT);
-        titleBox.setSpacing(10);
+        titleBox.setSpacing(10); // Reduced spacing
 
         Label title = new Label("📊 Productivity Insights");
         title.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-size: 20px; -fx-font-weight: bold; -fx-font-family: 'Segoe UI';");
@@ -560,7 +549,7 @@ public class Dashboard {
         titleBox.getChildren().addAll(title, viewAnalytics);
 
         // Weekly Progress
-        HBox weeklyBox = new HBox(15);
+        HBox weeklyBox = new HBox(15); // Reduced spacing
         weeklyBox.setPadding(new Insets(12));
         weeklyBox.setStyle("-fx-background-color: " + PASTEL_ROSE + "; -fx-background-radius: 12; -fx-border-radius: 12;");
         weeklyBox.setAlignment(Pos.CENTER);
@@ -593,7 +582,7 @@ public class Dashboard {
         weeklyBox.getChildren().addAll(progressText, progressStats);
 
         // Mini Stats
-        HBox miniStats = new HBox(15);
+        HBox miniStats = new HBox(15); // Reduced spacing
         miniStats.setAlignment(Pos.CENTER);
 
         VBox focusSessions = createMiniCard("Focus Sessions", "23", PASTEL_BLUE);
@@ -603,7 +592,7 @@ public class Dashboard {
 
         // Analytics Button
         Button analyticsBtn = new Button("Full Analytics Dashboard");
-        analyticsBtn.setPrefWidth(300);
+        analyticsBtn.setPrefWidth(300); // Smaller button
         analyticsBtn.setStyle("-fx-background-color: " + PASTEL_LAVENDER + "; " +
                 "-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-weight: bold; -fx-font-size: 14px; " +
                 "-fx-background-radius: 15; -fx-border-radius: 15; -fx-font-family: 'Segoe UI'; " +
