@@ -1,8 +1,8 @@
 // MainController.java
 package com.example.demo1;
-/*
+
 import com.example.demo1.Mood.MoodController;
-import com.example.demo1.Mood.MoodView;*/
+import com.example.demo1.Mood.MoodView;
 import com.example.demo1.Sidebar.Sidebar;
 import com.example.demo1.Sidebar.SidebarController;
 import com.example.demo1.Notes.NotesView;
@@ -88,6 +88,9 @@ public class MainController {
             case "timer":
                 showPomodoroTimer();
                 break;
+            case "mood":
+                showMood();
+                break;
             case "todos":
                 showTodoList();
                 break;
@@ -125,13 +128,13 @@ public class MainController {
         NotesView notesView = new NotesView(notesController);
         root.setCenter(notesView);
     }
-/*
+
     private void showMood() {
         MoodController moodController = new MoodController(userId);
         MoodView moodView = new MoodView(moodController);
         root.setCenter(moodView);
     }
-    */
+
 
     private void showTodoList() {
         try {
