@@ -1,5 +1,10 @@
 package com.example.demo1.Pomodoro;
 
+import com.example.demo1.Pets.PetsController;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.fxml.FXML;
@@ -64,6 +69,8 @@ public class PomodoroController {
     private final Color PASTEL_FOREST = Color.web("#343A26");
     private final Color PASTEL_BROWN = Color.web("#483C2B");
 
+    private PetsController petsController;
+
     @FXML
     public void initialize() {
         setupStyles();
@@ -94,6 +101,7 @@ public class PomodoroController {
         // Hide custom settings and pet container initially
         customTimerContainer.setVisible(false);
         petContainer.setVisible(false);
+        petContainer.setManaged(true);
     }
 
     private void setupPresets() {
@@ -213,6 +221,7 @@ public class PomodoroController {
         updateCircleGradient();
         updateCircularTimer(0);
         circularTimeText.setText(formatTime(timeLeft));
+        petContainer.setVisible(true); // Show pet for work sessions
     }
 
     private void startBreakSession() {
@@ -228,6 +237,8 @@ public class PomodoroController {
         updateSessions();
         updateCircularTimer(0);
         circularTimeText.setText(formatTime(timeLeft));
+
+        petContainer.setVisible(false); // Hide pet during breaks
 
         // Show happiness boost notification
         showHappinessBoost();
@@ -361,4 +372,68 @@ public class PomodoroController {
                 "-fx-border-color: " + toHex(PASTEL_PINK) + "; " +
                 "-fx-padding: 15; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 10, 0, 0, 3);");
     }
+
+    //pets
+    public void setPetsController(PetsController petsController) {
+        this.petsController = petsController;
+        updatePetDisplay();
+    }
+
+    // Add this method to update the pet display
+    private void updatePetDisplay() {
+        if (petsController != null) {
+            PetsController.PetInfo currentPet = petsController.getCurrentPetForSidebar();
+
+            // Clear previous pet content
+            petContainer.getChildren().clear();
+
+            // Create pet display
+            VBox petContent = new VBox(10);
+            petContent.setAlignment(Pos.CENTER);
+            petContent.setPadding(new Insets(10));
+
+            // Pet name
+            Label petNameLabel = new Label(currentPet.getDisplayName());
+            petNameLabel.setStyle("-fx-text-fill: " + toHex(PASTEL_FOREST) + "; -fx-font-weight: bold; -fx-font-size: 14px;");
+
+            // Pet GIF
+            try {
+                ImageView petGif = new ImageView(new Image(getPetGifPath(currentPet.getGifFilename())));
+                petGif.setFitWidth(80);
+                petGif.setFitHeight(80);
+                petGif.setPreserveRatio(true);
+
+                // Add subtle animation effect
+                petGif.setStyle("-fx-effect: dropshadow(gaussian, rgba(192, 132, 252, 0.3), 10, 0.5, 0, 2);");
+
+                petContent.getChildren().addAll(petGif, petNameLabel);
+            } catch (Exception e) {
+                // Fallback to emoji if GIF fails to load
+                Label petEmoji = new Label(getSpeciesEmoji(currentPet.getSpecies()));
+                petEmoji.setFont(Font.font(36));
+                petEmoji.setStyle("-fx-text-fill: " + toHex(PASTEL_FOREST) + ";");
+
+                petContent.getChildren().addAll(petEmoji, petNameLabel);
+            }
+
+            petContainer.getChildren().add(petContent);
+        }
+    }
+
+    // Helper method to get pet GIF path (similar to the one in PetsView)
+    private String getPetGifPath(String filename) {
+        return getClass().getResource("/pet_gifs/" + filename).toExternalForm();
+    }
+
+    // Helper method to get species emoji
+    private String getSpeciesEmoji(String species) {
+        switch (species.toLowerCase()) {
+            case "cat": return "🐱";
+            case "bunny": return "🐰";
+            case "owl": return "🦉";
+            case "dragon": return "🐉";
+            default: return "❓";
+        }
+    }
+
 }

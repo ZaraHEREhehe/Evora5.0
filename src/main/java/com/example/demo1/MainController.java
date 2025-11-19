@@ -348,12 +348,15 @@ public class MainController {
             FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/example/demo1/Pomodoro/Pomodoro.fxml"));
             Pane pomodoroContent = fxmlLoader.load();
 
+            // Get the controller instance from the FXML loader
+            PomodoroController pomodoroController = fxmlLoader.getController();
+
+            // Create pets controller and set it on the pomodoro controller
+            PetsController petsController = new PetsController(userId);
+            pomodoroController.setPetsController(petsController);
+
             // Apply the pastel theme to the loaded content
             pomodoroContent.setStyle("-fx-background-color: " + PASTEL_BLUSH + ";");
-
-            // ADD THESE 2 LINES - pass the userId to track sessions
-            //PomodoroController pomodoroController = fxmlLoader.getController();
-            //pomodoroController.setUserId(this.userId);
 
             // Make pomodoro content responsive
             pomodoroContent.prefWidthProperty().bind(root.widthProperty().subtract(200));

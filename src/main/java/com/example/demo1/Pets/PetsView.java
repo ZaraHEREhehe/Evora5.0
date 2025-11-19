@@ -8,9 +8,13 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.FontPosture;
+import javafx.scene.text.TextAlignment;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.application.Platform;
+import javafx.scene.Node;
 import java.util.List;
+import java.util.Optional;
 
 public class PetsView extends BorderPane {
     private final PetsController controller;
@@ -399,6 +403,7 @@ public class PetsView extends BorderPane {
         }
     }
 
+    // In the createPetDisplayCard method, add an edit button:
     private VBox createPetDisplayCard(PetsController.Pet pet, boolean showEquipButton) {
         VBox card = new VBox(20);
         card.setPadding(new Insets(30));
@@ -418,7 +423,37 @@ public class PetsView extends BorderPane {
         Label petName = new Label(pet.getName());
         petName.setFont(Font.font("System", FontWeight.BOLD, 24));
         petName.setStyle(forceTextColor(textPrimary));
-        nameBox.getChildren().addAll(petName);
+
+        // Cute edit button
+        Button editNameBtn = new Button("✏️");
+        editNameBtn.setStyle(
+                "-fx-background-color: transparent;" +
+                        "-fx-border-color: transparent;" +
+                        "-fx-cursor: hand;" +
+                        "-fx-font-size: 16;" +
+                        "-fx-text-fill: " + toHex(textSecondary) + ";" +
+                        "-fx-padding: 4 8;"
+        );
+        editNameBtn.setOnMouseEntered(e -> editNameBtn.setStyle(
+                "-fx-background-color: #F7EFFF;" +
+                        "-fx-border-color: transparent;" +
+                        "-fx-cursor: hand;" +
+                        "-fx-font-size: 16;" +
+                        "-fx-text-fill: " + toHex(textPrimary) + ";" +
+                        "-fx-padding: 4 8;" +
+                        "-fx-background-radius: 10;"
+        ));
+        editNameBtn.setOnMouseExited(e -> editNameBtn.setStyle(
+                "-fx-background-color: transparent;" +
+                        "-fx-border-color: transparent;" +
+                        "-fx-cursor: hand;" +
+                        "-fx-font-size: 16;" +
+                        "-fx-text-fill: " + toHex(textSecondary) + ";" +
+                        "-fx-padding: 4 8;"
+        ));
+        editNameBtn.setOnAction(e -> showNameEditDialog(pet));
+
+        nameBox.getChildren().addAll(petName, editNameBtn);
 
         Label petSpecies = new Label(pet.getSpecies() + " • Unlocked at " + pet.getRequiredExperience() + " XP");
         petSpecies.setFont(Font.font("System", 14));
@@ -438,6 +473,182 @@ public class PetsView extends BorderPane {
         }
 
         return card;
+    }
+
+    // Add the cute name edit dialog method:
+    private void showNameEditDialog(PetsController.Pet pet) {
+        // Create a custom dialog
+        Dialog<String> dialog = new Dialog<>();
+        dialog.setTitle("✨ Rename Your Pet ✨");
+
+        // Set the button types
+        ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
+
+        // Create the cute content
+        VBox content = new VBox(20);
+        content.setPadding(new Insets(20));
+        content.setAlignment(Pos.CENTER);
+        content.setStyle("-fx-background-color: linear-gradient(to bottom, #fdf7ff, #faf5ff);");
+
+        // Header with emoji
+        Label header = new Label("Give " + pet.getName() + " a new name! 🐾");
+        header.setFont(Font.font("System", FontWeight.BOLD, 18));
+        header.setStyle("-fx-text-fill: #5c5470;");
+
+        // Pet image/emoji
+        StackPane petDisplay = new StackPane();
+        petDisplay.setPrefSize(80, 80);
+
+        try {
+            ImageView petGif = new ImageView(new Image(getPetGifPath(pet.getGifFilename())));
+            petGif.setFitWidth(60);
+            petGif.setFitHeight(60);
+            petGif.setPreserveRatio(true);
+            petDisplay.getChildren().add(petGif);
+        } catch (Exception e) {
+            Label petEmoji = new Label(getSpeciesEmoji(pet.getSpecies()));
+            petEmoji.setFont(Font.font(36));
+            petDisplay.getChildren().add(petEmoji);
+        }
+
+        // Text field with cute styling
+        TextField nameField = new TextField(pet.getName());
+        nameField.setPromptText("Enter cute name here...");
+        nameField.setPrefWidth(200);
+        nameField.setStyle(
+                "-fx-background-color: white;" +
+                        "-fx-border-color: #D8B4FE;" +
+                        "-fx-border-width: 2;" +
+                        "-fx-border-radius: 15;" +
+                        "-fx-background-radius: 15;" +
+                        "-fx-padding: 10;" +
+                        "-fx-font-size: 14;" +
+                        "-fx-text-fill: #5c5470;"
+        );
+
+        // Instruction text
+        Label instruction = new Label("What should we call your adorable companion?");
+        instruction.setStyle("-fx-text-fill: #756f86; -fx-font-size: 12;");
+        instruction.setWrapText(true);
+        instruction.setMaxWidth(250);
+        instruction.setTextAlignment(TextAlignment.CENTER);
+
+        content.getChildren().addAll(header, petDisplay, instruction, nameField);
+        dialog.getDialogPane().setContent(content);
+
+        // Enable/Disable save button depending on whether a name was entered
+        Node saveButton = dialog.getDialogPane().lookupButton(saveButtonType);
+        saveButton.setDisable(true);
+
+        // Add listener to enable save button only when text is entered
+        nameField.textProperty().addListener((observable, oldValue, newValue) -> {
+            saveButton.setDisable(newValue.trim().isEmpty());
+        });
+
+        // Request focus on the name field
+        Platform.runLater(nameField::requestFocus);
+
+        // Convert the result to the new name when the save button is clicked
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == saveButtonType) {
+                return nameField.getText().trim();
+            }
+            return null;
+        });
+
+        // Style the dialog pane
+        dialog.getDialogPane().setStyle(
+                "-fx-background-color: linear-gradient(to bottom, #fdf7ff, #faf5ff);" +
+                        "-fx-border-color: #D8B4FE;" +
+                        "-fx-border-width: 3;" +
+                        "-fx-border-radius: 20;" +
+                        "-fx-background-radius: 20;" +
+                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 20, 0.5, 0, 5);"
+        );
+
+        // Style the buttons
+        dialog.getDialogPane().getButtonTypes().forEach(buttonType -> {
+            Node buttonNode = dialog.getDialogPane().lookupButton(buttonType);
+            if (buttonNode instanceof Button) {
+                Button button = (Button) buttonNode;
+                if (buttonType.getButtonData() == ButtonBar.ButtonData.OK_DONE) {
+                    button.setStyle(
+                            "-fx-background-color: linear-gradient(to right, #C084FC, #F472B6);" +
+                                    "-fx-text-fill: white;" +
+                                    "-fx-font-weight: bold;" +
+                                    "-fx-background-radius: 15;" +
+                                    "-fx-border-radius: 15;" +
+                                    "-fx-padding: 8 16;"
+                    );
+                } else {
+                    button.setStyle(
+                            "-fx-background-color: transparent;" +
+                                    "-fx-text-fill: #5c5470;" +
+                                    "-fx-border-color: #D1D5DB;" +
+                                    "-fx-border-width: 2;" +
+                                    "-fx-background-radius: 15;" +
+                                    "-fx-border-radius: 15;" +
+                                    "-fx-padding: 8 16;"
+                    );
+                }
+            }
+        });
+
+        // Show the dialog and handle the result
+        Optional<String> result = dialog.showAndWait();
+        result.ifPresent(newName -> {
+            if (!newName.isEmpty() && !newName.equals(pet.getName())) {
+                if (controller.changePetName(pet.getPetTypeId(), newName)) {
+                    // Show success notification
+                    showSuccessNotification("Name updated to " + newName + "! 🎉");
+                    refreshData();
+                    // Notify that pet changed so sidebar updates
+                    controller.notifyPetChanged();
+                } else {
+                    showErrorNotification("Failed to update name. Please try again.");
+                }
+            }
+        });
+    }
+
+    // Add helper methods for notifications
+    private void showSuccessNotification(String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Success! ✨");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+
+        // Style the success alert
+        DialogPane dialogPane = alert.getDialogPane();
+        dialogPane.setStyle(
+                "-fx-background-color: linear-gradient(to bottom, #f0fff4, #dcfce7);" +
+                        "-fx-border-color: #86efac;" +
+                        "-fx-border-width: 2;" +
+                        "-fx-border-radius: 15;" +
+                        "-fx-background-radius: 15;"
+        );
+
+        alert.showAndWait();
+    }
+
+    private void showErrorNotification(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Oops! 😿");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+
+        // Style the error alert
+        DialogPane dialogPane = alert.getDialogPane();
+        dialogPane.setStyle(
+                "-fx-background-color: linear-gradient(to bottom, #fef2f2, #fee2e2);" +
+                        "-fx-border-color: #fca5a5;" +
+                        "-fx-border-width: 2;" +
+                        "-fx-border-radius: 15;" +
+                        "-fx-background-radius: 15;"
+        );
+
+        alert.showAndWait();
     }
 
     private VBox createPetDisplay(PetsController.Pet pet) {
