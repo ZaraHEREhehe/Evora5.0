@@ -3,6 +3,8 @@ package com.example.demo1;
 
 import com.example.demo1.Mood.MoodController;
 import com.example.demo1.Mood.MoodView;
+import com.example.demo1.Pets.PetsController;
+import com.example.demo1.Pets.PetsView;
 import com.example.demo1.Sidebar.Sidebar;
 import com.example.demo1.Sidebar.SidebarController;
 import com.example.demo1.Notes.NotesView;
@@ -11,6 +13,7 @@ import com.example.demo1.Calendar.CalendarView;
 import com.example.demo1.ToDoList.TodoView;
 import com.example.demo1.WhiteNoise.WhiteNoiseView;
 import com.example.demo1.Theme.ThemeManager;
+import com.example.demo1.Pomodoro.PomodoroController;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -101,7 +104,7 @@ public class MainController {
                 showNotes();
                 break;
             case "pet":
-                System.out.println("Navigating to Pet");
+                showPets();
                 break;
             case "stats":
                 System.out.println("Navigating to Analytics");
@@ -133,6 +136,12 @@ public class MainController {
         MoodController moodController = new MoodController(userId);
         MoodView moodView = new MoodView(moodController);
         root.setCenter(moodView);
+    }
+
+    private void showPets() {
+        PetsController petsController = new PetsController();
+        PetsView petsView = new PetsView(petsController);
+        root.setCenter(petsView);
     }
 
 
@@ -324,6 +333,10 @@ public class MainController {
 
             // Apply the pastel theme to the loaded content
             pomodoroContent.setStyle("-fx-background-color: " + PASTEL_BLUSH + ";");
+
+            // ADD THESE 2 LINES - pass the userId to track sessions
+            //PomodoroController pomodoroController = fxmlLoader.getController();
+            //pomodoroController.setUserId(this.userId);
 
             // Make pomodoro content responsive
             pomodoroContent.prefWidthProperty().bind(root.widthProperty().subtract(200));

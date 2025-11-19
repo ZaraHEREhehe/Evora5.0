@@ -3,6 +3,9 @@ package com.example.demo1;
 import com.example.demo1.Database.DatabaseConnection;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.event.EventHandler;
 import java.sql.*;
 
 public class HelloController {
@@ -56,6 +59,22 @@ public class HelloController {
             loginButton.setDisable(false);
             loginButton.setText("Login");
         }
+    }
+
+    @FXML
+    public void initialize() {
+        // Add Enter key support for both fields
+        emailField.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ENTER) {
+                onLoginClick();
+            }
+        });
+
+        passwordField.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ENTER) {
+                onLoginClick();
+            }
+        });
     }
 
     @FXML
