@@ -14,6 +14,7 @@ import com.example.demo1.Theme.ThemeManager;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
@@ -274,8 +275,9 @@ public class MainController {
 
     private void showWhiteNoisePlayer() {
         try {
-            WhiteNoiseView whiteNoisePlayer = new WhiteNoiseView();
-            VBox whiteNoiseContent = whiteNoisePlayer.getContent();
+            // Use the singleton instance instead of creating a new one
+            WhiteNoiseView whiteNoisePlayer = WhiteNoiseView.getInstance();
+            Node whiteNoiseContent = whiteNoisePlayer.getContent(); // Changed to Node
 
             // Apply your dashboard theme to match the rest of the app
             whiteNoiseContent.setStyle("-fx-background-color: " + PASTEL_BLUSH + ";");
