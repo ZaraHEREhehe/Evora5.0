@@ -245,7 +245,12 @@ VALUES (1, '??', 1, 'hate it here', '2025-11-10'),
 -- extra column for pomodoro sessions
 ALTER TABLE PomodoroSessions ADD completed_cycles INT DEFAULT 1;
 ALTER TABLE PomodoroSessions ADD last_pause_time DATETIME NULL;
+-- Add columns to track current state for persistence
+ALTER TABLE PomodoroSessions ADD current_time_left INT NULL;
+ALTER TABLE PomodoroSessions ADD is_break BIT DEFAULT 0;
+ALTER TABLE PomodoroSessions ADD is_running BIT DEFAULT 0;
 
+select * from PomodoroSessions
 
 /****************************************************
 *** 			      Pets                        ***
