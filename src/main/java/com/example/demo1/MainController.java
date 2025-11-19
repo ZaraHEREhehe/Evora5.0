@@ -349,8 +349,9 @@ public class MainController {
             Pane pomodoroContent = fxmlLoader.load();
 
             // Get the controller instance from the FXML loader
+            // added these after setting the db up
             PomodoroController pomodoroController = fxmlLoader.getController();
-
+            pomodoroController.setUserId(userId);
             // Create pets controller and set it on the pomodoro controller
             PetsController petsController = new PetsController(userId);
             pomodoroController.setPetsController(petsController);
