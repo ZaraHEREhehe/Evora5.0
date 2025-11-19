@@ -1,4 +1,4 @@
-CREATE LOGIN evora_user WITH PASSWORD = 'password123';
+﻿CREATE LOGIN evora_user WITH PASSWORD = 'password123';
 USE EvoraDB;
 CREATE USER evora_user FOR LOGIN evora_user;
 ALTER ROLE db_owner ADD MEMBER evora_user;
@@ -115,7 +115,7 @@ CREATE TABLE PetMascot (
     pet_id INT IDENTITY(1,1) PRIMARY KEY,
     user_id INT,
     pet_gif VARCHAR(200) DEFAULT 'ourcatgif.com',
-    pet_name VARCHAR(50) DEFAULT '�voro',
+    pet_name VARCHAR(50) DEFAULT 'Évoro',
     experience INT DEFAULT 0,
     level INT DEFAULT 1,
     tokens_cost INT DEFAULT 1,
@@ -194,8 +194,7 @@ INSERT INTO ThemeColors (theme_id, color_name, color_hex) VALUES
 (1, 'Purple', '#e9d5ff'),
 (1, 'Orange', '#fed7aa');
 
-select * from Users
-
+-- dummy user
 INSERT INTO Users(username, email, password)
 VALUES ('test', 'test', 'test')
 
@@ -242,7 +241,291 @@ VALUES (1, '??', 1, 'hate it here', '2025-11-10'),
 (1, '??', 3, 'meow', '2025-11-11'),
 (1, '??', 2,'' , '2025-11-12'),
 (1, '??', 5, '', '2025-11-16');
+
+-- extra column for pomodoro sessions
+ALTER TABLE PomodoroSessions ADD completed_cycles INT DEFAULT 1;
+ALTER TABLE PomodoroSessions ADD last_pause_time DATETIME NULL;
+
+
+/****************************************************
+*** 			      Pets                        ***
+*****************************************************/
+-- for pets
+ALTER TABLE Users ADD current_pet_id INT DEFAULT 1;
+
+CREATE TABLE PetTypes (
+    pet_type_id INT IDENTITY(1,1) PRIMARY KEY,
+    pet_name VARCHAR(50) NOT NULL,
+    species VARCHAR(50) NOT NULL,
+    required_experience INT NOT NULL,
+    gif_filename VARCHAR(100) NOT NULL,
+    personality VARCHAR(200),
+    working_activity VARCHAR(200)
+);
+
+INSERT INTO PetTypes (pet_name, species, required_experience, gif_filename, personality, working_activity) VALUES
+('Luna', 'Cat', 0, 'cat.gif', 'Curious and independent', 'Typing on tiny keyboard'),
+('Pink Luna', 'Cat', 500, 'pinkcat_transparentbg.gif', 'Sweet and affectionate', 'Playing with yarn'),
+('Blue Luna', 'Cat', 1000, 'bluecat_transparentbg.gif', 'Calm and observant', 'Napping in sunbeams'),
+('Orange Luna', 'Cat', 1500, 'orangecat_transparentbg.gif', 'Playful and energetic', 'Chasing laser pointers'),
+
+('Cocoa', 'Bunny', 500, 'bunny.gif', 'Energetic and helpful', 'Organizing papers with tiny paws'),
+('Pink Cocoa', 'Bunny', 1000, 'pinkbunny_transparentbg.gif', 'Gentle and caring', 'Sorting colorful papers'),
+('Purple Cocoa', 'Bunny', 3000, 'purplebunny_transparentbg.gif', 'Creative and artistic', 'Drawing with tiny pencils'),
+('Green Cocoa', 'Bunny', 1500, 'greenbunny_transparentbg.gif', 'Adventurous and bold', 'Exploring new folders'),
+
+('Hoot', 'Owl', 2000, 'owl.gif', 'Wise and studious', 'Reading miniature books'),
+('Purple Hoot', 'Owl', 3000, 'purpleowl_transparentbg.gif', 'Mysterious and insightful', 'Studying ancient texts'),
+('Yellow Hoot', 'Owl', 3500, 'yellowowl_transparentbg.gif', 'Cheerful and optimistic', 'Organizing knowledge'),
+('Mauve Hoot', 'Owl', 4000, 'mauveowl_transparentbg.gif', 'Philosophical and deep', 'Contemplating big ideas'),
+('Gray Hoot', 'Owl', 3500, 'grayowl_transparentbg.gif', 'Serious and focused', 'Researching complex topics'),
+
+('Sage', 'Dragon', 4000, 'dragon.gif', 'Mystical and protective', 'Breathing gentle focus flames'),
+('Purple Sage', 'Dragon', 4500, 'purpledragon_transparentbg.gif', 'Magical and enchanting', 'Casting focus spells'),
+('Gray Sage', 'Dragon', 5000, 'graydragon_transparentbg.gif', 'Ancient and powerful', 'Guarding your progress'),
+('Orange Sage', 'Dragon', 5000, 'orangedragon_transparentbg.gif', 'Fiery and passionate', 'Inspiring creativity');
+
+update PetTypes
+set gif_filename = 'brownowl_transparentbg.gif'
+where gif_filename = 'mauveowl_transparentbg.gif'
+
+update PetTypes
+set pet_name = 'Brown Hoot'
+where gif_filename = 'brownowl_transparentbg.gif'
+
+update PetTypes
+set gif_filename = 'redowl_transparentbg.gif'
+where gif_filename = 'grayowl_transparentbg.gif'
+
+update PetTypes
+set pet_name = 'Red Hoot'
+where gif_filename = 'redowl_transparentbg.gif'
+
+-- Update PetMascot table to properly handle equipped pets
+
+-- Make sure only one pet is equipped per user
+CREATE OR ALTER TRIGGER trg_SingleEquippedPet
+ON PetMascot
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    IF UPDATE(is_equipped)
+    BEGIN
+        UPDATE pm
+        SET pm.is_equipped = 0
+        FROM PetMascot pm
+        INNER JOIN inserted i ON pm.user_id = i.user_id
+        WHERE pm.pet_type_id != i.pet_type_id
+        AND i.is_equipped = 1;
+    END
+END;
+
+
+-- for changing pet name
+ALTER TABLE PetMascot ADD pet_name VARCHAR(50) NULL;
+
+-- Update existing records
+UPDATE pm
+SET pm.pet_name = pt.pet_name
+FROM PetMascot pm
+INNER JOIN PetTypes pt ON pm.pet_type_id = pt.pet_type_id;
+
+
+
+select * from petmascot
 		
+-- Drop existing table and recreate
+DROP TABLE PetMascot;
+
+CREATE TABLE PetMascot (
+    user_id INT,
+    pet_type_id INT,
+    unlocked_at DATETIME DEFAULT GETDATE(),
+    is_equipped BIT DEFAULT 0,
+    PRIMARY KEY (user_id, pet_type_id),
+    CONSTRAINT FK_PetMascot_User 
+        FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+    CONSTRAINT FK_PetMascot_Type 
+        FOREIGN KEY (pet_type_id) REFERENCES PetTypes(pet_type_id)
+);
+
+
+/****************************************************
+*** 		   Badges Walay Queries               ***
+*****************************************************/
+select * from Badges
+-- Update the Badges table structure
+DROP TABLE IF EXISTS UserBadges;
+
+DROP TABLE IF EXISTS Badges;
+
+CREATE TABLE Badges (
+    badge_id INT IDENTITY(1,1) PRIMARY KEY,
+    badge_icon VARCHAR(200), 
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    condition_type VARCHAR(50) NOT NULL, -- 'tasks_completed', 'pomodoro_sessions', 'notes_created', 'mood_entries', 'login_streak'
+    condition_value INT NOT NULL, -- The threshold value for the condition
+    created_at DATETIME DEFAULT GETDATE()
+);
+
+CREATE TABLE UserBadges (
+    user_id INT,
+    badge_id INT,
+    earned_date DATETIME DEFAULT GETDATE(),
+    PRIMARY KEY (user_id, badge_id),
+    CONSTRAINT FK_UserBadges_User 
+        FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+    CONSTRAINT FK_UserBadges_Badge 
+        FOREIGN KEY (badge_id) REFERENCES Badges(badge_id) ON DELETE CASCADE
+);
+
+-- Insert badges with conditions
+INSERT INTO Badges (badge_icon, name, description, condition_type, condition_value) VALUES
+('🌟', 'First Steps', 'Complete your first task', 'tasks_completed', 1),
+('⚡', 'Focus Master', 'Complete pomodoro sessions', 'pomodoro_sessions', 5),
+('📝', 'Note Taker', 'Create sticky notes', 'notes_created', 10),
+('😊', 'Mood Tracker', 'Log your mood entries', 'mood_entries', 20),
+('👑', 'Task Champion', 'Complete many tasks', 'tasks_completed', 50),
+('🏆', 'Productivity Guru', 'Complete many pomodoro sessions', 'pomodoro_sessions', 25),
+('🔥', 'Consistent Logger', 'Maintain mood tracking streak', 'mood_entries', 50),
+('📚', 'Note Archivist', 'Create many notes', 'notes_created', 25);
+
+-- Create a function to check and award badges
+CREATE OR ALTER FUNCTION CheckBadgeEligibility(@user_id INT, @condition_type VARCHAR(50))
+RETURNS @EligibleBadges TABLE (badge_id INT)
+AS
+BEGIN
+    INSERT INTO @EligibleBadges
+    SELECT b.badge_id
+    FROM Badges b
+    WHERE b.condition_type = @condition_type
+    AND b.badge_id NOT IN (SELECT badge_id FROM UserBadges WHERE user_id = @user_id)
+    AND b.condition_value <= (
+        CASE 
+            WHEN @condition_type = 'tasks_completed' THEN 
+                (SELECT COUNT(*) FROM ToDoTasks WHERE user_id = @user_id AND is_completed = 1)
+            WHEN @condition_type = 'pomodoro_sessions' THEN 
+                (SELECT COUNT(*) FROM PomodoroSessions WHERE user_id = @user_id AND status = 'Completed')
+            WHEN @condition_type = 'notes_created' THEN 
+                (SELECT COUNT(*) FROM StickyNotes WHERE user_id = @user_id)
+            WHEN @condition_type = 'mood_entries' THEN 
+                (SELECT COUNT(*) FROM MoodLogger WHERE user_id = @user_id)
+            ELSE 0
+        END
+    );
+    
+    RETURN;
+END;
+
+
+-- Trigger for task completion
+CREATE OR ALTER TRIGGER trg_AwardTaskBadges
+ON ToDoTasks
+AFTER UPDATE
+AS
+BEGIN
+    IF UPDATE(is_completed)
+    BEGIN
+        DECLARE @user_id INT;
+        SELECT @user_id = user_id FROM inserted;
+        
+        -- Only proceed if task was marked as completed
+        IF EXISTS (SELECT 1 FROM inserted WHERE is_completed = 1)
+        BEGIN
+            INSERT INTO UserBadges (user_id, badge_id)
+            SELECT @user_id, badge_id 
+            FROM dbo.CheckBadgeEligibility(@user_id, 'tasks_completed')
+            WHERE badge_id NOT IN (SELECT badge_id FROM UserBadges WHERE user_id = @user_id);
+        END
+    END
+END;
+
+-- Trigger for pomodoro session completion
+CREATE OR ALTER TRIGGER trg_AwardPomodoroBadges
+ON PomodoroSessions
+AFTER UPDATE
+AS
+BEGIN
+    IF UPDATE(status)
+    BEGIN
+        DECLARE @user_id INT;
+        SELECT @user_id = user_id FROM inserted;
+        
+        -- Only proceed if session was completed
+        IF EXISTS (SELECT 1 FROM inserted WHERE status = 'Completed')
+        BEGIN
+            INSERT INTO UserBadges (user_id, badge_id)
+            SELECT @user_id, badge_id 
+            FROM dbo.CheckBadgeEligibility(@user_id, 'pomodoro_sessions')
+            WHERE badge_id NOT IN (SELECT badge_id FROM UserBadges WHERE user_id = @user_id);
+        END
+    END
+END;
+
+-- Trigger for sticky note creation
+CREATE OR ALTER TRIGGER trg_AwardNoteBadges
+ON StickyNotes
+AFTER INSERT
+AS
+BEGIN
+    DECLARE @user_id INT;
+    SELECT @user_id = user_id FROM inserted;
+    
+    INSERT INTO UserBadges (user_id, badge_id)
+    SELECT @user_id, badge_id 
+    FROM dbo.CheckBadgeEligibility(@user_id, 'notes_created')
+    WHERE badge_id NOT IN (SELECT badge_id FROM UserBadges WHERE user_id = @user_id);
+END;
+
+-- Trigger for mood logging
+CREATE OR ALTER TRIGGER trg_AwardMoodBadges
+ON MoodLogger
+AFTER INSERT
+AS
+BEGIN
+    DECLARE @user_id INT;
+    SELECT @user_id = user_id FROM inserted;
+    
+    INSERT INTO UserBadges (user_id, badge_id)
+    SELECT @user_id, badge_id 
+    FROM dbo.CheckBadgeEligibility(@user_id, 'mood_entries')
+    WHERE badge_id NOT IN (SELECT badge_id FROM UserBadges WHERE user_id = @user_id);
+END;
+
+-- Stored procedure to check and award all eligible badges (useful for initial setup)
+CREATE OR ALTER PROCEDURE CheckAllBadgesForUser
+    @user_id INT
+AS
+BEGIN
+    -- Check all condition types
+    DECLARE @condition_types TABLE (condition_type VARCHAR(50));
+    INSERT INTO @condition_types VALUES 
+    ('tasks_completed'), ('pomodoro_sessions'), ('notes_created'), ('mood_entries');
+    
+    DECLARE @current_condition VARCHAR(50);
+    
+    DECLARE condition_cursor CURSOR FOR 
+    SELECT condition_type FROM @condition_types;
+    
+    OPEN condition_cursor;
+    FETCH NEXT FROM condition_cursor INTO @current_condition;
+    
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        INSERT INTO UserBadges (user_id, badge_id)
+        SELECT @user_id, badge_id 
+        FROM dbo.CheckBadgeEligibility(@user_id, @current_condition)
+        WHERE badge_id NOT IN (SELECT badge_id FROM UserBadges WHERE user_id = @user_id);
+        
+        FETCH NEXT FROM condition_cursor INTO @current_condition;
+    END
+    
+    CLOSE condition_cursor;
+    DEALLOCATE condition_cursor;
+END;
+
+EXEC CheckAllBadgesForUser @user_id = 1;
 
 
 /****************************************************
@@ -258,3 +541,22 @@ select * from Themes
 Select note_id, user_id, content, color_name, position_x, position_y, created_at
 From StickyNotes s
 Inner Join ThemeColors ts on s.color_id = ts.color_id
+
+select * from users
+select * from Badges
+select * from UserBadges
+select * from PetMascot
+
+
+select * from PomodoroSessions
+select * from Users
+sp_help PomodoroSessions
+sp_help Users
+
+
+
+select * from PomodoroSessions
+
+update Users
+set current_pet_id = 1
+where user_id = 1
