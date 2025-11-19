@@ -10,31 +10,25 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.FontPosture;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import java.util.List;
 
 public class PetsView extends BorderPane {
     private final PetsController controller;
-    private String currentPetType = "luna";
-    private String activeTab = "pet";
+    private String activeTab = "current";
+    private VBox contentArea;
+    private HBox tabContainer;
 
-    // Color palette - matching your Mood module
+    // Color palette
     private final Color bgColor = Color.web("#fdf7ff");
     private final Color cardBg = Color.web("#FFFFFF");
     private final Color textPrimary = Color.web("#5c5470");
     private final Color textSecondary = Color.web("#756f86");
     private final Color borderColor = Color.web("#D8B4FE");
-    private final Color gradientStart = Color.web("#C084FC");
-    private final Color gradientEnd = Color.web("#F472B6");
-
-    // Mock data - will be replaced with real data from controller later
-    private int petLevel = 5;
-    private int petExperience = 750;
-    private int experienceToNext = 1000;
-    private int happiness = 85;
-    private int coins = 245;
 
     public PetsView(PetsController controller) {
         this.controller = controller;
         createView();
+        refreshData();
     }
 
     private String forceTextColor(Color color) {
@@ -54,16 +48,11 @@ public class PetsView extends BorderPane {
         HBox tabNavigation = createTabNavigation();
 
         // Content area
-        StackPane contentArea = new StackPane();
-        contentArea.setPrefHeight(600);
+        contentArea = new VBox();
+        contentArea.setAlignment(Pos.TOP_CENTER);
+        contentArea.setSpacing(25);
 
-        // Create different tab contents
-        VBox petTab = createPetTab();
-        VBox badgesTab = createBadgesTab();
-        VBox wardrobeTab = createWardrobeTab();
-
-        // Initially show pet tab
-        contentArea.getChildren().add(petTab);
+        showCurrentPetTab();
 
         mainContent.getChildren().addAll(headerBox, tabNavigation, contentArea);
 
@@ -83,7 +72,8 @@ public class PetsView extends BorderPane {
         title.setFont(Font.font("System", FontWeight.BOLD, 32));
         title.setStyle(forceTextColor(textPrimary));
 
-        Label subtitle = new Label("Take care of your pixel friend and earn rewards!");
+        int userExp = controller.getUserExperience();
+        Label subtitle = new Label("Unlock new pets as you gain experience! • Your XP: " + userExp + " ✨");
         subtitle.setFont(Font.font("System", 16));
         subtitle.setStyle(forceTextColor(textSecondary));
 
@@ -94,7 +84,7 @@ public class PetsView extends BorderPane {
     }
 
     private HBox createTabNavigation() {
-        HBox tabContainer = new HBox();
+        tabContainer = new HBox();
         tabContainer.setAlignment(Pos.CENTER);
 
         VBox card = new VBox();
@@ -110,42 +100,17 @@ public class PetsView extends BorderPane {
         tabs.setAlignment(Pos.CENTER);
 
         String[] tabData = {
-                "pet", "Pet",
-                "badges", "Badges",
-                "wardrobe", "Shop"
+                "current", "Current Pet",
+                "collection", "My Pets",
+                "all", "Pet Collection",
+                "badges", "Badges"
         };
 
         for (int i = 0; i < tabData.length; i += 2) {
             String tabId = tabData[i];
             String tabLabel = tabData[i + 1];
 
-            Button tabButton = new Button(tabLabel);
-            tabButton.setPrefSize(100, 40);
-            tabButton.setFont(Font.font("System", FontWeight.BOLD, 14));
-
-            if (activeTab.equals(tabId)) {
-                tabButton.setStyle(
-                        "-fx-background-color: linear-gradient(to right, #C084FC, #F472B6);" +
-                                "-fx-text-fill: white;" +
-                                "-fx-background-radius: 20;" +
-                                "-fx-border-radius: 20;" +
-                                "-fx-cursor: hand;"
-                );
-            } else {
-                tabButton.setStyle(
-                        "-fx-background-color: transparent;" +
-                                "-fx-text-fill: " + toHex(textPrimary) + ";" +
-                                "-fx-border-color: #D1D5DB;" +
-                                "-fx-border-width: 2;" +
-                                "-fx-background-radius: 20;" +
-                                "-fx-border-radius: 20;" +
-                                "-fx-cursor: hand;"
-                );
-            }
-
-            final String finalTabId = tabId;
-            tabButton.setOnAction(e -> switchTab(finalTabId, tabs, tabButton));
-
+            Button tabButton = createTabButton(tabId, tabLabel);
             tabs.getChildren().add(tabButton);
         }
 
@@ -154,304 +119,78 @@ public class PetsView extends BorderPane {
         return tabContainer;
     }
 
-    private void switchTab(String tabId, HBox tabs, Button clickedButton) {
+    private Button createTabButton(String tabId, String tabLabel) {
+        Button tabButton = new Button(tabLabel);
+        tabButton.setPrefSize(120, 40);
+        tabButton.setFont(Font.font("System", FontWeight.BOLD, 14));
+        tabButton.setUserData(tabId);
+
+        updateTabButtonStyle(tabButton, tabId.equals(activeTab));
+
+        tabButton.setOnAction(e -> switchTab(tabId));
+
+        return tabButton;
+    }
+
+    private void updateTabButtonStyle(Button button, boolean isActive) {
+        if (isActive) {
+            button.setStyle(
+                    "-fx-background-color: linear-gradient(to right, #C084FC, #F472B6);" +
+                            "-fx-text-fill: white;" +
+                            "-fx-background-radius: 20;" +
+                            "-fx-border-radius: 20;" +
+                            "-fx-cursor: hand;"
+            );
+        } else {
+            button.setStyle(
+                    "-fx-background-color: transparent;" +
+                            "-fx-text-fill: " + toHex(textPrimary) + ";" +
+                            "-fx-border-color: #D1D5DB;" +
+                            "-fx-border-width: 2;" +
+                            "-fx-background-radius: 20;" +
+                            "-fx-border-radius: 20;" +
+                            "-fx-cursor: hand;"
+            );
+        }
+    }
+
+    private void switchTab(String tabId) {
         activeTab = tabId;
 
-        // Update button styles
+        VBox tabCard = (VBox) tabContainer.getChildren().get(0);
+        HBox tabs = (HBox) tabCard.getChildren().get(0);
+
         for (var child : tabs.getChildren()) {
             Button button = (Button) child;
-            if (button == clickedButton) {
-                button.setStyle(
-                        "-fx-background-color: linear-gradient(to right, #C084FC, #F472B6);" +
-                                "-fx-text-fill: white;" +
-                                "-fx-background-radius: 20;" +
-                                "-fx-border-radius: 20;" +
-                                "-fx-cursor: hand;"
-                );
-            } else {
-                button.setStyle(
-                        "-fx-background-color: transparent;" +
-                                "-fx-text-fill: " + toHex(textPrimary) + ";" +
-                                "-fx-border-color: #D1D5DB;" +
-                                "-fx-border-width: 2;" +
-                                "-fx-background-radius: 20;" +
-                                "-fx-border-radius: 20;" +
-                                "-fx-cursor: hand;"
-                );
-            }
+            String buttonTabId = (String) button.getUserData();
+            updateTabButtonStyle(button, buttonTabId.equals(activeTab));
         }
 
-        // Update content (in a real implementation, you'd switch the actual content)
+        refreshData();
     }
 
-    private VBox createPetTab() {
-        VBox petTab = new VBox(25);
-        petTab.setAlignment(Pos.TOP_CENTER);
+    private void refreshData() {
+        contentArea.getChildren().clear();
 
-        // Pet Display Card
-        VBox petDisplayCard = createPetDisplayCard();
-
-        // Pet Selection Card
-        VBox petSelectionCard = createPetSelectionCard();
-
-        petTab.getChildren().addAll(petDisplayCard, petSelectionCard);
-        return petTab;
-    }
-
-    private VBox createPetDisplayCard() {
-        VBox card = new VBox(20);
-        card.setPadding(new Insets(30));
-        card.setStyle("-fx-background-color: " + toHex(cardBg) + ";" +
-                "-fx-background-radius: 25;" +
-                "-fx-border-color: " + toHex(borderColor) + ";" +
-                "-fx-border-width: 2;" +
-                "-fx-border-radius: 25;" +
-                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.5, 0, 6);");
-        card.setMaxWidth(500);
-        card.setAlignment(Pos.TOP_CENTER);
-
-        // Pet name and level
-        Label petName = new Label("Luna");
-        petName.setFont(Font.font("System", FontWeight.BOLD, 24));
-        petName.setStyle(forceTextColor(textPrimary));
-
-        Label petLevelLabel = new Label("Level " + petLevel + " • Luna the Cat");
-        petLevelLabel.setFont(Font.font("System", 14));
-        petLevelLabel.setStyle(forceTextColor(textSecondary));
-
-        VBox headerBox = new VBox(5, petName, petLevelLabel);
-        headerBox.setAlignment(Pos.CENTER);
-
-        // Pet display area
-        VBox petDisplay = createPetDisplay();
-
-        // Stats
-        VBox stats = createStatsSection();
-
-        card.getChildren().addAll(headerBox, petDisplay, stats);
-        return card;
-    }
-
-    private VBox createPetDisplay() {
-        VBox petDisplay = new VBox(10);
-        petDisplay.setAlignment(Pos.CENTER);
-        petDisplay.setPadding(new Insets(20, 0, 20, 0));
-
-        // Pet image placeholder (you can replace with actual pixel art)
-        StackPane petContainer = new StackPane();
-        petContainer.setPrefSize(120, 120);
-
-        // Background circle
-        Region background = new Region();
-        background.setPrefSize(120, 120);
-        background.setStyle(
-                "-fx-background-color: linear-gradient(to right, #FFB347, #FFCC33);" +
-                        "-fx-background-radius: 60;" +
-                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0.5, 0, 4);"
-        );
-
-        // Pet emoji as placeholder
-        Label petEmoji = new Label("🐱");
-        petEmoji.setFont(Font.font(48));
-
-        petContainer.getChildren().addAll(background, petEmoji);
-
-        // Pet personality info
-        Label personality = new Label("\"Curious and independent\"");
-        personality.setFont(Font.font("System", FontPosture.ITALIC, 14));
-        personality.setStyle(forceTextColor(textSecondary));
-
-        Label activity = new Label("Current activity: Typing on tiny keyboard");
-        activity.setFont(Font.font("System", 12));
-        activity.setStyle(forceTextColor(Color.web("#9ca3af")));
-
-        VBox infoBox = new VBox(5, personality, activity);
-        infoBox.setAlignment(Pos.CENTER);
-        infoBox.setMaxWidth(300);
-
-        petDisplay.getChildren().addAll(petContainer, infoBox);
-        return petDisplay;
-    }
-
-    private VBox createStatsSection() {
-        VBox stats = new VBox(15);
-        stats.setAlignment(Pos.CENTER_LEFT);
-        stats.setMaxWidth(400);
-
-        // Experience progress
-        VBox experienceSection = createProgressBar(
-                "Experience",
-                petExperience + " / " + experienceToNext,
-                (double) petExperience / experienceToNext,
-                "#8B5CF6", "#C084FC"
-        );
-
-        // Happiness progress
-        VBox happinessSection = createProgressBar(
-                "Happiness",
-                happiness + "%",
-                happiness / 100.0,
-                "#EC4899", "#F472B6"
-        );
-
-        // Coins
-        HBox coinsSection = new HBox(10);
-        coinsSection.setAlignment(Pos.CENTER_LEFT);
-
-        Label coinsLabel = new Label("Coins");
-        coinsLabel.setFont(Font.font("System", 14));
-        coinsLabel.setStyle(forceTextColor(textSecondary));
-        coinsLabel.setPrefWidth(100);
-
-        Pane coinBadge = createBadge(coins + " coins", "#FEF3C7", "#D97706");
-
-        coinsSection.getChildren().addAll(coinsLabel, coinBadge);
-
-        stats.getChildren().addAll(experienceSection, happinessSection, coinsSection);
-        return stats;
-    }
-
-    private VBox createProgressBar(String label, String value, double progress, String startColor, String endColor) {
-        VBox section = new VBox(5);
-
-        HBox labels = new HBox();
-        labels.setAlignment(Pos.CENTER_LEFT);
-
-        Label sectionLabel = new Label(label);
-        sectionLabel.setFont(Font.font("System", 14));
-        sectionLabel.setStyle(forceTextColor(textSecondary));
-        sectionLabel.setPrefWidth(100);
-
-        Label valueLabel = new Label(value);
-        valueLabel.setFont(Font.font("System", 14));
-        valueLabel.setStyle(forceTextColor(textSecondary));
-
-        labels.getChildren().addAll(sectionLabel, valueLabel);
-        HBox.setHgrow(valueLabel, Priority.ALWAYS);
-        valueLabel.setAlignment(Pos.CENTER_RIGHT);
-
-        // Progress bar background
-        StackPane progressBar = new StackPane();
-        progressBar.setPrefHeight(8);
-        progressBar.setMaxWidth(400);
-        progressBar.setStyle(
-                "-fx-background-color: #E5E7EB;" +
-                        "-fx-background-radius: 4;" +
-                        "-fx-border-radius: 4;"
-        );
-
-        // Progress bar fill
-        Region progressFill = new Region();
-        progressFill.setPrefHeight(8);
-        progressFill.setMaxWidth(400 * progress);
-        progressFill.setStyle(
-                "-fx-background-color: linear-gradient(to right, " + startColor + ", " + endColor + ");" +
-                        "-fx-background-radius: 4;" +
-                        "-fx-border-radius: 4;"
-        );
-
-        progressBar.getChildren().add(progressFill);
-
-        section.getChildren().addAll(labels, progressBar);
-        return section;
-    }
-
-    private Pane createBadge(String text, String bgColor, String textColor) {
-        HBox badge = new HBox(5);
-        badge.setPadding(new Insets(5, 10, 5, 10));
-        badge.setStyle(
-                "-fx-background-color: " + bgColor + ";" +
-                        "-fx-background-radius: 12;" +
-                        "-fx-border-radius: 12;"
-        );
-        badge.setAlignment(Pos.CENTER);
-
-        Label badgeText = new Label(text);
-        badgeText.setFont(Font.font("System", FontWeight.BOLD, 12));
-        badgeText.setStyle("-fx-text-fill: " + textColor + ";");
-
-        badge.getChildren().add(badgeText);
-        return badge;
-    }
-
-    private VBox createPetSelectionCard() {
-        VBox card = new VBox(15);
-        card.setPadding(new Insets(25));
-        card.setStyle("-fx-background-color: " + toHex(cardBg) + ";" +
-                "-fx-background-radius: 25;" +
-                "-fx-border-color: " + toHex(borderColor) + ";" +
-                "-fx-border-width: 2;" +
-                "-fx-border-radius: 25;" +
-                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.5, 0, 6);");
-        card.setMaxWidth(600);
-        card.setAlignment(Pos.TOP_CENTER);
-
-        Label title = new Label("Choose Your Pet");
-        title.setFont(Font.font("System", FontWeight.BOLD, 20));
-        title.setStyle(forceTextColor(textPrimary));
-
-        // Pet selection grid
-        GridPane petGrid = new GridPane();
-        petGrid.setHgap(15);
-        petGrid.setVgap(15);
-        petGrid.setAlignment(Pos.CENTER);
-
-        String[][] pets = {
-                {"luna", "Luna the Cat", "🐱", "#FFB347", "#FFCC33"},
-                {"hoot", "Hoot the Owl", "🦉", "#A78BFA", "#C4B5FD"},
-                {"cocoa", "Cocoa the Bunny", "🐰", "#F472B6", "#FDA4AF"}
-        };
-
-        for (int i = 0; i < pets.length; i++) {
-            String petId = pets[i][0];
-            String petName = pets[i][1];
-            String emoji = pets[i][2];
-            String startColor = pets[i][3];
-            String endColor = pets[i][4];
-
-            Button petButton = createPetButton(petId, petName, emoji, startColor, endColor);
-            petGrid.add(petButton, i % 3, i / 3);
+        switch (activeTab) {
+            case "current":
+                showCurrentPetTab();
+                break;
+            case "collection":
+                showCollectionTab();
+                break;
+            case "all":
+                showAllPetsTab();
+                break;
+            case "badges":
+                showBadgesTab();
+                break;
         }
-
-        card.getChildren().addAll(title, petGrid);
-        return card;
     }
 
-    private Button createPetButton(String petId, String petName, String emoji, String startColor, String endColor) {
-        Button petButton = new Button();
-        petButton.setPrefSize(120, 100);
-        petButton.setStyle(
-                "-fx-background-color: linear-gradient(to bottom right, " + startColor + ", " + endColor + ");" +
-                        "-fx-background-radius: 20;" +
-                        "-fx-border-radius: 20;" +
-                        "-fx-border-width: 2;" +
-                        "-fx-border-color: " + (currentPetType.equals(petId) ? "#8B5CF6" : "transparent") + ";" +
-                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0.5, 0, 4);" +
-                        "-fx-cursor: hand;"
-        );
-
-        VBox content = new VBox(8);
-        content.setAlignment(Pos.CENTER);
-
-        Label emojiLabel = new Label(emoji);
-        emojiLabel.setFont(Font.font(24));
-
-        Label nameLabel = new Label(petName.split(" ")[0]);
-        nameLabel.setFont(Font.font("System", FontWeight.BOLD, 12));
-        nameLabel.setStyle("-fx-text-fill: white;");
-        nameLabel.setWrapText(true);
-        nameLabel.setMaxWidth(100);
-        nameLabel.setAlignment(Pos.CENTER);
-
-        content.getChildren().addAll(emojiLabel, nameLabel);
-        petButton.setGraphic(content);
-
-        petButton.setOnAction(e -> {
-            currentPetType = petId;
-            // In real implementation, update the pet display
-        });
-
-        return petButton;
+    private void showBadgesTab() {
+        VBox badgesCard = createBadgesTab();
+        contentArea.getChildren().add(badgesCard);
     }
 
     private VBox createBadgesTab() {
@@ -463,83 +202,310 @@ public class PetsView extends BorderPane {
                 "-fx-border-width: 2;" +
                 "-fx-border-radius: 25;" +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.5, 0, 6);");
-        card.setMaxWidth(600);
+        card.setMaxWidth(800);
 
-        Label title = new Label("Achievement Badges");
+        Label title = new Label("Achievement Badges 🏆");
         title.setFont(Font.font("System", FontWeight.BOLD, 20));
         title.setStyle(forceTextColor(textPrimary));
         title.setAlignment(Pos.CENTER);
 
         VBox badgesList = new VBox(15);
+        List<PetsController.Badge> badges = controller.getUserBadges();
 
-        String[][] badgeData = {
-                {"⭐", "First Steps", "Complete your first task", "true", "10"},
-                {"⚡", "Focus Master", "Complete 5 pomodoro sessions", "true", "25"},
-                {"❤️", "Note Taker", "Create 10 sticky notes", "false", "15"},
-                {"👑", "Week Warrior", "Stay productive for 7 days straight", "false", "50"},
-                {"🏆", "Mood Tracker", "Log your mood 20 times", "true", "20"}
-        };
-
-        for (String[] badge : badgeData) {
-            HBox badgeItem = createBadgeItem(badge[0], badge[1], badge[2],
-                    Boolean.parseBoolean(badge[3]), Integer.parseInt(badge[4]));
+        for (PetsController.Badge badge : badges) {
+            HBox badgeItem = createBadgeItem(badge);
             badgesList.getChildren().add(badgeItem);
+        }
+
+        if (badges.isEmpty()) {
+            Label noBadgesLabel = new Label("No badges earned yet. Keep working to earn achievements! 🌟");
+            noBadgesLabel.setStyle(forceTextColor(textSecondary));
+            noBadgesLabel.setAlignment(Pos.CENTER);
+            badgesList.getChildren().add(noBadgesLabel);
         }
 
         card.getChildren().addAll(title, badgesList);
         return card;
     }
 
-    private HBox createBadgeItem(String icon, String name, String description, boolean earned, int coinReward) {
-        HBox badgeItem = new HBox(15);
+    private HBox createBadgeItem(PetsController.Badge badge) {
+        HBox badgeItem = new HBox(20);
         badgeItem.setPadding(new Insets(20));
-        badgeItem.setStyle(
-                "-fx-background-color: " + (earned ? "linear-gradient(to right, #DCFCE7, #BBF7D0)" : "#F3F4F6") + ";" +
-                        "-fx-background-radius: 20;" +
-                        "-fx-border-color: " + (earned ? "#86EFAC" : "#D1D5DB") + ";" +
-                        "-fx-border-width: 2;" +
-                        "-fx-border-radius: 20;" +
-                        "-fx-opacity: " + (earned ? "1.0" : "0.6") + ";"
-        );
         badgeItem.setAlignment(Pos.CENTER_LEFT);
 
-        // Icon
-        Label iconLabel = new Label(icon);
-        iconLabel.setFont(Font.font(20));
-        StackPane iconContainer = new StackPane(iconLabel);
-        iconContainer.setPrefSize(40, 40);
-        iconContainer.setStyle(
-                "-fx-background-color: " + (earned ? "#BBF7D0" : "#E5E7EB") + ";" +
-                        "-fx-background-radius: 20;" +
-                        "-fx-border-radius: 20;"
-        );
-        iconContainer.setAlignment(Pos.CENTER);
-
-        // Text content
-        VBox textContent = new VBox(5);
-        Label nameLabel = new Label(name);
-        nameLabel.setFont(Font.font("System", FontWeight.BOLD, 16));
-        nameLabel.setStyle(forceTextColor(textPrimary));
-
-        Label descLabel = new Label(description);
-        descLabel.setFont(Font.font("System", 14));
-        descLabel.setStyle(forceTextColor(textSecondary));
-
-        textContent.getChildren().addAll(nameLabel, descLabel);
-        HBox.setHgrow(textContent, Priority.ALWAYS);
-
-        // Coin reward badge
-        if (earned) {
-            Pane coinBadge = createBadge("+" + coinReward + " coins", "#FEF3C7", "#D97706");
-            badgeItem.getChildren().addAll(iconContainer, textContent, coinBadge);
+        if (badge.isEarned()) {
+            // Earned badges - keep the cute purple gradient
+            badgeItem.setStyle(
+                    "-fx-background-color: linear-gradient(to right, #E2D6FF, #F0D2F7);" +
+                            "-fx-background-radius: 20;" +
+                            "-fx-border-color: #C084FC;" +
+                            "-fx-border-width: 2;" +
+                            "-fx-border-radius: 20;" +
+                            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0.3, 0, 3);"
+            );
         } else {
-            badgeItem.getChildren().addAll(iconContainer, textContent);
+            // Unearned badges - soft pastel colors with gentle styling
+            badgeItem.setStyle(
+                    "-fx-background-color: linear-gradient(to right, #F7EFFF, #FCEDF5);" +
+                            "-fx-background-radius: 20;" +
+                            "-fx-border-color: #E2D6FF;" +
+                            "-fx-border-width: 2;" +
+                            "-fx-border-radius: 20;" +
+                            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 5, 0.2, 0, 2);"
+            );
+        }
+
+        // Badge icon/emoji - make it cuter for both states
+        Label badgeIcon = new Label(getBadgeEmoji(badge.getName()));
+        badgeIcon.setFont(Font.font(28));
+        if (!badge.isEarned()) {
+            badgeIcon.setStyle("-fx-opacity: 0.6;");
+        } else {
+            badgeIcon.setStyle("-fx-effect: dropshadow(gaussian, rgba(192, 132, 252, 0.4), 8, 0.5, 0, 2);");
+        }
+
+        VBox badgeInfo = new VBox(8);
+        badgeInfo.setAlignment(Pos.CENTER_LEFT);
+
+        // Badge name with cute styling
+        Label nameLabel = new Label(badge.getName());
+        nameLabel.setFont(Font.font("System", FontWeight.BOLD, 16));
+        if (badge.isEarned()) {
+            nameLabel.setStyle(forceTextColor(textPrimary) + " -fx-effect: dropshadow(gaussian, rgba(255,255,255,0.8), 0, 0, 0, 1);");
+        } else {
+            nameLabel.setStyle(forceTextColor(Color.web("#8B7B9D")) + " -fx-opacity: 0.8;");
+        }
+
+        // Description with softer color
+        Label descLabel = new Label(badge.getDescription());
+        descLabel.setFont(Font.font("System", 13));
+        if (badge.isEarned()) {
+            descLabel.setStyle(forceTextColor(textSecondary));
+        } else {
+            descLabel.setStyle(forceTextColor(Color.web("#9C8FA8")) + " -fx-opacity: 0.7;");
+        }
+
+        // Progress section - much cuter styling
+        VBox progressBox = new VBox(6);
+        progressBox.setAlignment(Pos.CENTER_LEFT);
+
+        if (badge.isEarned()) {
+            // Earned badge - celebration style!
+            HBox earnedBox = new HBox(8);
+            earnedBox.setAlignment(Pos.CENTER_LEFT);
+
+            Label celebrationIcon = new Label("🎉");
+            celebrationIcon.setFont(Font.font(14));
+
+            Label statusLabel = new Label("Earned on " + badge.getEarnedDate().toLocalDateTime().toLocalDate());
+            statusLabel.setFont(Font.font("System", FontWeight.BOLD, 12));
+            statusLabel.setStyle("-fx-text-fill: #8B5CF6; -fx-effect: dropshadow(gaussian, rgba(139, 92, 246, 0.2), 2, 0.3, 0, 1);");
+
+            earnedBox.getChildren().addAll(celebrationIcon, statusLabel);
+            progressBox.getChildren().add(earnedBox);
+        } else {
+            // Unearned badge - cute progress display
+            VBox progressContent = new VBox(5);
+
+            // Progress text with cute styling
+            HBox progressText = new HBox(5);
+            progressText.setAlignment(Pos.CENTER_LEFT);
+
+            Label sparkleIcon = new Label("✨");
+            sparkleIcon.setFont(Font.font(12));
+
+            Label statusLabel = new Label("Progress: " + badge.getProgressText());
+            statusLabel.setFont(Font.font("System", FontWeight.MEDIUM, 12));
+            statusLabel.setStyle("-fx-text-fill: #8B5CF6; -fx-opacity: 0.9;");
+
+            progressText.getChildren().addAll(sparkleIcon, statusLabel);
+
+            // Progress bar with cute styling
+            ProgressBar progressBar = new ProgressBar();
+            progressBar.setProgress(badge.getProgressPercentage() / 100.0);
+            progressBar.setPrefWidth(220);
+            progressBar.setPrefHeight(8);
+            progressBar.setStyle(
+                    "-fx-accent: linear-gradient(to right, #C1DAFF, #D7D8FF); " +
+                            "-fx-control-inner-background: #F7EFFF; " +
+                            "-fx-border-color: #E2D6FF; " +
+                            "-fx-border-width: 1; " +
+                            "-fx-border-radius: 10; " +
+                            "-fx-background-radius: 10; " +
+                            "-fx-padding: 1;"
+            );
+
+            // Percentage label
+            Label percentageLabel = new Label(badge.getProgressPercentage() + "%");
+            percentageLabel.setFont(Font.font("System", FontWeight.BOLD, 10));
+            percentageLabel.setStyle("-fx-text-fill: #8B5CF6; -fx-opacity: 0.8;");
+            percentageLabel.setAlignment(Pos.CENTER_RIGHT);
+
+            progressContent.getChildren().addAll(progressText, progressBar, percentageLabel);
+            progressBox.getChildren().add(progressContent);
+        }
+
+        badgeInfo.getChildren().addAll(nameLabel, descLabel, progressBox);
+        HBox.setHgrow(badgeInfo, Priority.ALWAYS);
+
+        badgeItem.getChildren().addAll(badgeIcon, badgeInfo);
+
+        // Add a cute hover effect for unearned badges
+        if (!badge.isEarned()) {
+            badgeItem.setOnMouseEntered(e -> {
+                badgeItem.setStyle(
+                        "-fx-background-color: linear-gradient(to right, #E4EFFF, #F3D1F3);" +
+                                "-fx-background-radius: 20;" +
+                                "-fx-border-color: #D7D8FF;" +
+                                "-fx-border-width: 2;" +
+                                "-fx-border-radius: 20;" +
+                                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 8, 0.3, 0, 3);"
+                );
+            });
+
+            badgeItem.setOnMouseExited(e -> {
+                badgeItem.setStyle(
+                        "-fx-background-color: linear-gradient(to right, #F7EFFF, #FCEDF5);" +
+                                "-fx-background-radius: 20;" +
+                                "-fx-border-color: #E2D6FF;" +
+                                "-fx-border-width: 2;" +
+                                "-fx-border-radius: 20;" +
+                                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 5, 0.2, 0, 2);"
+                );
+            });
         }
 
         return badgeItem;
     }
 
-    private VBox createWardrobeTab() {
+    // Add helper method for badge emojis
+    private String getBadgeEmoji(String badgeName) {
+        if (badgeName.toLowerCase().contains("first")) return "🌟";
+        if (badgeName.toLowerCase().contains("focus")) return "⚡";
+        if (badgeName.toLowerCase().contains("note")) return "📝";
+        if (badgeName.toLowerCase().contains("week")) return "👑";
+        if (badgeName.toLowerCase().contains("mood")) return "😊";
+        if (badgeName.toLowerCase().contains("master")) return "🏆";
+        if (badgeName.toLowerCase().contains("streak")) return "🔥";
+        return "🏅";
+    }
+
+    private void showCurrentPetTab() {
+        PetsController.Pet currentPet = controller.getCurrentPet();
+        if (currentPet != null) {
+            VBox petDisplayCard = createPetDisplayCard(currentPet, false);
+            VBox unlockedPetsCard = createUnlockedPetsCard();
+            contentArea.getChildren().addAll(petDisplayCard, unlockedPetsCard);
+        }
+    }
+
+    private VBox createPetDisplayCard(PetsController.Pet pet, boolean showEquipButton) {
+        VBox card = new VBox(20);
+        card.setPadding(new Insets(30));
+        card.setStyle("-fx-background-color: " + toHex(cardBg) + ";" +
+                "-fx-background-radius: 25;" +
+                "-fx-border-color: " + toHex(borderColor) + ";" +
+                "-fx-border-width: 2;" +
+                "-fx-border-radius: 25;" +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.5, 0, 6);");
+        card.setMaxWidth(500);
+        card.setAlignment(Pos.TOP_CENTER);
+
+        // Pet name with edit option
+        HBox nameBox = new HBox(10);
+        nameBox.setAlignment(Pos.CENTER);
+
+        Label petName = new Label(pet.getName());
+        petName.setFont(Font.font("System", FontWeight.BOLD, 24));
+        petName.setStyle(forceTextColor(textPrimary));
+        nameBox.getChildren().addAll(petName);
+
+        Label petSpecies = new Label(pet.getSpecies() + " • Unlocked at " + pet.getRequiredExperience() + " XP");
+        petSpecies.setFont(Font.font("System", 14));
+        petSpecies.setStyle(forceTextColor(textSecondary));
+
+        VBox headerBox = new VBox(5, nameBox, petSpecies);
+        headerBox.setAlignment(Pos.CENTER);
+
+        // Pet display area
+        VBox petDisplay = createPetDisplay(pet);
+
+        card.getChildren().addAll(headerBox, petDisplay);
+
+        if (showEquipButton) {
+            Button equipButton = createEquipButton(pet);
+            card.getChildren().add(equipButton);
+        }
+
+        return card;
+    }
+
+    private VBox createPetDisplay(PetsController.Pet pet) {
+        VBox petDisplay = new VBox(10);
+        petDisplay.setAlignment(Pos.CENTER);
+        petDisplay.setPadding(new Insets(20, 0, 20, 0));
+
+        // Pet GIF - no fancy border
+        StackPane petContainer = new StackPane();
+        petContainer.setPrefSize(150, 150);
+
+        try {
+            ImageView petGif = new ImageView(new Image(getPetGifPath(pet.getGifFilename())));
+            petGif.setFitWidth(120);
+            petGif.setFitHeight(120);
+            petGif.setPreserveRatio(true);
+            petContainer.getChildren().add(petGif);
+        } catch (Exception e) {
+            Label petEmoji = new Label(getSpeciesEmoji(pet.getSpecies()));
+            petEmoji.setFont(Font.font(48));
+            petContainer.getChildren().add(petEmoji);
+        }
+
+        // Pet personality info
+        Label personality = new Label("\"" + pet.getPersonality() + "\"");
+        personality.setFont(Font.font("System", FontPosture.ITALIC, 14));
+        personality.setStyle(forceTextColor(textSecondary));
+
+        Label activity = new Label("Current activity: " + pet.getWorkingActivity());
+        activity.setFont(Font.font("System", 12));
+        activity.setStyle(forceTextColor(Color.web("#9ca3af")));
+
+        VBox infoBox = new VBox(5, personality, activity);
+        infoBox.setAlignment(Pos.CENTER);
+        infoBox.setMaxWidth(300);
+
+        petDisplay.getChildren().addAll(petContainer, infoBox);
+        return petDisplay;
+    }
+
+    private Button createEquipButton(PetsController.Pet pet) {
+        PetsController.Pet currentPet = controller.getCurrentPet();
+        boolean isEquipped = currentPet != null && currentPet.getPetTypeId() == pet.getPetTypeId();
+
+        Button equipButton = new Button(isEquipped ? "✓ Equipped" : "Equip");
+        equipButton.setStyle(
+                "-fx-background-color: " + (isEquipped ? "#10B981" : "#C084FC") + ";" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-background-radius: 10;" +
+                        "-fx-border-radius: 10;" +
+                        "-fx-padding: 8 16;" +
+                        "-fx-cursor: " + (isEquipped ? "default" : "hand") + ";"
+        );
+
+        if (!isEquipped) {
+            equipButton.setOnAction(e -> {
+                if (controller.equipPet(pet.getPetTypeId())) {
+                    controller.notifyPetChanged();
+                    refreshData();
+                }
+            });
+        }
+
+        return equipButton;
+    }
+
+    private VBox createUnlockedPetsCard() {
         VBox card = new VBox(15);
         card.setPadding(new Insets(25));
         card.setStyle("-fx-background-color: " + toHex(cardBg) + ";" +
@@ -549,82 +515,277 @@ public class PetsView extends BorderPane {
                 "-fx-border-radius: 25;" +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.5, 0, 6);");
         card.setMaxWidth(600);
+        card.setAlignment(Pos.TOP_CENTER);
 
-        HBox header = new HBox(10);
-        header.setAlignment(Pos.CENTER);
-
-        Label title = new Label("Wardrobe Shop");
+        Label title = new Label("Your Unlocked Pets 🎉");
         title.setFont(Font.font("System", FontWeight.BOLD, 20));
         title.setStyle(forceTextColor(textPrimary));
 
-        Pane coinBadge = createBadge(coins + " coins", "#FEF3C7", "#D97706");
+        FlowPane petGrid = new FlowPane();
+        petGrid.setHgap(20);
+        petGrid.setVgap(20);
+        petGrid.setAlignment(Pos.CENTER);
+        petGrid.setPrefWidth(550);
 
-        header.getChildren().addAll(title, coinBadge);
+        List<PetsController.Pet> unlockedPets = controller.getUnlockedPets();
+        PetsController.Pet currentPet = controller.getCurrentPet();
 
-        VBox shopItems = new VBox(15);
-
-        String[][] itemData = {
-                {"👑", "Golden Crown", "hat", "100"},
-                {"🤓", "Smart Glasses", "accessory", "50"},
-                {"🎀", "Fancy Bow Tie", "accessory", "75"},
-                {"🎩", "Top Hat", "hat", "80"},
-                {"🌸", "Flower Crown", "hat", "60"}
-        };
-
-        for (String[] item : itemData) {
-            HBox shopItem = createShopItem(item[0], item[1], item[2], Integer.parseInt(item[3]));
-            shopItems.getChildren().add(shopItem);
+        for (PetsController.Pet pet : unlockedPets) {
+            if (pet.getPetTypeId() != currentPet.getPetTypeId()) {
+                VBox petCard = createUnlockedPetCard(pet);
+                petGrid.getChildren().add(petCard);
+            }
         }
 
-        card.getChildren().addAll(header, shopItems);
+        if (petGrid.getChildren().isEmpty()) {
+            Label noPetsLabel = new Label("No other pets unlocked yet. Keep gaining experience! 🌟");
+            noPetsLabel.setStyle(forceTextColor(textSecondary));
+            noPetsLabel.setAlignment(Pos.CENTER);
+            petGrid.getChildren().add(noPetsLabel);
+        }
+
+        card.getChildren().addAll(title, petGrid);
         return card;
     }
 
-    private HBox createShopItem(String emoji, String name, String type, int cost) {
-        HBox shopItem = new HBox(15);
-        shopItem.setPadding(new Insets(20));
-        shopItem.setStyle(
+    private VBox createUnlockedPetCard(PetsController.Pet pet) {
+        VBox card = new VBox(10);
+        card.setPadding(new Insets(15));
+        card.setStyle(
+                "-fx-background-color: #F8FAFC;" +
+                        "-fx-background-radius: 15;" +
+                        "-fx-border-color: #E5E7EB;" +
+                        "-fx-border-width: 1;" +
+                        "-fx-border-radius: 15;"
+        );
+        card.setAlignment(Pos.CENTER);
+        card.setPrefSize(140, 160);
+
+        try {
+            ImageView petImage = new ImageView(new Image(getPetGifPath(pet.getGifFilename()), 80, 80, true, true));
+            card.getChildren().add(petImage);
+        } catch (Exception e) {
+            Label emojiLabel = new Label(getSpeciesEmoji(pet.getSpecies()));
+            emojiLabel.setFont(Font.font(24));
+            card.getChildren().add(emojiLabel);
+        }
+
+        Label nameLabel = new Label(pet.getName());
+        nameLabel.setFont(Font.font("System", FontWeight.BOLD, 12));
+        nameLabel.setStyle(forceTextColor(textPrimary));
+        nameLabel.setAlignment(Pos.CENTER);
+
+        Button equipBtn = createEquipButton(pet);
+
+        card.getChildren().addAll(nameLabel, equipBtn);
+        return card;
+    }
+
+    private void showCollectionTab() {
+        VBox collectionCard = createCollectionTab();
+        contentArea.getChildren().add(collectionCard);
+    }
+
+    private VBox createCollectionTab() {
+        VBox card = new VBox(15);
+        card.setPadding(new Insets(25));
+        card.setStyle("-fx-background-color: " + toHex(cardBg) + ";" +
+                "-fx-background-radius: 25;" +
+                "-fx-border-color: " + toHex(borderColor) + ";" +
+                "-fx-border-width: 2;" +
+                "-fx-border-radius: 25;" +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.5, 0, 6);");
+        card.setMaxWidth(800);
+
+        Label title = new Label("My Pet Collection 🎀");
+        title.setFont(Font.font("System", FontWeight.BOLD, 20));
+        title.setStyle(forceTextColor(textPrimary));
+        title.setAlignment(Pos.CENTER);
+
+        VBox petsList = new VBox(15);
+        List<PetsController.Pet> unlockedPets = controller.getUnlockedPets();
+
+        for (PetsController.Pet pet : unlockedPets) {
+            HBox petItem = createCollectionPetItem(pet);
+            petsList.getChildren().add(petItem);
+        }
+
+        if (unlockedPets.isEmpty()) {
+            Label noPetsLabel = new Label("No pets unlocked yet. Start gaining experience to unlock pets! 🌟");
+            noPetsLabel.setStyle(forceTextColor(textSecondary));
+            noPetsLabel.setAlignment(Pos.CENTER);
+            petsList.getChildren().add(noPetsLabel);
+        }
+
+        card.getChildren().addAll(title, petsList);
+        return card;
+    }
+
+    private HBox createCollectionPetItem(PetsController.Pet pet) {
+        HBox petItem = new HBox(20);
+        petItem.setPadding(new Insets(20));
+        petItem.setStyle(
                 "-fx-background-color: #F8FAFC;" +
                         "-fx-background-radius: 20;" +
                         "-fx-border-color: #D1D5DB;" +
                         "-fx-border-width: 2;" +
                         "-fx-border-radius: 20;"
         );
-        shopItem.setAlignment(Pos.CENTER_LEFT);
+        petItem.setAlignment(Pos.CENTER_LEFT);
 
-        // Emoji
-        Label emojiLabel = new Label(emoji);
-        emojiLabel.setFont(Font.font(24));
+        try {
+            ImageView petImage = new ImageView(new Image(getPetGifPath(pet.getGifFilename()), 80, 80, true, true));
+            petItem.getChildren().add(petImage);
+        } catch (Exception e) {
+            Label emojiLabel = new Label(getSpeciesEmoji(pet.getSpecies()));
+            emojiLabel.setFont(Font.font(36));
+            petItem.getChildren().add(emojiLabel);
+        }
 
-        // Text content
-        VBox textContent = new VBox(5);
-        Label nameLabel = new Label(name);
+        VBox petInfo = new VBox(5);
+        Label nameLabel = new Label(pet.getName() + " the " + pet.getSpecies());
         nameLabel.setFont(Font.font("System", FontWeight.BOLD, 16));
         nameLabel.setStyle(forceTextColor(textPrimary));
 
-        Label typeLabel = new Label(type);
-        typeLabel.setFont(Font.font("System", 14));
-        typeLabel.setStyle(forceTextColor(textSecondary));
-        typeLabel.setText(type.substring(0, 1).toUpperCase() + type.substring(1));
+        Label personalityLabel = new Label(pet.getPersonality());
+        personalityLabel.setFont(Font.font("System", 14));
+        personalityLabel.setStyle(forceTextColor(textSecondary));
 
-        textContent.getChildren().addAll(nameLabel, typeLabel);
-        HBox.setHgrow(textContent, Priority.ALWAYS);
+        Label activityLabel = new Label("Activity: " + pet.getWorkingActivity());
+        activityLabel.setFont(Font.font("System", 12));
+        activityLabel.setStyle(forceTextColor(Color.web("#9ca3af")));
 
-        // Buy button
-        Button buyButton = new Button(cost + " coins");
-        buyButton.setStyle(
-                "-fx-background-color: linear-gradient(to right, #FFB347, #FFCC33);" +
-                        "-fx-text-fill: white;" +
-                        "-fx-font-weight: bold;" +
-                        "-fx-background-radius: 15;" +
-                        "-fx-border-radius: 15;" +
-                        "-fx-padding: 8 16;" +
-                        "-fx-cursor: hand;" +
-                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0.5, 0, 2);"
-        );
+        petInfo.getChildren().addAll(nameLabel, personalityLabel, activityLabel);
+        HBox.setHgrow(petInfo, Priority.ALWAYS);
 
-        shopItem.getChildren().addAll(emojiLabel, textContent, buyButton);
-        return shopItem;
+        Button equipButton = createEquipButton(pet);
+
+        petItem.getChildren().addAll(petInfo, equipButton);
+        return petItem;
+    }
+
+    private void showAllPetsTab() {
+        VBox allPetsCard = createAllPetsTab();
+        contentArea.getChildren().add(allPetsCard);
+    }
+
+    private VBox createAllPetsTab() {
+        VBox card = new VBox(15);
+        card.setPadding(new Insets(25));
+        card.setStyle("-fx-background-color: " + toHex(cardBg) + ";" +
+                "-fx-background-radius: 25;" +
+                "-fx-border-color: " + toHex(borderColor) + ";" +
+                "-fx-border-width: 2;" +
+                "-fx-border-radius: 25;" +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.5, 0, 6);");
+        card.setMaxWidth(800);
+
+        int userExp = controller.getUserExperience();
+        Label expHeader = new Label("Your Total Experience: " + userExp + " XP ✨");
+        expHeader.setFont(Font.font("System", FontWeight.BOLD, 18));
+        expHeader.setStyle(forceTextColor(textPrimary));
+        expHeader.setAlignment(Pos.CENTER);
+
+        Label title = new Label("All Available Pets 🌈");
+        title.setFont(Font.font("System", FontWeight.BOLD, 20));
+        title.setStyle(forceTextColor(textPrimary));
+        title.setAlignment(Pos.CENTER);
+
+        VBox petsList = new VBox(15);
+        List<PetsController.Pet> allPets = controller.getAllPets();
+
+        for (PetsController.Pet pet : allPets) {
+            HBox petItem = createAllPetsItem(pet);
+            petsList.getChildren().add(petItem);
+        }
+
+        card.getChildren().addAll(expHeader, title, petsList);
+        return card;
+    }
+
+    private HBox createAllPetsItem(PetsController.Pet pet) {
+        HBox petItem = new HBox(20);
+        petItem.setPadding(new Insets(20));
+
+        if (pet.isUnlocked()) {
+            petItem.setStyle(
+                    "-fx-background-color: linear-gradient(to right, #E2D6FF, #F0D2F7);" +
+                            "-fx-background-radius: 20;" +
+                            "-fx-border-color: #C084FC;" +
+                            "-fx-border-width: 2;" +
+                            "-fx-border-radius: 20;"
+            );
+        } else {
+            petItem.setStyle(
+                    "-fx-background-color: linear-gradient(to right, #F3F4F6, #E5E7EB);" +
+                            "-fx-background-radius: 20;" +
+                            "-fx-border-color: #D1D5DB;" +
+                            "-fx-border-width: 2;" +
+                            "-fx-border-radius: 20;" +
+                            "-fx-opacity: 0.9;"
+            );
+        }
+        petItem.setAlignment(Pos.CENTER_LEFT);
+
+        // Always show the pet GIF, even if locked - just with lower opacity
+        try {
+            ImageView petImage = new ImageView(new Image(getPetGifPath(pet.getGifFilename()), 80, 80, true, true));
+            if (!pet.isUnlocked()) {
+                petImage.setOpacity(0.7);
+            }
+            petItem.getChildren().add(petImage);
+        } catch (Exception e) {
+            Label emojiLabel = new Label(getSpeciesEmoji(pet.getSpecies()));
+            emojiLabel.setFont(Font.font(24));
+            if (!pet.isUnlocked()) {
+                emojiLabel.setOpacity(0.7);
+            }
+            petItem.getChildren().add(emojiLabel);
+        }
+
+        VBox petInfo = new VBox(5);
+        Label nameLabel = new Label(pet.getName() + " the " + pet.getSpecies());
+        nameLabel.setFont(Font.font("System", FontWeight.BOLD, 16));
+        nameLabel.setStyle(forceTextColor(textPrimary));
+
+        Label expLabel = new Label("Requires " + pet.getRequiredExperience() + " XP 🌟");
+        expLabel.setFont(Font.font("System", 14));
+        expLabel.setStyle(forceTextColor(textSecondary));
+
+        Label statusLabel = new Label();
+        statusLabel.setFont(Font.font("System", FontWeight.BOLD, 12));
+
+        if (pet.isUnlocked()) {
+            statusLabel.setText("🎉 Unlocked - Click 'My Pets' to equip!");
+            statusLabel.setStyle("-fx-text-fill: #059669;");
+        } else if (pet.canUnlock()) {
+            statusLabel.setText("✨ Ready to unlock! Visit 'Pet Collection' to claim");
+            statusLabel.setStyle("-fx-text-fill: #D97706;");
+        } else {
+            statusLabel.setText("🔒 " + pet.getRemainingExperience() + " XP needed");
+            statusLabel.setStyle("-fx-text-fill: #DC2626;");
+        }
+
+        petInfo.getChildren().addAll(nameLabel, expLabel, statusLabel);
+        HBox.setHgrow(petInfo, Priority.ALWAYS);
+
+        petItem.getChildren().add(petInfo);
+        return petItem;
+    }
+
+    // Helper methods
+    private String getPetGifPath(String filename) {
+        return getClass().getResource("/pet_gifs/" + filename).toExternalForm();
+    }
+
+    private String getSpeciesEmoji(String species) {
+        switch (species.toLowerCase()) {
+            case "cat": return "🐱";
+            case "bunny": return "🐰";
+            case "owl": return "🦉";
+            case "dragon": return "🐉";
+            default: return "❓";
+        }
     }
 
     private String toHex(Color color) {

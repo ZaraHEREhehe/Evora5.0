@@ -63,6 +63,11 @@ public class MainController {
         sidebar = new Sidebar(sidebarController, userName);
         root.setLeft(sidebar);
 
+        // Set initial pet in sidebar
+        PetsController petsController = new PetsController(userId);
+        PetsController.PetInfo initialPet = petsController.getCurrentPetForSidebar();
+        sidebar.updateMascot(initialPet.getName(), initialPet.getSpecies(), initialPet.getGifFilename());
+
         showDashboard();
 
         // Dynamic layout with minimum size (copied exactly from Dashboard)
@@ -139,9 +144,21 @@ public class MainController {
     }
 
     private void showPets() {
-        PetsController petsController = new PetsController();
+        PetsController petsController = new PetsController(userId);
+
+        // Set up the listener to update sidebar when pet changes
+        petsController.setPetChangeListener(() -> {
+            // When pet changes, update the sidebar mascot
+            PetsController.PetInfo currentPet = petsController.getCurrentPetForSidebar();
+            sidebar.updateMascot(currentPet.getName(), currentPet.getSpecies(), currentPet.getGifFilename());
+        });
+
         PetsView petsView = new PetsView(petsController);
         root.setCenter(petsView);
+
+        // Also update sidebar with current pet when first loading pets tab
+        PetsController.PetInfo currentPet = petsController.getCurrentPetForSidebar();
+        sidebar.updateMascot(currentPet.getName(), currentPet.getSpecies(), currentPet.getGifFilename());
     }
 
 
