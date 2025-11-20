@@ -2,14 +2,19 @@ package com.example.demo1.Pomodoro;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import com.example.demo1.Sidebar.Sidebar;
 import com.example.demo1.Database.DatabaseConnection;
 import java.sql.*;
 
 public class PomodoroSessionManager {
     private int userId;
+    private Sidebar sidebar;
 
     public PomodoroSessionManager(int userId) {
         this.userId = userId;
+    }
+    public void setSidebar(Sidebar sidebar) {
+        this.sidebar = sidebar;
     }
 
     // Data class for active sessions
@@ -121,6 +126,8 @@ public class PomodoroSessionManager {
 
             // Award experience
             awardExperience(100);
+            if (sidebar != null)
+                sidebar.refreshExperienceFromDatabase(userId);
         } catch (SQLException e) {
             e.printStackTrace();
         }

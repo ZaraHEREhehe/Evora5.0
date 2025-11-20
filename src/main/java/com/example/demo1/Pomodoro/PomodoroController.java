@@ -6,6 +6,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.text.Font;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import com.example.demo1.Sidebar.Sidebar;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -76,6 +77,9 @@ public class PomodoroController {
         this.userId = userId;
         this.sessionManager = new PomodoroSessionManager(userId);
         loadActiveSession();
+    }
+    public void setSidebar(Sidebar sidebar) {
+        sessionManager.setSidebar(sidebar);
     }
 
     public void setPetsController(PetsController petsController) {

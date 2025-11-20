@@ -1,16 +1,21 @@
 package com.example.demo1.Notes;
 
 import com.example.demo1.Database.DatabaseConnection;
+import com.example.demo1.Sidebar.Sidebar;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class NotesController {
     private int currentUserId;
+    private Sidebar sidebar;
 
     public NotesController(int userId) {
         this.currentUserId = userId;
         System.out.println("Notes module loaded for user: " + userId);
+    }
+    public void setSidebar(Sidebar sidebar) {
+        this.sidebar = sidebar;
     }
 
     // Create - Add new note
@@ -35,6 +40,8 @@ public class NotesController {
 
                         // Increment user experience by 50
                         incrementUserExperience(50);
+                        if (sidebar != null)
+                            sidebar.refreshExperienceFromDatabase(currentUserId);
 
                         return noteId; // Return the new note_id
                     }

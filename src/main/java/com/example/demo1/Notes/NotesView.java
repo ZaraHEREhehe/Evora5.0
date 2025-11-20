@@ -323,6 +323,7 @@ public class NotesView extends BorderPane {
         double y = Math.random() * 300 + 50;
 
         int noteId = controller.addNote(content, colorId, x, y);
+
         if (noteId != -1) {
             StickyNote note = new StickyNote(controller, noteId, content, colorIndex);
             note.setLayoutX(x);
