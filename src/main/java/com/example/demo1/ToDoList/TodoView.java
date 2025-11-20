@@ -519,6 +519,8 @@ public class TodoView {
     }
 
     private void showConfetti() {
+        System.out.println("Showing Confetti");
+
         if (overlayRoot == null || scene == null) return;
         Pane confettiPane = new Pane();
         confettiPane.setMouseTransparent(true);
@@ -545,12 +547,16 @@ public class TodoView {
                     )
             );
             fall.setOnFinished(e -> confettiPane.getChildren().remove(c));
+            System.out.println("fall play");
+
             fall.play();
         }
 
         Timeline cleanup = new Timeline(new KeyFrame(Duration.seconds(2.5), e -> {
             overlayRoot.getChildren().remove(confettiPane);
         }));
+        System.out.println("cleanup");
+
         cleanup.play();
     }
 

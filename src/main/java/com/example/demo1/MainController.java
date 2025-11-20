@@ -3,6 +3,7 @@ package com.example.demo1;
 
 import com.example.demo1.Mood.MoodController;
 import com.example.demo1.Mood.MoodView;
+import com.example.demo1.Analytics.AnalyticsView;
 import com.example.demo1.Pets.PetsController;
 import com.example.demo1.Pets.PetsView;
 import com.example.demo1.Sidebar.Sidebar;
@@ -113,7 +114,7 @@ public class MainController {
                 showPets();
                 break;
             case "stats":
-                System.out.println("Navigating to Analytics");
+                showAnalytics();
                 break;
             case "whitenoise":
                 showWhiteNoisePlayer();
@@ -389,6 +390,44 @@ public class MainController {
             timerSubtitle.setStyle("-fx-text-fill: " + PASTEL_SAGE + "; -fx-font-size: 16px; -fx-font-family: 'Segoe UI';");
 
             fallbackContent.getChildren().addAll(timerTitle, timerSubtitle);
+            root.setCenter(fallbackContent);
+        }
+    }
+
+    private void showAnalytics() {
+        try {
+            AnalyticsView analyticsView = new AnalyticsView(userId, userName);
+            Node analyticsContent = analyticsView.create();
+
+            // Create a scroll pane for the content
+            ScrollPane scrollPane = new ScrollPane(analyticsContent);
+            scrollPane.setFitToWidth(true);
+            scrollPane.setStyle("-fx-background: " + PASTEL_BLUSH + "; -fx-border-color: " + PASTEL_BLUSH + ";");
+            scrollPane.setPadding(new Insets(20));
+
+            // Make analytics content responsive
+            scrollPane.prefWidthProperty().bind(root.widthProperty().subtract(200));
+            scrollPane.prefHeightProperty().bind(root.heightProperty());
+
+            root.setCenter(scrollPane);
+
+        } catch (Exception e) {
+            System.out.println("❌ Error loading Analytics: " + e.getMessage());
+            e.printStackTrace();
+
+            // Fallback content
+            VBox fallbackContent = new VBox(20);
+            fallbackContent.setPadding(new Insets(40));
+            fallbackContent.setAlignment(Pos.CENTER);
+            fallbackContent.setStyle("-fx-background-color: " + PASTEL_BLUSH + ";");
+
+            Label title = new Label("Analytics 📊");
+            title.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-size: 32px; -fx-font-weight: bold;");
+
+            Label subtitle = new Label("Error loading analytics. Please check the console for details.");
+            subtitle.setStyle("-fx-text-fill: " + PASTEL_SAGE + "; -fx-font-size: 16px;");
+
+            fallbackContent.getChildren().addAll(title, subtitle);
             root.setCenter(fallbackContent);
         }
     }
