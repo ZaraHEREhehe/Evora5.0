@@ -10,6 +10,9 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.image.Image;
+import com.example.demo1.Database.DatabaseConnection;
+import java.sql.*;
+
 import javafx.scene.image.ImageView;
 
 import java.util.HashMap;
@@ -23,6 +26,8 @@ public class Sidebar extends VBox {
     private final SidebarController controller;
     private final Map<String, Button> navButtons = new HashMap<>();
     private VBox mascotContainer; // Store reference to update it
+    private VBox experienceContainer; // Store reference to update experience
+    private Label expLabel;
 
     // Pastel color palette matching the dashboard
     private final String PASTEL_BLUSH = "#FCEDF5";
@@ -40,14 +45,103 @@ public class Sidebar extends VBox {
     private final String PASTEL_IVORY = "#FDF5E7";
     private final String PASTEL_SAGE = "#8D9383";
     private final String PASTEL_FOREST = "#343A26";
+    private final String PASTEL_GOLD = "#FFD700";
 
     public Sidebar(SidebarController controller, String userName) {
         this.controller = controller;
         setupSidebar();
         createHeader(userName);
         createNavButtons();
+        createExperienceSection();
         createMascotSection();
     }
+
+    // Add this method to create the experience display
+    private void createExperienceSection() {
+        experienceContainer = new VBox(5);
+        experienceContainer.setAlignment(Pos.CENTER);
+        experienceContainer.setPadding(new Insets(12, 15, 12, 15));
+        experienceContainer.setBackground(new Background(new BackgroundFill(
+                Color.web(PASTEL_IVORY),
+                new CornerRadii(12),
+                Insets.EMPTY
+        )));
+        experienceContainer.setBorder(new Border(new BorderStroke(
+                Color.web(PASTEL_GOLD, 0.3),
+                BorderStrokeStyle.SOLID,
+                new CornerRadii(12),
+                new BorderWidths(1.5)
+        )));
+        experienceContainer.setEffect(new DropShadow(5, Color.web(PASTEL_GOLD, 0.2)));
+
+        // Experience icon and text
+        HBox expBox = new HBox(8);
+        expBox.setAlignment(Pos.CENTER);
+
+        Label starIcon = new Label("⭐");
+        starIcon.setFont(Font.font(14));
+
+        expLabel = new Label("800 XP");
+        expLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
+        expLabel.setTextFill(Color.web(PASTEL_FOREST));
+
+        // Sparkle emoji for cuteness
+        Label sparkle = new Label("✨");
+        sparkle.setFont(Font.font(12));
+
+        expBox.getChildren().addAll(starIcon, expLabel, sparkle);
+        experienceContainer.getChildren().add(expBox);
+        this.getChildren().add(experienceContainer);
+    }
+
+    // Simple method to update experience - just call this whenever exp changes
+    public void updateExperience(int newExp) {
+        expLabel.setText(newExp + " XP");
+
+        // Cute little animation
+        experienceContainer.setScaleX(1.05);
+        experienceContainer.setScaleY(1.05);
+
+        javafx.animation.ScaleTransition scaleTransition =
+                new javafx.animation.ScaleTransition(javafx.util.Duration.millis(200), experienceContainer);
+        scaleTransition.setToX(1.0);
+        scaleTransition.setToY(1.0);
+        scaleTransition.play();
+
+        // Add sparkle effect temporarily
+        experienceContainer.setEffect(new DropShadow(10, Color.web(PASTEL_GOLD)));
+
+        javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(500));
+        pause.setOnFinished(e -> {
+            experienceContainer.setEffect(new DropShadow(5, Color.web(PASTEL_GOLD, 0.2)));
+        });
+        pause.play();
+    }
+
+    public void refreshExperienceFromDatabase(int userId) {
+        int currentExp = getCurrentUserExperience(userId);
+        updateExperience(currentExp);
+    }
+
+    private int getCurrentUserExperience(int userId) {
+        String sql = "SELECT experience FROM Users WHERE user_id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, userId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt("experience");
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching user experience: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
 
     // Add this method to update the mascot display
     public void updateMascot(String petName, String species, String gifFilename) {

@@ -133,6 +133,7 @@ public class MainController {
 
     private void showNotes() {
         NotesController notesController = new NotesController(userId);
+        notesController.setSidebar(sidebar);
         NotesView notesView = new NotesView(notesController);
         root.setCenter(notesView);
     }
@@ -352,6 +353,7 @@ public class MainController {
             // added these after setting the db up
             PomodoroController pomodoroController = fxmlLoader.getController();
             pomodoroController.setUserId(userId);
+            pomodoroController.setSidebar(sidebar);
             // Create pets controller and set it on the pomodoro controller
             PetsController petsController = new PetsController(userId);
             pomodoroController.setPetsController(petsController);
