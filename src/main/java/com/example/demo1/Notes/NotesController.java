@@ -31,7 +31,12 @@ public class NotesController {
             if (affectedRows > 0) {
                 try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
-                        return generatedKeys.getInt(1); // Return the new note_id
+                        int noteId = generatedKeys.getInt(1);
+
+                        // Increment user experience by 50
+                        incrementUserExperience(50);
+
+                        return noteId; // Return the new note_id
                     }
                 }
             }
@@ -40,6 +45,26 @@ public class NotesController {
             e.printStackTrace();
         }
         return -1; // Error
+    }
+
+    // Method to increment user experience
+    private void incrementUserExperience(int experienceToAdd) {
+        String sql = "UPDATE Users SET experience = experience + ? WHERE user_id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, experienceToAdd);
+            stmt.setInt(2, currentUserId);
+
+            int affectedRows = stmt.executeUpdate();
+            if (affectedRows > 0) {
+                System.out.println("Added " + experienceToAdd + " experience to user " + currentUserId);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error updating user experience: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     // Read - Get all notes for current user

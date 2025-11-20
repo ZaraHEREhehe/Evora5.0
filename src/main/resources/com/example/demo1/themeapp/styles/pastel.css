@@ -2,7 +2,7 @@
 
 :root {
     /* Pastel Palette */
-    -fx-color-1: #FACEEA;
+    /*-fx-color-1: #FACEEA;
     -fx-color-2: #C1DAFF;
     -fx-color-3: #D7D8FF;
     -fx-color-4: #F0D2F7;
@@ -10,13 +10,13 @@
     -fx-color-6: #F3D1F3;
     -fx-color-7: #FCEDF5;
     -fx-color-8: #E4EFFF;
-    -fx-color-9: #F7EFFF;
+    -fx-color-9: #F7EFFF;*/
 
     /* Common Semantic Colors */
-    -fx-bg-color: #FFFFFF;
+  /*  -fx-bg-color: #FFFFFF;
     -fx-text-color: #2E2E2E;
     -fx-accent-color: -fx-color-3;
-    -fx-button-color: -fx-color-2;
+    -fx-button-color: -fx-color-2;*/
 }
 
 /* Base UI Styles */
@@ -25,13 +25,14 @@
     -fx-font-family: 'Segoe UI', sans-serif;
 }
 
+/*
 .label {
     -fx-text-fill: -fx-text-color;
 }
-
+*/
 .button {
     -fx-background-color: -fx-button-color;
-    -fx-text-fill: -fx-text-color;
+   /* -fx-text-fill: -fx-text-color;*/
     -fx-font-weight: bold;
     -fx-background-radius: 12;
     -fx-padding: 8 18 8 18;

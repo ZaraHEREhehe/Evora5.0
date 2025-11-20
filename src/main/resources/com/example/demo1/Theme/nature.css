@@ -1,0 +1,49 @@
+/* Root background */
+.root {
+    -fx-background-color: #FDF5E7; /* Ivory */
+}
+
+/* Buttons */
+.button {
+    -fx-background-radius: 15;
+    -fx-font-family: "Poppins";
+    -fx-text-fill: #343a26;
+    -fx-background-color: linear-gradient(to right, #F1DBD0, #D3A29D);
+}
+
+.button:hover {
+    -fx-background-color: linear-gradient(to right, #A36361, #8d9383);
+}
+
+.button:pressed {
+    -fx-background-color: linear-gradient(to right, #CDBFAA, #ADB697);
+}
+
+/* Labels */
+.label {
+    -fx-text-fill: #343a26;
+}
+
+.dashboard-title { -fx-text-fill: #343a26; }
+.dashboard-subtitle { -fx-text-fill: #6b5b3c; }
+
+.stat-card { -fx-text-fill: #343a26; }
+.stat-value { -fx-text-fill: #343a26; }
+.stat-desc { -fx-text-fill: #756f86; }
+
+.mini-card { -fx-text-fill: #343a26; }
+
+.focus-box { -fx-background-color: #F1E5D8; }
+.analytics-box { -fx-background-color: #E5E0F2; }
+.main-goal { -fx-background-color: #FDF1E7; }
+
+/* Optional other nature colors */
+.nature1 { -fx-background-color: #FDF5E7; }
+.nature2 { -fx-background-color: #CDBFAA; }
+.nature3 { -fx-background-color: #ADB697; }
+.nature4 { -fx-background-color: #F1D0D0; }
+.nature5 { -fx-background-color: #D3A29D; }
+.nature6 { -fx-background-color: #A36361; }
+.nature7 { -fx-background-color: #8d9383; }
+.nature8 { -fx-background-color: #343a26; }
+.nature9 { -fx-background-color: #483c2b; }

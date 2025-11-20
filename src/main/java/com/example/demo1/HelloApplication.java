@@ -1,9 +1,11 @@
 package com.example.demo1;
 
+import com.example.demo1.Theme.ThemeManager;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -19,24 +21,27 @@ public class HelloApplication extends Application {
         // Load the login page
         FXMLLoader fxmlLoader = new FXMLLoader(HelloApplication.class.getResource("hello-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
-
-        stage.setTitle("Évora - Login");
+        ThemeManager.applyTheme(scene, ThemeManager.Theme.PASTEL);
+        stage.setTitle("Pomodoro Timer");
         stage.setScene(scene);
         stage.setResizable(true);
-        stage.setMinWidth(400);
+        stage.setMinWidth(500);
         stage.setMinHeight(500);
         stage.show();
     }
 
-    // Updated method to accept username
+    // Updated method to accept username - Reusing same stage
     public static void showDashboard(String username, int userId) {
-        BorderPane root = new BorderPane();
-        MainController mainController = new MainController(root, username, userId); //pass user id
+        try {
+            MainController mainController = new MainController(primaryStage, username, userId);
 
-        Scene scene = new Scene(root, 1200, 700);
-        primaryStage.setScene(scene);
-        primaryStage.setTitle("Pastel Productivity Dashboard - Welcome, " + username);
-        primaryStage.show();
+            // Update the title
+            primaryStage.setTitle("Pastel Productivity Dashboard - Welcome, " + username);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("❌ Error loading dashboard: " + e.getMessage());
+        }
     }
 
     public static void main(String[] args) {
