@@ -18,6 +18,7 @@ public class AnalyticsView {
     private TabPane tabPane;
     private Canvas taskChartCanvas;
     private Canvas focusChartCanvas;
+    private Canvas activityChartCanvas;
     private Canvas moodTrendCanvas;
     private Tooltip chartTooltip;
     private ToggleGroup timeGroup;
@@ -29,6 +30,7 @@ public class AnalyticsView {
     private final Color textPrimary = Color.web("#5c5470");
     private final Color textSecondary = Color.web("#756f86");
     private final Color borderColor = Color.web("#D8B4FE");
+    private final Color navBarColor = Color.web("#E6F2FF"); // Pastel blue for navigation
 
     private final Color[] chartColors = {
             Color.web("#A78BFA"), // Pastel Purple
@@ -42,7 +44,7 @@ public class AnalyticsView {
     public AnalyticsView(int userId, String userName) {
         this.controller = new AnalyticsController(userId, userName);
         this.chartTooltip = new Tooltip();
-        this.chartTooltip.setStyle("-fx-font-size: 12; -fx-font-weight: bold;");
+        this.chartTooltip.setStyle("-fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #5c5470; -fx-border-color: #D8B4FE; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-radius: 5;");
     }
 
     public Node create() {
@@ -53,15 +55,112 @@ public class AnalyticsView {
         // Header
         VBox header = createHeader();
 
+        // Create tab pane first
+        tabPane = createTabPane();
+
+        // Custom Navigation Bar (needs tabPane reference)
+        HBox navBar = createCustomNavBar();
+
         // Time range selector
         HBox timeRangeSelector = createTimeRangeSelector();
 
-        // Tab pane for different analytics sections
-        tabPane = createTabPane();
-
-        mainContent.getChildren().addAll(header, timeRangeSelector, tabPane);
+        mainContent.getChildren().addAll(header, navBar, timeRangeSelector, tabPane);
 
         return mainContent;
+    }
+
+    private HBox createCustomNavBar() {
+        HBox navBar = new HBox();
+        navBar.setStyle("-fx-background-color: " + toHex(navBarColor) + ";" +
+                "-fx-background-radius: 25;" +
+                "-fx-border-color: " + toHex(borderColor) + ";" +
+                "-fx-border-width: 1;" +
+                "-fx-border-radius: 25;" +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0.5, 0, 2);");
+        navBar.setPadding(new Insets(8));
+        navBar.setMaxWidth(Double.MAX_VALUE);
+
+        // Create navigation buttons
+        ToggleButton overviewBtn = createNavButton("Overview", true);
+        ToggleButton tasksBtn = createNavButton("Tasks & Focus", false);
+        ToggleButton wellbeingBtn = createNavButton("Wellbeing", false);
+        ToggleButton achievementsBtn = createNavButton("Achievements", false);
+
+        // Create toggle group for navigation
+        ToggleGroup navGroup = new ToggleGroup();
+        overviewBtn.setToggleGroup(navGroup);
+        tasksBtn.setToggleGroup(navGroup);
+        wellbeingBtn.setToggleGroup(navGroup);
+        achievementsBtn.setToggleGroup(navGroup);
+
+        // Set button actions
+        overviewBtn.setOnAction(e -> switchToTab("Overview"));
+        tasksBtn.setOnAction(e -> switchToTab("Tasks & Focus"));
+        wellbeingBtn.setOnAction(e -> switchToTab("Wellbeing"));
+        achievementsBtn.setOnAction(e -> switchToTab("Achievements"));
+
+        // Distribute buttons evenly
+        HBox.setHgrow(overviewBtn, Priority.ALWAYS);
+        HBox.setHgrow(tasksBtn, Priority.ALWAYS);
+        HBox.setHgrow(wellbeingBtn, Priority.ALWAYS);
+        HBox.setHgrow(achievementsBtn, Priority.ALWAYS);
+
+        overviewBtn.setMaxWidth(Double.MAX_VALUE);
+        tasksBtn.setMaxWidth(Double.MAX_VALUE);
+        wellbeingBtn.setMaxWidth(Double.MAX_VALUE);
+        achievementsBtn.setMaxWidth(Double.MAX_VALUE);
+
+        navBar.getChildren().addAll(overviewBtn, tasksBtn, wellbeingBtn, achievementsBtn);
+        return navBar;
+    }
+
+    private ToggleButton createNavButton(String text, boolean selected) {
+        ToggleButton button = new ToggleButton(text);
+        button.setStyle("-fx-background-radius: 20; -fx-padding: 12 20; -fx-font-size: 14; -fx-font-weight: bold;");
+
+        if (selected) {
+            button.setSelected(true);
+            button.setStyle(button.getStyle() +
+                    " -fx-background-color: linear-gradient(to right, #A78BFA, #F472B6);" +
+                    " -fx-text-fill: white;");
+        } else {
+            button.setStyle(button.getStyle() +
+                    " -fx-background-color: transparent;" +
+                    " -fx-text-fill: #5c5470;");
+        }
+
+        button.selectedProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal) {
+                button.setStyle("-fx-background-radius: 20; -fx-padding: 12 20; -fx-font-size: 14; -fx-font-weight: bold;" +
+                        " -fx-background-color: linear-gradient(to right, #A78BFA, #F472B6);" +
+                        " -fx-text-fill: white;");
+            } else {
+                button.setStyle("-fx-background-radius: 20; -fx-padding: 12 20; -fx-font-size: 14; -fx-font-weight: bold;" +
+                        " -fx-background-color: transparent;" +
+                        " -fx-text-fill: #5c5470;");
+            }
+        });
+
+        return button;
+    }
+
+    private void switchToTab(String tabName) {
+        resetTimeRangeToWeekly();
+        switch (tabName) {
+            case "Overview":
+                tabPane.getSelectionModel().select(0);
+                break;
+            case "Tasks & Focus":
+                tabPane.getSelectionModel().select(1);
+                break;
+            case "Wellbeing":
+                tabPane.getSelectionModel().select(2);
+                break;
+            case "Achievements":
+                tabPane.getSelectionModel().select(3);
+                break;
+        }
+        refreshTabContent();
     }
 
     private VBox createHeader() {
@@ -134,6 +233,10 @@ public class AnalyticsView {
         Tab wellbeingTab = new Tab("Wellbeing", createWellbeingContent());
         Tab achievementsTab = new Tab("Achievements", createAchievementsContent());
 
+        // Hide the tab headers but keep the content visible
+        tabPane.setStyle("-fx-tab-max-height: 0; -fx-tab-min-height: 0; -fx-tab-max-width: 0; -fx-tab-min-width: 0;");
+        tabPane.getTabs().forEach(tab -> tab.setStyle("-fx-padding: 0; -fx-background-color: transparent;"));
+
         // Reset time range to weekly when switching tabs
         tabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
             if (newTab != null) {
@@ -141,10 +244,6 @@ public class AnalyticsView {
                 refreshTabContent();
             }
         });
-
-        for (Tab tab : new Tab[]{overviewTab, productivityTab, wellbeingTab, achievementsTab}) {
-            tab.setStyle("-fx-font-size: 14; -fx-padding: 10 20;");
-        }
 
         tabPane.getTabs().addAll(overviewTab, productivityTab, wellbeingTab, achievementsTab);
 
@@ -173,68 +272,64 @@ public class AnalyticsView {
     }
 
     private Node createOverviewContent() {
-        VBox content = new VBox(20);
+        VBox content = new VBox(25);
         content.setAlignment(Pos.TOP_CENTER);
+        content.setPadding(new Insets(10));
 
-        // Stats cards
-        GridPane statsGrid = createStatsCards();
+        // Stats cards - all in one row horizontally
+        HBox statsRow = createOverviewStatsCards();
 
         // Activity chart
         VBox activityChart = createActivityChart();
 
-        content.getChildren().addAll(statsGrid, activityChart);
+        content.getChildren().addAll(statsRow, activityChart);
         return content;
     }
 
-    private GridPane createStatsCards() {
-        GridPane grid = new GridPane();
-        grid.setHgap(15);
-        grid.setVgap(15);
-        grid.setAlignment(Pos.CENTER);
+    private HBox createOverviewStatsCards() {
+        HBox statsRow = new HBox(20);
+        statsRow.setAlignment(Pos.CENTER);
+        statsRow.setPadding(new Insets(10));
 
         int completionRate = controller.totalTasksProperty().get() > 0 ?
                 (int) ((controller.tasksCompletedProperty().get() / (double) controller.totalTasksProperty().get()) * 100) : 0;
         int focusHours = controller.focusMinutesProperty().get() / 60;
         int focusMinutesRemaining = controller.focusMinutesProperty().get() % 60;
 
-        VBox taskCard = createStatCard(
+        VBox taskCard = createOverviewStatCard(
                 "Task Completion",
                 completionRate + "%",
                 controller.tasksCompletedProperty().get() + " of " + controller.totalTasksProperty().get() + " tasks",
                 "#F3E8FF", "#FCE7F3", "✓"
         );
 
-        VBox focusCard = createStatCard(
+        VBox focusCard = createOverviewStatCard(
                 "Focus Time",
                 focusHours + "h " + focusMinutesRemaining + "m",
                 controller.pomodoroSessionsProperty().get() + " sessions",
                 "#E0F2FE", "#BAE6FD", "⏰"
         );
 
-        VBox streakCard = createStatCard(
+        VBox streakCard = createOverviewStatCard(
                 "Current Streak",
                 controller.currentStreakProperty().get() + " days",
                 "Best: " + controller.longestStreakProperty().get() + " days",
                 "#F0E8FF", "#E8D6FF", "⚡"
         );
 
-        VBox coinsCard = createStatCard(
+        VBox coinsCard = createOverviewStatCard(
                 "Coins Earned",
                 String.valueOf(controller.coinsEarnedProperty().get()),
                 "Pet happiness: " + controller.petHappinessProperty().get() + "%",
                 "#E8F5E8", "#D4F0D4", "⭐"
         );
 
-        grid.add(taskCard, 0, 0);
-        grid.add(focusCard, 1, 0);
-        grid.add(streakCard, 0, 1);
-        grid.add(coinsCard, 1, 1);
-
-        return grid;
+        statsRow.getChildren().addAll(taskCard, focusCard, streakCard, coinsCard);
+        return statsRow;
     }
 
-    private VBox createStatCard(String title, String value, String subtitle, String startColor, String endColor, String emoji) {
-        VBox card = new VBox(10);
+    private VBox createOverviewStatCard(String title, String value, String subtitle, String startColor, String endColor, String emoji) {
+        VBox card = new VBox(12);
         card.setPadding(new Insets(20));
         card.setStyle(
                 "-fx-background-color: linear-gradient(to bottom right, " + startColor + ", " + endColor + ");" +
@@ -244,33 +339,24 @@ public class AnalyticsView {
                         "-fx-border-radius: 20;" +
                         "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 15, 0.5, 0, 4);"
         );
-        card.setPrefSize(250, 140);
+        card.setPrefSize(220, 140);
         card.setAlignment(Pos.CENTER);
 
-        HBox headerBox = new HBox(10);
-        headerBox.setAlignment(Pos.CENTER);
-
         Label emojiLabel = new Label(emoji);
-        emojiLabel.setStyle("-fx-font-size: 24;");
-
-        VBox textBox = new VBox(5);
-        textBox.setAlignment(Pos.CENTER);
+        emojiLabel.setStyle("-fx-font-size: 28;");
 
         Label titleLabel = new Label(title);
-        titleLabel.setStyle("-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #2A2D3A; -fx-text-alignment: center;");
-        titleLabel.setWrapText(true);
+        titleLabel.setStyle("-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #2A2D3A; -fx-text-alignment: center; -fx-wrap-text: true;");
+        titleLabel.setMaxWidth(180);
 
         Label valueLabel = new Label(value);
-        valueLabel.setStyle("-fx-font-size: 24; -fx-font-weight: bold; -fx-text-fill: #2A2D3A;");
+        valueLabel.setStyle("-fx-font-size: 22; -fx-font-weight: bold; -fx-text-fill: #2A2D3A; -fx-text-alignment: center;");
 
         Label subtitleLabel = new Label(subtitle);
-        subtitleLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #2A2D3A; -fx-text-alignment: center;");
-        subtitleLabel.setWrapText(true);
+        subtitleLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #2A2D3A; -fx-text-alignment: center; -fx-wrap-text: true;");
+        subtitleLabel.setMaxWidth(180);
 
-        textBox.getChildren().addAll(titleLabel, valueLabel, subtitleLabel);
-        headerBox.getChildren().addAll(emojiLabel, textBox);
-
-        card.getChildren().add(headerBox);
+        card.getChildren().addAll(emojiLabel, titleLabel, valueLabel, subtitleLabel);
         return card;
     }
 
@@ -287,16 +373,17 @@ public class AnalyticsView {
                 "-fx-border-width: 2;" +
                 "-fx-border-radius: 25;" +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.5, 0, 6);");
-        chartContainer.setMaxWidth(850);
+        chartContainer.setMaxWidth(1000);
         chartContainer.setAlignment(Pos.CENTER);
 
         Label title = new Label("Weekly Activity");
         title.setStyle("-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: #5c5470;");
 
-        Canvas canvas = new Canvas(750, 350);
-        drawActivityChart(canvas);
+        activityChartCanvas = new Canvas(900, 400); // Larger canvas
+        drawActivityChart(activityChartCanvas);
+        setupChartHover(activityChartCanvas, "activity");
 
-        chartContainer.getChildren().addAll(title, canvas);
+        chartContainer.getChildren().addAll(title, activityChartCanvas);
         return chartContainer;
     }
 
@@ -388,45 +475,39 @@ public class AnalyticsView {
         int maxValue = Math.max(maxTasks, maxPomodoros);
         maxValue = Math.max(maxValue, 10);
 
-        gc.setFont(Font.font("System", 11));
-
-        // Draw tasks data points
+        // Draw tasks data points (without value labels)
         gc.setFill(chartColors[1]);
         for (int i = 0; i < data.size(); i++) {
             double x = padding + (chartWidth / (data.size() - 1)) * i;
             double y = padding + chartHeight - ((data.get(i).getTasks() / (double) maxValue) * chartHeight);
 
-            gc.fillOval(x - 5, y - 5, 10, 10);
+            gc.fillOval(x - 6, y - 6, 12, 12);
             gc.setStroke(Color.web("#7C3AED"));
             gc.setLineWidth(2);
-            gc.strokeOval(x - 5, y - 5, 10, 10);
-
-            // Value label
-            gc.setFill(Color.web("#5c5470"));
-            gc.fillText(String.valueOf(data.get(i).getTasks()), x - 8, y - 10);
+            gc.strokeOval(x - 6, y - 6, 12, 12);
         }
 
-        // Draw pomodoro data points
+        // Draw pomodoro data points (without value labels)
         gc.setFill(chartColors[3]);
         for (int i = 0; i < data.size(); i++) {
             double x = padding + (chartWidth / (data.size() - 1)) * i;
             double y = padding + chartHeight - ((data.get(i).getPomodoros() / (double) maxValue) * chartHeight);
 
-            gc.fillRect(x - 4, y - 4, 8, 8);
+            gc.fillRect(x - 5, y - 5, 10, 10);
             gc.setStroke(Color.web("#2563EB"));
             gc.setLineWidth(2);
-            gc.strokeRect(x - 4, y - 4, 8, 8);
-
-            // Value label
-            gc.setFill(Color.web("#5c5470"));
-            gc.fillText(String.valueOf(data.get(i).getPomodoros()), x - 8, y - 15);
+            gc.strokeRect(x - 5, y - 5, 10, 10);
         }
 
-        // Day labels with proper spacing
+        // Day labels with shortened names to prevent overlap
+        gc.setFont(Font.font("System", 12));
         for (int i = 0; i < data.size(); i++) {
             double x = padding + (chartWidth / (data.size() - 1)) * i;
             gc.setFill(Color.web("#6B7280"));
-            gc.fillText(data.get(i).getDay(), x - 15, padding + chartHeight + 25);
+
+            // Use shortened day names
+            String dayLabel = getShortenedDayName(data.get(i).getDay());
+            gc.fillText(dayLabel, x - 10, padding + chartHeight + 25);
         }
 
         // Add legend with proper spacing
@@ -434,6 +515,63 @@ public class AnalyticsView {
         gc.fillText("Tasks Completed", padding + 10, padding - 20);
         gc.setFill(chartColors[3]);
         gc.fillText("Focus Sessions", padding + 150, padding - 20);
+    }
+
+    private void setupChartHover(Canvas canvas, String chartType) {
+        canvas.setOnMouseMoved(event -> handleChartHover(event, canvas, chartType));
+        canvas.setOnMouseExited(event -> chartTooltip.hide());
+    }
+
+    private void handleChartHover(MouseEvent event, Canvas canvas, String chartType) {
+        List<AnalyticsController.WeeklyData> data = controller.getWeeklyData();
+        if (data.isEmpty()) return;
+
+        double padding = 80;
+        double chartWidth = canvas.getWidth() - 2 * padding;
+        double chartHeight = canvas.getHeight() - 2 * padding;
+
+        double mouseX = event.getX();
+        double mouseY = event.getY();
+
+        AnalyticsController.WeeklyData closestData = null;
+        double minDistance = Double.MAX_VALUE;
+
+        int maxTasks = data.stream().mapToInt(AnalyticsController.WeeklyData::getTasks).max().orElse(10);
+        int maxPomodoros = data.stream().mapToInt(AnalyticsController.WeeklyData::getPomodoros).max().orElse(10);
+        int maxValue = Math.max(maxTasks, maxPomodoros);
+        maxValue = Math.max(maxValue, 10);
+
+        for (int i = 0; i < data.size(); i++) {
+            AnalyticsController.WeeklyData entry = data.get(i);
+            double x = padding + (chartWidth / (data.size() - 1)) * i;
+
+            // Check tasks point
+            double yTasks = padding + chartHeight - ((entry.getTasks() / (double) maxValue) * chartHeight);
+            double distanceTasks = Math.sqrt(Math.pow(mouseX - x, 2) + Math.pow(mouseY - yTasks, 2));
+
+            // Check pomodoros point
+            double yPomodoros = padding + chartHeight - ((entry.getPomodoros() / (double) maxValue) * chartHeight);
+            double distancePomodoros = Math.sqrt(Math.pow(mouseX - x, 2) + Math.pow(mouseY - yPomodoros, 2));
+
+            if (distanceTasks < 20 && distanceTasks < minDistance) {
+                minDistance = distanceTasks;
+                closestData = entry;
+            }
+            if (distancePomodoros < 20 && distancePomodoros < minDistance) {
+                minDistance = distancePomodoros;
+                closestData = entry;
+            }
+        }
+
+        if (closestData != null) {
+            String tooltipText = String.format("%s\nTasks: %d\nFocus Sessions: %d\nMood: %d/5",
+                    closestData.getDay(), closestData.getTasks(), closestData.getPomodoros(), closestData.getMood());
+
+            chartTooltip.setText(tooltipText);
+            chartTooltip.show(canvas, event.getScreenX() + 10, event.getScreenY() + 10);
+        } else {
+            chartTooltip.hide();
+        }
     }
 
     private Node createProductivityContent() {
@@ -470,14 +608,15 @@ public class AnalyticsView {
                 "-fx-border-width: 2;" +
                 "-fx-border-radius: 25;" +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.5, 0, 6);");
-        chartContainer.setPrefWidth(450);
+        chartContainer.setPrefWidth(550); // Wider container
         chartContainer.setAlignment(Pos.CENTER);
 
         Label chartTitle = new Label("Daily Task Completion");
         chartTitle.setStyle("-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #5c5470;");
 
-        taskChartCanvas = new Canvas(400, 250);
+        taskChartCanvas = new Canvas(500, 300); // Larger canvas
         drawBarChart(taskChartCanvas, "tasks");
+        setupChartHover(taskChartCanvas, "tasks");
 
         chartContainer.getChildren().addAll(chartTitle, taskChartCanvas);
         return chartContainer;
@@ -492,14 +631,15 @@ public class AnalyticsView {
                 "-fx-border-width: 2;" +
                 "-fx-border-radius: 25;" +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.5, 0, 6);");
-        chartContainer.setPrefWidth(450);
+        chartContainer.setPrefWidth(550); // Wider container
         chartContainer.setAlignment(Pos.CENTER);
 
         Label chartTitle = new Label("Focus Session Intensity");
         chartTitle.setStyle("-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #5c5470;");
 
-        focusChartCanvas = new Canvas(400, 250);
+        focusChartCanvas = new Canvas(500, 300); // Larger canvas
         drawBarChart(focusChartCanvas, "pomodoros");
+        setupChartHover(focusChartCanvas, "pomodoros");
 
         chartContainer.getChildren().addAll(chartTitle, focusChartCanvas);
         return chartContainer;
@@ -515,15 +655,15 @@ public class AnalyticsView {
             return;
         }
 
-        double padding = 50;
+        double padding = 60;
         double chartWidth = canvas.getWidth() - 2 * padding;
         double chartHeight = canvas.getHeight() - 2 * padding;
-        double barWidth = (chartWidth / data.size()) * 0.6; // 60% of available space
+        double barWidth = (chartWidth / data.size()) * 0.6;
 
         int maxValue = data.stream().mapToInt(d -> dataType.equals("tasks") ? d.getTasks() : d.getPomodoros()).max().orElse(10);
         maxValue = Math.max(maxValue, 10);
 
-        // Draw bars with proper spacing
+        // Draw bars with proper spacing (without value labels on bars)
         for (int i = 0; i < data.size(); i++) {
             double value = dataType.equals("tasks") ? data.get(i).getTasks() : data.get(i).getPomodoros();
             double barHeight = (value / maxValue) * chartHeight;
@@ -534,22 +674,22 @@ public class AnalyticsView {
             gc.setFill(barColor);
             gc.fillRect(x, y, barWidth, barHeight);
 
-            // Add value label
-            gc.setFill(Color.web("#5c5470"));
-            gc.setFont(Font.font("System", 11));
-            gc.fillText(String.valueOf((int)value), x + barWidth/2 - 5, y - 8);
+            // Add shortened day label with proper spacing
+            gc.setFill(Color.web("#6B7280"));
+            gc.setFont(Font.font("System", 12));
 
-            // Add day label with proper spacing
-            gc.fillText(data.get(i).getDay(), x + barWidth/2 - 10, padding + chartHeight + 20);
+            // Use shortened day names to prevent overlap
+            String dayLabel = getShortenedDayName(data.get(i).getDay());
+            gc.fillText(dayLabel, x + barWidth/2 - 10, padding + chartHeight + 25);
         }
 
         // Y-axis labels
         gc.setFill(Color.web("#6B7280"));
-        gc.setFont(Font.font("System", 11));
+        gc.setFont(Font.font("System", 12));
         for (int i = 0; i <= 5; i++) {
             double y = padding + chartHeight - (chartHeight / 5) * i;
             int value = (int) ((i / 5.0) * maxValue);
-            gc.fillText(String.valueOf(value), padding - 20, y + 5);
+            gc.fillText(String.valueOf(value), padding - 25, y + 5);
         }
     }
 
@@ -566,7 +706,7 @@ public class AnalyticsView {
 
         for (AnalyticsController.WeeklyData data : controller.getWeeklyData()) {
             actualCompleted += data.getTasks();
-            totalPossible += 3; // Assume 3 tasks per day is achievable
+            totalPossible += 3;
         }
 
         int goalPercentage = totalPossible > 0 ? (actualCompleted * 100) / totalPossible : 0;
@@ -616,13 +756,6 @@ public class AnalyticsView {
         card.getChildren().addAll(emojiLabel, titleLabel, valueLabel, subtitleLabel);
         return card;
     }
-
-    // ... (rest of the methods remain the same as previous version, including:
-    // calculateProductivityTrend, getTrendArrow, getTrendDescription,
-    // createWellbeingContent, createMoodDistributionChart, drawMoodDistributionChart,
-    // createMoodTrendChart, drawMoodTrendChart, createWellbeingStats,
-    // createAchievementsContent, createAchievementCard, createProgressSummary,
-    // drawPlaceholderChart, toHex)
 
     private int calculateProductivityTrend() {
         var chartData = controller.getWeeklyData();
@@ -688,14 +821,15 @@ public class AnalyticsView {
                 "-fx-border-width: 2;" +
                 "-fx-border-radius: 25;" +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.5, 0, 6);");
-        chartContainer.setPrefWidth(450);
+        chartContainer.setPrefWidth(550);
         chartContainer.setAlignment(Pos.CENTER);
 
         Label title = new Label("Mood Distribution");
         title.setStyle("-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #5c5470;");
 
-        Canvas canvas = new Canvas(400, 280);
+        Canvas canvas = new Canvas(500, 350);
         drawMoodDistributionChart(canvas);
+        setupPieChartHover(canvas); // Add hover effect to pie chart
 
         chartContainer.getChildren().addAll(title, canvas);
         return chartContainer;
@@ -713,40 +847,74 @@ public class AnalyticsView {
 
         double centerX = canvas.getWidth() / 2;
         double centerY = canvas.getHeight() / 2 - 10;
-        double radius = Math.min(centerX, centerY) - 30;
+        double radius = Math.min(centerX, centerY) - 40;
 
         double total = distribution.stream().mapToInt(AnalyticsController.MoodDistribution::getValue).sum();
         double startAngle = 0;
 
-        for (AnalyticsController.MoodDistribution mood : distribution) {
+        // Store slice information for hover detection
+        PieSlice[] slices = new PieSlice[distribution.size()];
+
+        for (int i = 0; i < distribution.size(); i++) {
+            AnalyticsController.MoodDistribution mood = distribution.get(i);
             double sliceAngle = 360 * (mood.getValue() / total);
 
             gc.setFill(Color.web(mood.getColor()));
             gc.fillArc(centerX - radius, centerY - radius, radius * 2, radius * 2, startAngle, sliceAngle, javafx.scene.shape.ArcType.ROUND);
 
-            // Draw label
-            double labelAngle = startAngle + sliceAngle / 2;
-            double labelRadius = radius * 0.7;
-            double labelX = centerX + labelRadius * Math.cos(Math.toRadians(labelAngle));
-            double labelY = centerY + labelRadius * Math.sin(Math.toRadians(labelAngle));
-
-            gc.setFill(Color.web("#5c5470"));
-            gc.setFont(Font.font("System", 11));
-            gc.fillText(mood.getValue() + "%", labelX - 10, labelY);
+            // Store slice information for hover detection
+            slices[i] = new PieSlice(startAngle, sliceAngle, centerX, centerY, radius, mood);
 
             startAngle += sliceAngle;
         }
 
-        // Draw legend with proper spacing
-        double legendY = 20;
-        gc.setFont(Font.font("System", 12));
-        for (AnalyticsController.MoodDistribution mood : distribution) {
-            gc.setFill(Color.web(mood.getColor()));
-            gc.fillRect(30, legendY, 15, 15);
-            gc.setFill(Color.web("#5c5470"));
-            gc.fillText(mood.getMood() + " (" + mood.getValue() + "%)", 50, legendY + 12);
-            legendY += 25;
+        // Store slices in canvas properties for hover detection
+        canvas.setUserData(slices);
+    }
+
+    private void setupPieChartHover(Canvas canvas) {
+        canvas.setOnMouseMoved(event -> handlePieChartHover(event, canvas));
+        canvas.setOnMouseExited(event -> chartTooltip.hide());
+    }
+
+    private void handlePieChartHover(MouseEvent event, Canvas canvas) {
+        PieSlice[] slices = (PieSlice[]) canvas.getUserData();
+        if (slices == null) return;
+
+        double mouseX = event.getX();
+        double mouseY = event.getY();
+
+        // Check if mouse is inside the pie chart circle
+        double centerX = canvas.getWidth() / 2;
+        double centerY = canvas.getHeight() / 2 - 10;
+        double radius = Math.min(centerX, centerY) - 40;
+
+        double distanceFromCenter = Math.sqrt(
+                Math.pow(mouseX - centerX, 2) +
+                        Math.pow(mouseY - centerY, 2)
+        );
+
+        if (distanceFromCenter > radius) {
+            chartTooltip.hide();
+            return;
         }
+
+        // Calculate angle from center
+        double angle = Math.toDegrees(Math.atan2(mouseY - centerY, mouseX - centerX));
+        if (angle < 0) angle += 360;
+
+        // Find which slice contains this angle
+        for (PieSlice slice : slices) {
+            if (slice.containsAngle(angle)) {
+                AnalyticsController.MoodDistribution mood = slice.getMoodData();
+                String tooltipText = String.format("%s: %d%%", mood.getMood(), mood.getValue());
+                chartTooltip.setText(tooltipText);
+                chartTooltip.show(canvas, event.getScreenX() + 10, event.getScreenY() + 10);
+                return;
+            }
+        }
+
+        chartTooltip.hide();
     }
 
     private VBox createMoodTrendChart() {
@@ -758,14 +926,15 @@ public class AnalyticsView {
                 "-fx-border-width: 2;" +
                 "-fx-border-radius: 25;" +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.5, 0, 6);");
-        chartContainer.setPrefWidth(450);
+        chartContainer.setPrefWidth(550);
         chartContainer.setAlignment(Pos.CENTER);
 
         Label title = new Label("Weekly Mood Trend");
         title.setStyle("-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #5c5470;");
 
-        moodTrendCanvas = new Canvas(400, 280);
+        moodTrendCanvas = new Canvas(500, 350);
         drawMoodTrendChart(moodTrendCanvas);
+        setupChartHover(moodTrendCanvas, "mood");
 
         chartContainer.getChildren().addAll(title, moodTrendCanvas);
         return chartContainer;
@@ -781,7 +950,7 @@ public class AnalyticsView {
             return;
         }
 
-        double padding = 50;
+        double padding = 60;
         double chartWidth = canvas.getWidth() - 2 * padding;
         double chartHeight = canvas.getHeight() - 2 * padding;
 
@@ -799,33 +968,33 @@ public class AnalyticsView {
             gc.strokeLine(x1, y1, x2, y2);
         }
 
-        // Draw data points
+        // Draw data points (without value labels)
         for (int i = 0; i < data.size(); i++) {
             double x = padding + (chartWidth / (data.size() - 1)) * i;
             double y = padding + chartHeight - ((data.get(i).getMood() - 1) / 4.0) * chartHeight;
 
             gc.setFill(chartColors[0]);
-            gc.fillOval(x - 5, y - 5, 10, 10);
+            gc.fillOval(x - 6, y - 6, 12, 12);
             gc.setStroke(Color.web("#7C3AED"));
             gc.setLineWidth(2);
-            gc.strokeOval(x - 5, y - 5, 10, 10);
+            gc.strokeOval(x - 6, y - 6, 12, 12);
 
-            // Value label
-            gc.setFill(Color.web("#5c5470"));
-            gc.setFont(Font.font("System", 11));
-            gc.fillText(String.valueOf(data.get(i).getMood()), x - 5, y - 10);
+            // Day label with shortened names
+            gc.setFill(Color.web("#6B7280"));
+            gc.setFont(Font.font("System", 12));
 
-            // Day label
-            gc.fillText(data.get(i).getDay(), x - 10, padding + chartHeight + 20);
+            // Use shortened day names
+            String dayLabel = getShortenedDayName(data.get(i).getDay());
+            gc.fillText(dayLabel, x - 10, padding + chartHeight + 25);
         }
 
         // Y-axis labels
         String[] moodLevels = {"5 - 😄", "4 - 😊", "3 - 😐", "2 - 😟", "1 - 😢"};
-        gc.setFont(Font.font("System", 11));
+        gc.setFont(Font.font("System", 12));
         for (int i = 0; i < 5; i++) {
             double y = padding + (chartHeight / 4) * i;
             gc.setFill(Color.web("#6B7280"));
-            gc.fillText(moodLevels[i], 5, y + 5);
+            gc.fillText(moodLevels[i], 10, y + 5);
         }
     }
 
@@ -847,7 +1016,7 @@ public class AnalyticsView {
     }
 
     private String getMoodTimeRangeText() {
-        return "This week"; // Always show "This week" since we reset to weekly
+        return "This week";
     }
 
     private String getPetHappinessMessage() {
@@ -864,9 +1033,9 @@ public class AnalyticsView {
         content.setPadding(new Insets(10));
 
         FlowPane achievementsGrid = new FlowPane();
-        achievementsGrid.setHgap(20);
-        achievementsGrid.setVgap(20);
-        achievementsGrid.setPrefWrapLength(900);
+        achievementsGrid.setHgap(25);
+        achievementsGrid.setVgap(25);
+        achievementsGrid.setPrefWrapLength(1200); // Wider wrap length
         achievementsGrid.setAlignment(Pos.CENTER);
         achievementsGrid.setPadding(new Insets(10));
 
@@ -883,9 +1052,9 @@ public class AnalyticsView {
 
     private VBox createAchievementCard(AnalyticsController.Achievement achievement) {
         VBox card = new VBox(15);
-        card.setPadding(new Insets(20));
-        card.setPrefSize(280, 160); // Increased width to prevent ellipsis
-        card.setMinWidth(280);
+        card.setPadding(new Insets(25));
+        card.setPrefSize(350, 180); // Much wider cards
+        card.setMinWidth(350);
 
         String cardStyle = "-fx-background-color: linear-gradient(to bottom right, #ffffff, #f8f8f8); " +
                 "-fx-background-radius: 15; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 3);";
@@ -898,43 +1067,43 @@ public class AnalyticsView {
 
         card.setStyle(cardStyle);
 
-        HBox header = new HBox(15);
+        HBox header = new HBox(20); // More spacing
         header.setAlignment(Pos.CENTER_LEFT);
 
         VBox iconContainer = new VBox();
         iconContainer.setAlignment(Pos.CENTER);
         iconContainer.setStyle("-fx-background-color: " + (achievement.isUnlocked() ?
                 "linear-gradient(to bottom right, #FFD54F, #FFC107)" : achievement.getColor()) +
-                "; -fx-background-radius: 10; -fx-padding: 8;");
-        iconContainer.setMinSize(45, 45);
+                "; -fx-background-radius: 10; -fx-padding: 10;");
+        iconContainer.setMinSize(50, 50);
 
         Label iconLabel = new Label(achievement.isUnlocked() ? "🏆" : achievement.getEmoji());
-        iconLabel.setStyle("-fx-font-size: 18;");
+        iconLabel.setStyle("-fx-font-size: 20;");
         iconContainer.getChildren().add(iconLabel);
 
         VBox textContent = new VBox(8);
         HBox.setHgrow(textContent, Priority.ALWAYS);
-        textContent.setMaxWidth(200);
+        textContent.setMaxWidth(260); // Wider text area
 
-        HBox titleRow = new HBox(10);
+        HBox titleRow = new HBox(15);
         titleRow.setAlignment(Pos.CENTER_LEFT);
 
         Label titleLabel = new Label(achievement.getTitle());
-        titleLabel.setStyle("-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #6d7d8d; -fx-wrap-text: true;");
-        titleLabel.setMaxWidth(180);
+        titleLabel.setStyle("-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #6d7d8d; -fx-wrap-text: true;");
+        titleLabel.setMaxWidth(200);
 
         if (achievement.isUnlocked()) {
             Label badge = new Label("Unlocked");
-            badge.setStyle("-fx-background-color: linear-gradient(to right, #FFEB3B, #FFD740); -fx-text-fill: #FF6F00; -fx-font-size: 10; " +
-                    "-fx-padding: 3 8; -fx-background-radius: 10;");
+            badge.setStyle("-fx-background-color: linear-gradient(to right, #FFEB3B, #FFD740); -fx-text-fill: #FF6F00; -fx-font-size: 11; " +
+                    "-fx-padding: 4 10; -fx-background-radius: 10;");
             titleRow.getChildren().addAll(titleLabel, badge);
         } else {
             titleRow.getChildren().add(titleLabel);
         }
 
         Label descriptionLabel = new Label(achievement.getDescription());
-        descriptionLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #8d9dad; -fx-wrap-text: true;");
-        descriptionLabel.setMaxWidth(180);
+        descriptionLabel.setStyle("-fx-font-size: 13; -fx-text-fill: #8d9dad; -fx-wrap-text: true;");
+        descriptionLabel.setMaxWidth(260);
 
         VBox progressContainer = new VBox(5);
         HBox progressLabels = new HBox();
@@ -942,10 +1111,10 @@ public class AnalyticsView {
         HBox.setHgrow(progressLabels, Priority.ALWAYS);
 
         Label progressText = new Label("Progress");
-        progressText.setStyle("-fx-font-size: 11; -fx-text-fill: #8d9dad;");
+        progressText.setStyle("-fx-font-size: 12; -fx-text-fill: #8d9dad;");
 
         Label progressValue = new Label(achievement.getProgress() + "/" + achievement.getMaxProgress());
-        progressValue.setStyle("-fx-font-size: 11; -fx-text-fill: #8d9dad;");
+        progressValue.setStyle("-fx-font-size: 12; -fx-text-fill: #8d9dad;");
 
         progressLabels.getChildren().addAll(progressText, progressValue);
         HBox.setHgrow(progressValue, Priority.ALWAYS);
@@ -953,7 +1122,7 @@ public class AnalyticsView {
 
         ProgressBar progressBar = new ProgressBar();
         progressBar.setProgress(achievement.getProgress() / (double) achievement.getMaxProgress());
-        progressBar.setPrefWidth(200);
+        progressBar.setPrefWidth(260);
         progressBar.setStyle("-fx-accent: " + achievement.getColor() + "; -fx-background-color: #e0e0e0;");
 
         progressContainer.getChildren().addAll(progressLabels, progressBar);
@@ -972,7 +1141,7 @@ public class AnalyticsView {
         summary.setStyle("-fx-background-color: linear-gradient(to bottom right, #D4C2FF, #E2D6FF); " +
                 "-fx-background-radius: 20; -fx-border-color: #A28BF0; -fx-border-width: 2; " +
                 "-fx-border-radius: 20;");
-        summary.setPrefWidth(600);
+        summary.setPrefWidth(800);
 
         Label trophyIcon = new Label("🏆");
         trophyIcon.setStyle("-fx-font-size: 32;");
@@ -986,7 +1155,7 @@ public class AnalyticsView {
 
         ProgressBar overallProgress = new ProgressBar();
         overallProgress.setProgress(unlockedCount / (double) controller.getAchievements().size());
-        overallProgress.setPrefWidth(400);
+        overallProgress.setPrefWidth(500);
         overallProgress.setStyle("-fx-accent: #A28BF0; -fx-background-color: #e0e0e0; -fx-pref-height: 8;");
 
         summary.getChildren().addAll(trophyIcon, title, subtitle, overallProgress);
@@ -997,6 +1166,55 @@ public class AnalyticsView {
         gc.setFill(Color.web("#6B7280"));
         gc.setFont(Font.font("System", FontWeight.NORMAL, 16));
         gc.fillText("No data available yet. Keep using the app!", width/2 - 120, height/2);
+    }
+
+    // Helper method to get shortened day names
+    private String getShortenedDayName(String dayName) {
+        // If the day name starts with "Week", return it as-is (for weekly labels)
+        if (dayName.toLowerCase().startsWith("week")) {
+            return dayName;
+        }
+
+        switch (dayName.toLowerCase()) {
+            case "monday": return "Mon";
+            case "tuesday": return "Tue";
+            case "wednesday": return "Wed";
+            case "thursday": return "Thu";
+            case "friday": return "Fri";
+            case "saturday": return "Sat";
+            case "sunday": return "Sun";
+            default: return dayName.length() > 3 ? dayName.substring(0, 3) : dayName;
+        }
+    }
+
+    // Helper class for pie chart hover detection
+    private static class PieSlice {
+        private final double startAngle;
+        private final double sliceAngle;
+        private final double centerX;
+        private final double centerY;
+        private final double radius;
+        private final AnalyticsController.MoodDistribution moodData;
+
+        public PieSlice(double startAngle, double sliceAngle, double centerX, double centerY,
+                        double radius, AnalyticsController.MoodDistribution moodData) {
+            this.startAngle = startAngle;
+            this.sliceAngle = sliceAngle;
+            this.centerX = centerX;
+            this.centerY = centerY;
+            this.radius = radius;
+            this.moodData = moodData;
+        }
+
+        public boolean containsAngle(double angle) {
+            // Normalize angles for comparison
+            double endAngle = startAngle + sliceAngle;
+            return angle >= startAngle && angle <= endAngle;
+        }
+
+        public AnalyticsController.MoodDistribution getMoodData() {
+            return moodData;
+        }
     }
 
     private String toHex(Color color) {
