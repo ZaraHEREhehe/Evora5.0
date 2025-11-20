@@ -124,12 +124,13 @@ public class PomodoroController {
         timeLeft = Math.max(0, workTime - (int)elapsedSeconds);
 
         if (timeLeft > 0) {
-            running = false; // Start paused so user can choose to resume
-            statusLabel.setText("💼 Work Session (Paused)");
-            startPauseButton.setText("Resume");
+            running = true;
+            statusLabel.setText("💼 Work Session");
+            startPauseButton.setText("Pause");
             startPauseButton.setStyle(getPrimaryButtonStyle(false));
             circularTimeText.setText(formatTime(timeLeft));
             updateCircularTimer((double)(workTime - timeLeft)/workTime);
+            timeline.play();
             System.out.println("Restored running session with " + timeLeft + " seconds remaining");
         } else {
             sessionManager.completeSession(currentSessionId);
@@ -266,7 +267,14 @@ public class PomodoroController {
             // Pause timer
             timeline.stop();
             running = false;
-            startPauseButton.setText("Start");
+            // Update status based on whether it's work or break
+            if (isBreak) {
+                statusLabel.setText("☕ Break Time (Paused)");
+            } else {
+                statusLabel.setText("💼 Work Session (Paused)");
+            }
+            startPauseButton.setText("Resume");
+
             startPauseButton.setStyle(getPrimaryButtonStyle(false));
 
             if (petContainer != null) {
@@ -280,6 +288,12 @@ public class PomodoroController {
         } else {
             // Start/resume timer
             running = true;
+            // Update status based on whether it's work or break
+            if (isBreak) {
+                statusLabel.setText("☕ Break Time");
+            } else {
+                statusLabel.setText("💼 Work Session");
+            }
 
             // Always create session when starting work session
             if (!isBreak && currentSessionId == -1) {
@@ -299,6 +313,7 @@ public class PomodoroController {
             }
         }
     }
+
 
     @FXML
     private void resetTimer() {
@@ -625,6 +640,25 @@ public class PomodoroController {
             case "owl": return "🦉";
             case "dragon": return "🐉";
             default: return "❓";
+        }
+    }
+
+    //for pausing when screen closes
+    private static PomodoroController instance;
+
+    public PomodoroController() {
+        instance = this;
+    }
+
+    public static PomodoroController getInstance() {
+        return instance;
+    }
+
+    public void forcePauseOnExit() {
+        if (running && !isBreak && currentSessionId != -1) {
+            timeline.stop();
+            running = false;
+            sessionManager.pauseSession(currentSessionId);
         }
     }
 }

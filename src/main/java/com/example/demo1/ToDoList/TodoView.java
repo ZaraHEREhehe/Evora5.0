@@ -46,6 +46,7 @@ public class TodoView {
     private StackPane overlayRoot;
     private final int CURRENT_USER_ID = 1;
     private static final DataFormat TODO_FORMAT = new DataFormat("application/x-todo-object");
+    String userName;
 
     public TodoView() {
         this.db = new Database();
@@ -57,6 +58,13 @@ public class TodoView {
         this(); // Call the no-arg constructor
         this.stage = stage;
     }
+
+    public void setUsername(String userName)
+    {
+        this.userName = userName;
+    }
+
+
     public void show() {
         if (scene == null) {
             root = new BorderPane();
@@ -71,7 +79,7 @@ public class TodoView {
                 // The Dashboard will handle the actual navigation
             });
 
-            Sidebar sidebar = new Sidebar(sidebarController, "Zara");
+            Sidebar sidebar = new Sidebar(sidebarController, userName, CURRENT_USER_ID);
             root.setLeft(sidebar);
 
             scene = new Scene(root, 1400, 900);

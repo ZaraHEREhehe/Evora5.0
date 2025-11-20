@@ -26,7 +26,6 @@ public class Sidebar extends VBox {
     private final SidebarController controller;
     private final Map<String, Button> navButtons = new HashMap<>();
     private VBox mascotContainer; // Store reference to update it
-    private VBox experienceContainer; // Store reference to update experience
     private Label expLabel;
 
     // Pastel color palette matching the dashboard
@@ -47,75 +46,85 @@ public class Sidebar extends VBox {
     private final String PASTEL_FOREST = "#343A26";
     private final String PASTEL_GOLD = "#FFD700";
 
-    public Sidebar(SidebarController controller, String userName) {
+    public Sidebar(SidebarController controller, String userName, int userId) {
         this.controller = controller;
         setupSidebar();
         createHeader(userName);
         createNavButtons();
-        createExperienceSection();
         createMascotSection();
+        // Initialize with current experience from database
+        refreshExperienceFromDatabase(userId);
     }
 
-    // Add this method to create the experience display
-    private void createExperienceSection() {
-        experienceContainer = new VBox(5);
-        experienceContainer.setAlignment(Pos.CENTER);
-        experienceContainer.setPadding(new Insets(12, 15, 12, 15));
-        experienceContainer.setBackground(new Background(new BackgroundFill(
-                Color.web(PASTEL_IVORY),
-                new CornerRadii(12),
-                Insets.EMPTY
-        )));
-        experienceContainer.setBorder(new Border(new BorderStroke(
-                Color.web(PASTEL_GOLD, 0.3),
-                BorderStrokeStyle.SOLID,
-                new CornerRadii(12),
-                new BorderWidths(1.5)
-        )));
-        experienceContainer.setEffect(new DropShadow(5, Color.web(PASTEL_GOLD, 0.2)));
+    // Add this method to update the mascot display with integrated experience
+    public void updateMascot(String petName, String species, String gifFilename) {
+        if (mascotContainer != null) {
+            mascotContainer.getChildren().clear();
 
-        // Experience icon and text
-        HBox expBox = new HBox(8);
-        expBox.setAlignment(Pos.CENTER);
+            // Create main content container
+            VBox contentBox = new VBox(8);
+            contentBox.setAlignment(Pos.CENTER);
+            contentBox.setPadding(new Insets(10));
 
-        Label starIcon = new Label("⭐");
-        starIcon.setFont(Font.font(14));
+            try {
+                // Try to load the pet GIF
+                ImageView petImage = new ImageView(new Image(getPetGifPath(gifFilename), 60, 60, true, true));
+                contentBox.getChildren().add(petImage);
+            } catch (Exception e) {
+                // Fallback to species emoji
+                Label emojiLabel = new Label(getSpeciesEmoji(species));
+                emojiLabel.setFont(Font.font(36));
+                contentBox.getChildren().add(emojiLabel);
+            }
 
-        expLabel = new Label("800 XP");
-        expLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-        expLabel.setTextFill(Color.web(PASTEL_FOREST));
+            // Pet name only (no species)
+            Label mascotText = new Label(petName);
+            mascotText.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
+            mascotText.setTextFill(Color.web(PASTEL_FOREST));
+            mascotText.setAlignment(Pos.CENTER);
+            mascotText.setWrapText(true);
+            mascotText.setMaxWidth(150);
 
-        // Sparkle emoji for cuteness
-        Label sparkle = new Label("✨");
-        sparkle.setFont(Font.font(12));
+            // Experience display integrated below pet name
+            HBox expBox = new HBox(5);
+            expBox.setAlignment(Pos.CENTER);
 
-        expBox.getChildren().addAll(starIcon, expLabel, sparkle);
-        experienceContainer.getChildren().add(expBox);
-        this.getChildren().add(experienceContainer);
+            Label starIcon = new Label("⭐");
+            starIcon.setFont(Font.font(12));
+
+            expLabel = new Label("Loading...");
+            expLabel.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 12));
+            expLabel.setTextFill(Color.web(PASTEL_SAGE));
+
+            expBox.getChildren().addAll(starIcon, expLabel);
+
+            contentBox.getChildren().addAll(mascotText, expBox);
+            mascotContainer.getChildren().add(contentBox);
+        }
     }
 
-    // Simple method to update experience - just call this whenever exp changes
+    // Simple method to update experience
     public void updateExperience(int newExp) {
-        expLabel.setText(newExp + " XP");
+        if (expLabel != null) {
+            expLabel.setText(newExp + " XP");
 
-        // Cute little animation
-        experienceContainer.setScaleX(1.05);
-        experienceContainer.setScaleY(1.05);
+            // Cute little animation
+            expLabel.setScaleX(1.1);
+            expLabel.setScaleY(1.1);
+            expLabel.setTextFill(Color.web(PASTEL_GOLD));
 
-        javafx.animation.ScaleTransition scaleTransition =
-                new javafx.animation.ScaleTransition(javafx.util.Duration.millis(200), experienceContainer);
-        scaleTransition.setToX(1.0);
-        scaleTransition.setToY(1.0);
-        scaleTransition.play();
+            javafx.animation.ScaleTransition scaleTransition =
+                    new javafx.animation.ScaleTransition(javafx.util.Duration.millis(200), expLabel);
+            scaleTransition.setToX(1.0);
+            scaleTransition.setToY(1.0);
+            scaleTransition.play();
 
-        // Add sparkle effect temporarily
-        experienceContainer.setEffect(new DropShadow(10, Color.web(PASTEL_GOLD)));
-
-        javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(500));
-        pause.setOnFinished(e -> {
-            experienceContainer.setEffect(new DropShadow(5, Color.web(PASTEL_GOLD, 0.2)));
-        });
-        pause.play();
+            javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(500));
+            pause.setOnFinished(e -> {
+                expLabel.setTextFill(Color.web(PASTEL_SAGE));
+            });
+            pause.play();
+        }
     }
 
     public void refreshExperienceFromDatabase(int userId) {
@@ -140,34 +149,6 @@ public class Sidebar extends VBox {
             e.printStackTrace();
         }
         return 0;
-    }
-
-
-    // Add this method to update the mascot display
-    public void updateMascot(String petName, String species, String gifFilename) {
-        if (mascotContainer != null) {
-            mascotContainer.getChildren().clear();
-
-            try {
-                // Try to load the pet GIF
-                ImageView petImage = new ImageView(new Image(getPetGifPath(gifFilename), 60, 60, true, true));
-                mascotContainer.getChildren().add(petImage);
-            } catch (Exception e) {
-                // Fallback to species emoji
-                Label emojiLabel = new Label(getSpeciesEmoji(species));
-                emojiLabel.setFont(Font.font(36));
-                mascotContainer.getChildren().add(emojiLabel);
-            }
-
-            Label mascotText = new Label(petName + " the " + species);
-            mascotText.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-            mascotText.setTextFill(Color.web(PASTEL_FOREST));
-            mascotText.setAlignment(Pos.CENTER);
-            mascotText.setWrapText(true);
-            mascotText.setMaxWidth(150);
-
-            mascotContainer.getChildren().add(mascotText);
-        }
     }
 
     // Helper method to get GIF path
@@ -386,7 +367,17 @@ public class Sidebar extends VBox {
         defaultText.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
         defaultText.setTextFill(Color.web(PASTEL_FOREST));
 
-        mascotContainer.getChildren().addAll(defaultMascot, defaultText);
+        // Temporary experience display until mascot is updated
+        HBox tempExpBox = new HBox(5);
+        tempExpBox.setAlignment(Pos.CENTER);
+        Label tempStar = new Label("⭐");
+        tempStar.setFont(Font.font(12));
+        expLabel = new Label("Loading...");
+        expLabel.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 12));
+        expLabel.setTextFill(Color.web(PASTEL_SAGE));
+        tempExpBox.getChildren().addAll(tempStar, expLabel);
+
+        mascotContainer.getChildren().addAll(defaultMascot, defaultText, tempExpBox);
 
         // Logout button
         Button logoutBtn = new Button("🚪 Log Out");
