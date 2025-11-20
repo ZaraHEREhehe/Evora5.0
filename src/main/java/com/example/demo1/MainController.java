@@ -3,6 +3,8 @@ package com.example.demo1;
 
 import com.example.demo1.Mood.MoodController;
 import com.example.demo1.Mood.MoodView;
+import com.example.demo1.Pets.PetsController;
+import com.example.demo1.Pets.PetsView;
 import com.example.demo1.Sidebar.Sidebar;
 import com.example.demo1.Sidebar.SidebarController;
 import com.example.demo1.Notes.NotesView;
@@ -11,6 +13,7 @@ import com.example.demo1.Calendar.CalendarView;
 import com.example.demo1.ToDoList.TodoView;
 import com.example.demo1.WhiteNoise.WhiteNoiseView;
 import com.example.demo1.Theme.ThemeManager;
+import com.example.demo1.Pomodoro.PomodoroController;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -61,6 +64,11 @@ public class MainController {
         sidebar = new Sidebar(sidebarController, userName);
         root.setLeft(sidebar);
 
+        // Set initial pet in sidebar
+        PetsController petsController = new PetsController(userId);
+        PetsController.PetInfo initialPet = petsController.getCurrentPetForSidebar();
+        sidebar.updateMascot(initialPet.getName(), initialPet.getSpecies(), initialPet.getGifFilename());
+
         showDashboard();
 
         // Dynamic layout with minimum size (copied exactly from Dashboard)
@@ -102,7 +110,7 @@ public class MainController {
                 showNotes();
                 break;
             case "pet":
-                System.out.println("Navigating to Pet");
+                showPets();
                 break;
             case "stats":
                 System.out.println("Navigating to Analytics");
@@ -134,6 +142,24 @@ public class MainController {
         MoodController moodController = new MoodController(userId);
         MoodView moodView = new MoodView(moodController);
         root.setCenter(moodView);
+    }
+
+    private void showPets() {
+        PetsController petsController = new PetsController(userId);
+
+        // Set up the listener to update sidebar when pet changes
+        petsController.setPetChangeListener(() -> {
+            // When pet changes, update the sidebar mascot
+            PetsController.PetInfo currentPet = petsController.getCurrentPetForSidebar();
+            sidebar.updateMascot(currentPet.getName(), currentPet.getSpecies(), currentPet.getGifFilename());
+        });
+
+        PetsView petsView = new PetsView(petsController);
+        root.setCenter(petsView);
+
+        // Also update sidebar with current pet when first loading pets tab
+        PetsController.PetInfo currentPet = petsController.getCurrentPetForSidebar();
+        sidebar.updateMascot(currentPet.getName(), currentPet.getSpecies(), currentPet.getGifFilename());
     }
 
 
@@ -323,6 +349,14 @@ public class MainController {
         try {
             FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/example/demo1/Pomodoro/Pomodoro.fxml"));
             Pane pomodoroContent = fxmlLoader.load();
+
+            // Get the controller instance from the FXML loader
+            // added these after setting the db up
+            PomodoroController pomodoroController = fxmlLoader.getController();
+            pomodoroController.setUserId(userId);
+            // Create pets controller and set it on the pomodoro controller
+            PetsController petsController = new PetsController(userId);
+            pomodoroController.setPetsController(petsController);
 
             // Apply the pastel theme to the loaded content
             pomodoroContent.setStyle("-fx-background-color: " + PASTEL_BLUSH + ";");
