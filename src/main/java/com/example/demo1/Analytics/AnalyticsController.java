@@ -6,11 +6,7 @@ import javafx.collections.ObservableList;
 import com.example.demo1.Database.DatabaseConfig;
 import java.sql.*;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.DayOfWeek;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.*;
 
 public class AnalyticsController {
 
@@ -54,13 +50,131 @@ public class AnalyticsController {
         refreshData();
     }
 
-    // Add this missing method
+    // Get user XP from database
+    public int getUserXP() {
+        String sql = "SELECT experience FROM Users WHERE user_id = ?";
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, userId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt("experience");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    // Get real achievements from database with user progress
+    public List<Achievement> getRealAchievements() {
+        List<Achievement> achievements = new ArrayList<>();
+        String sql = """
+            SELECT 
+                b.badge_id,
+                b.badge_icon,
+                b.name,
+                b.description,
+                b.condition_type,
+                b.condition_value,
+                CASE WHEN ub.user_id IS NOT NULL THEN 1 ELSE 0 END as is_unlocked,
+                ub.earned_date,
+                -- Calculate current progress based on condition_type
+                CASE 
+                    WHEN b.condition_type = 'tasks_completed' THEN 
+                        (SELECT COUNT(*) FROM ToDoTasks WHERE user_id = ? AND is_completed = 1)
+                    WHEN b.condition_type = 'pomodoro_sessions' THEN 
+                        (SELECT COUNT(*) FROM PomodoroSessions WHERE user_id = ? AND status = 'Completed')
+                    WHEN b.condition_type = 'notes_created' THEN 
+                        (SELECT COUNT(*) FROM StickyNotes WHERE user_id = ?)
+                    WHEN b.condition_type = 'mood_entries' THEN 
+                        (SELECT COUNT(*) FROM MoodLogger WHERE user_id = ?)
+                    ELSE 0
+                END as current_progress
+            FROM Badges b
+            LEFT JOIN UserBadges ub ON b.badge_id = ub.badge_id AND ub.user_id = ?
+            ORDER BY b.badge_id
+            """;
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            // Set parameters for all the user_id placeholders
+            for (int i = 1; i <= 5; i++) {
+                stmt.setInt(i, userId);
+            }
+
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                Achievement achievement = new Achievement(
+                        rs.getString("name"),
+                        rs.getString("description"),
+                        rs.getString("badge_icon"),
+                        rs.getInt("current_progress"),
+                        rs.getInt("condition_value"),
+                        rs.getBoolean("is_unlocked"),
+                        getAchievementColor(rs.getString("condition_type"))
+                );
+
+                achievements.add(achievement);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            // Fallback to mock achievements if database fails
+            return getMockAchievements();
+        }
+
+        return achievements;
+    }
+
+    // Helper method to get color based on achievement type
+    private String getAchievementColor(String conditionType) {
+        switch (conditionType) {
+            case "tasks_completed": return "#F472B6"; // Pink
+            case "pomodoro_sessions": return "#60A5FA"; // Blue
+            case "notes_created": return "#34D399"; // Green
+            case "mood_entries": return "#A78BFA"; // Purple
+            default: return "#FBBF24"; // Yellow
+        }
+    }
+
+    // Mock achievements fallback
+    private List<Achievement> getMockAchievements() {
+        List<Achievement> mockAchievements = new ArrayList<>();
+        mockAchievements.add(new Achievement("First Steps", "Complete your first task", "🌟", 1, 1, true, "#F472B6"));
+        mockAchievements.add(new Achievement("Focus Master", "Complete 5 pomodoro sessions", "⚡", 3, 5, false, "#60A5FA"));
+        mockAchievements.add(new Achievement("Note Taker", "Create 10 sticky notes", "📝", 8, 10, false, "#34D399"));
+        mockAchievements.add(new Achievement("Mood Tracker", "Log 20 mood entries", "😊", 15, 20, false, "#A78BFA"));
+        mockAchievements.add(new Achievement("Task Champion", "Complete 50 tasks", "👑", 47, 50, false, "#FBBF24"));
+        mockAchievements.add(new Achievement("Productivity Guru", "Complete 25 pomodoro sessions", "🏆", 23, 25, false, "#A78BFA"));
+        return mockAchievements;
+    }
+
+    // You might also want to add a method to check and award any new badges
+    public void checkAndAwardNewBadges() {
+        String sql = "EXEC CheckAllBadgesForUser ?";
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, userId);
+            stmt.execute();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void setTimeRange(String timeRange) {
         this.currentTimeRange = timeRange.toLowerCase();
         refreshData();
     }
 
-    // Add this missing method
     public String getCurrentTimeRange() {
         return currentTimeRange;
     }
@@ -163,9 +277,9 @@ public class AnalyticsController {
 
     private void loadStreakStatistics(Connection conn) throws SQLException {
         // Improved streak calculation
-        String streakSql = "SELECT DISTINCT entry_date FROM MoodLogger " +
+        String streakSql = "SELECT DISTINCT CAST(entry_date as DATE) as activity_date FROM MoodLogger " +
                 "WHERE user_id = ? AND entry_date >= DATEADD(day, -30, GETDATE()) " +
-                "ORDER BY entry_date DESC";
+                "ORDER BY activity_date DESC";
 
         try (PreparedStatement stmt = conn.prepareStatement(streakSql)) {
             stmt.setInt(1, userId);
@@ -178,7 +292,7 @@ public class AnalyticsController {
             LocalDate expectedDate = null;
 
             while (rs.next()) {
-                LocalDate currentDate = rs.getDate("entry_date").toLocalDate();
+                LocalDate currentDate = rs.getDate("activity_date").toLocalDate();
 
                 if (lastDate == null) {
                     currentStreakCount = 1;
@@ -204,9 +318,9 @@ public class AnalyticsController {
 
     private void loadPetAndCoinStatistics(Connection conn) throws SQLException {
         // Get actual pet happiness from database if available
-        String petSql = "SELECT COUNT(*) as active_days FROM (" +
-                "SELECT CAST(created_at as DATE) as activity_date FROM ToDoTasks WHERE user_id = ? AND is_completed = 1 " +
-                "UNION SELECT CAST(start_time as DATE) as activity_date FROM PomodoroSessions WHERE user_id = ? AND status = 'Completed'" +
+        String petSql = "SELECT COUNT(DISTINCT CAST(activity_date as DATE)) as active_days FROM (" +
+                "SELECT created_at as activity_date FROM ToDoTasks WHERE user_id = ? AND is_completed = 1 " +
+                "UNION ALL SELECT start_time as activity_date FROM PomodoroSessions WHERE user_id = ? AND status = 'Completed'" +
                 ") activities WHERE activity_date >= DATEADD(day, -7, GETDATE())";
 
         try (PreparedStatement stmt = conn.prepareStatement(petSql)) {
@@ -436,35 +550,41 @@ public class AnalyticsController {
         weeklyData.clear();
         if ("month".equals(currentTimeRange)) {
             weeklyData.addAll(
-                    new WeeklyData("Week 1", 15, 8, 4),
-                    new WeeklyData("Week 2", 22, 12, 5),
-                    new WeeklyData("Week 3", 18, 10, 4),
-                    new WeeklyData("Week 4", 25, 14, 5)
+                    Arrays.asList(
+                            new WeeklyData("Week 1", 15, 8, 4),
+                            new WeeklyData("Week 2", 22, 12, 5),
+                            new WeeklyData("Week 3", 18, 10, 4),
+                            new WeeklyData("Week 4", 25, 14, 5)
+                    )
             );
         } else if ("year".equals(currentTimeRange)) {
             weeklyData.addAll(
-                    new WeeklyData("Jan", 45, 20, 4),
-                    new WeeklyData("Feb", 52, 25, 4),
-                    new WeeklyData("Mar", 48, 22, 4),
-                    new WeeklyData("Apr", 55, 28, 5),
-                    new WeeklyData("May", 60, 30, 5),
-                    new WeeklyData("Jun", 58, 29, 4),
-                    new WeeklyData("Jul", 42, 18, 3),
-                    new WeeklyData("Aug", 50, 24, 4),
-                    new WeeklyData("Sep", 65, 32, 5),
-                    new WeeklyData("Oct", 70, 35, 5),
-                    new WeeklyData("Nov", 68, 34, 5),
-                    new WeeklyData("Dec", 40, 15, 4)
+                    Arrays.asList(
+                            new WeeklyData("Jan", 45, 20, 4),
+                            new WeeklyData("Feb", 52, 25, 4),
+                            new WeeklyData("Mar", 48, 22, 4),
+                            new WeeklyData("Apr", 55, 28, 5),
+                            new WeeklyData("May", 60, 30, 5),
+                            new WeeklyData("Jun", 58, 29, 4),
+                            new WeeklyData("Jul", 42, 18, 3),
+                            new WeeklyData("Aug", 50, 24, 4),
+                            new WeeklyData("Sep", 65, 32, 5),
+                            new WeeklyData("Oct", 70, 35, 5),
+                            new WeeklyData("Nov", 68, 34, 5),
+                            new WeeklyData("Dec", 40, 15, 4)
+                    )
             );
         } else {
             weeklyData.addAll(
-                    new WeeklyData("Mon", 8, 4, 4),
-                    new WeeklyData("Tue", 6, 3, 5),
-                    new WeeklyData("Wed", 10, 5, 4),
-                    new WeeklyData("Thu", 7, 4, 3),
-                    new WeeklyData("Fri", 9, 6, 5),
-                    new WeeklyData("Sat", 4, 2, 4),
-                    new WeeklyData("Sun", 3, 1, 4)
+                    Arrays.asList(
+                            new WeeklyData("Mon", 8, 4, 4),
+                            new WeeklyData("Tue", 6, 3, 5),
+                            new WeeklyData("Wed", 10, 5, 4),
+                            new WeeklyData("Thu", 7, 4, 3),
+                            new WeeklyData("Fri", 9, 6, 5),
+                            new WeeklyData("Sat", 4, 2, 4),
+                            new WeeklyData("Sun", 3, 1, 4)
+                    )
             );
         }
     }
@@ -490,10 +610,12 @@ public class AnalyticsController {
                     int total = rs.getInt("total");
                     if (total > 0) {
                         moodDistribution.addAll(
-                                new MoodDistribution("Excellent", (int) ((rs.getInt("excellent") / (double) total) * 100), colors.get("pink")),
-                                new MoodDistribution("Good", (int) ((rs.getInt("good") / (double) total) * 100), colors.get("green")),
-                                new MoodDistribution("Neutral", (int) ((rs.getInt("neutral") / (double) total) * 100), colors.get("lightBlue")),
-                                new MoodDistribution("Low", (int) ((rs.getInt("low") / (double) total) * 100), colors.get("yellow"))
+                                Arrays.asList(
+                                        new MoodDistribution("Excellent", (int) ((rs.getInt("excellent") / (double) total) * 100), colors.get("pink")),
+                                        new MoodDistribution("Good", (int) ((rs.getInt("good") / (double) total) * 100), colors.get("green")),
+                                        new MoodDistribution("Neutral", (int) ((rs.getInt("neutral") / (double) total) * 100), colors.get("lightBlue")),
+                                        new MoodDistribution("Low", (int) ((rs.getInt("low") / (double) total) * 100), colors.get("yellow"))
+                                )
                         );
                         return;
                     }
@@ -505,71 +627,19 @@ public class AnalyticsController {
 
         // Fallback mock data
         moodDistribution.addAll(
-                new MoodDistribution("Excellent", 25, colors.get("pink")),
-                new MoodDistribution("Good", 35, colors.get("green")),
-                new MoodDistribution("Neutral", 25, colors.get("lightBlue")),
-                new MoodDistribution("Low", 15, colors.get("yellow"))
+                Arrays.asList(
+                        new MoodDistribution("Excellent", 25, colors.get("pink")),
+                        new MoodDistribution("Good", 35, colors.get("green")),
+                        new MoodDistribution("Neutral", 25, colors.get("lightBlue")),
+                        new MoodDistribution("Low", 15, colors.get("yellow"))
+                )
         );
     }
 
     private void generateAchievements() {
         achievements.clear();
-
-        try (Connection conn = getConnection()) {
-            // Get actual achievement progress from database
-            String tasksSql = "SELECT COUNT(*) as completed FROM ToDoTasks WHERE user_id = ? AND is_completed = 1";
-            String pomodoroSql = "SELECT COUNT(*) as sessions FROM PomodoroSessions WHERE user_id = ? AND status = 'Completed'";
-            String moodSql = "SELECT COUNT(*) as entries FROM MoodLogger WHERE user_id = ?";
-
-            int completedTasks = 0;
-            int completedSessions = 0;
-            int moodEntriesCount = 0;
-
-            try (PreparedStatement stmt = conn.prepareStatement(tasksSql)) {
-                stmt.setInt(1, userId);
-                ResultSet rs = stmt.executeQuery();
-                if (rs.next()) completedTasks = rs.getInt("completed");
-            }
-
-            try (PreparedStatement stmt = conn.prepareStatement(pomodoroSql)) {
-                stmt.setInt(1, userId);
-                ResultSet rs = stmt.executeQuery();
-                if (rs.next()) completedSessions = rs.getInt("sessions");
-            }
-
-            try (PreparedStatement stmt = conn.prepareStatement(moodSql)) {
-                stmt.setInt(1, userId);
-                ResultSet rs = stmt.executeQuery();
-                if (rs.next()) moodEntriesCount = rs.getInt("entries");
-            }
-
-            achievements.addAll(
-                    new Achievement("Getting Started", "Complete tasks for 5 days in a row", "📅",
-                            currentStreak.get() >= 5, Math.min(currentStreak.get(), 5), 5, colors.get("pink")),
-                    new Achievement("Pomodoro Master", "Complete 25 pomodoro sessions", "⏰",
-                            completedSessions >= 25, Math.min(completedSessions, 25), 25, colors.get("blue")),
-                    new Achievement("Mood Keeper", "Log your mood for 14 consecutive days", "❤️",
-                            currentStreak.get() >= 14, Math.min(currentStreak.get(), 14), 14, colors.get("purple")),
-                    new Achievement("Task Completionist", "Complete 100 tasks total", "✓",
-                            completedTasks >= 100, Math.min(completedTasks, 100), 100, colors.get("green")),
-                    new Achievement("Pet Whisperer", "Keep pet happiness above 80% for a week", "⭐",
-                            petHappiness.get() >= 80, petHappiness.get() >= 80 ? 7 : 0, 7, colors.get("yellow")),
-                    new Achievement("Focus Champion", "Accumulate 10 hours of focused work time", "🎯",
-                            focusMinutes.get() >= 600, Math.min(focusMinutes.get(), 600), 600, colors.get("lightPurple"))
-            );
-
-        } catch (SQLException e) {
-            System.err.println("Error generating achievements: " + e.getMessage());
-            // Fallback to mock data
-            achievements.addAll(
-                    new Achievement("Getting Started", "Complete tasks for 5 days in a row", "📅", true, 5, 5, colors.get("pink")),
-                    new Achievement("Pomodoro Master", "Complete 25 pomodoro sessions", "⏰", false, 23, 25, colors.get("blue")),
-                    new Achievement("Mood Keeper", "Log your mood for 14 consecutive days", "❤️", false, 12, 14, colors.get("purple")),
-                    new Achievement("Task Completionist", "Complete 100 tasks total", "✓", false, 47, 100, colors.get("green")),
-                    new Achievement("Pet Whisperer", "Keep pet happiness above 80% for a week", "⭐", true, 7, 7, colors.get("yellow")),
-                    new Achievement("Focus Champion", "Accumulate 10 hours of focused work time", "🎯", false, 575, 600, colors.get("lightPurple"))
-            );
-        }
+        // This is now handled by getRealAchievements()
+        achievements.addAll(getMockAchievements());
     }
 
     private void loadMockStatistics() {
@@ -642,27 +712,28 @@ public class AnalyticsController {
         private final String title;
         private final String description;
         private final String emoji;
-        private final boolean unlocked;
         private final int progress;
         private final int maxProgress;
+        private final boolean unlocked;
         private final String color;
 
-        public Achievement(String title, String description, String emoji, boolean unlocked, int progress, int maxProgress, String color) {
+        public Achievement(String title, String description, String emoji,
+                           int progress, int maxProgress, boolean unlocked, String color) {
             this.title = title;
             this.description = description;
             this.emoji = emoji;
-            this.unlocked = unlocked;
             this.progress = progress;
             this.maxProgress = maxProgress;
+            this.unlocked = unlocked;
             this.color = color;
         }
 
         public String getTitle() { return title; }
         public String getDescription() { return description; }
         public String getEmoji() { return emoji; }
-        public boolean isUnlocked() { return unlocked; }
         public int getProgress() { return progress; }
         public int getMaxProgress() { return maxProgress; }
+        public boolean isUnlocked() { return unlocked; }
         public String getColor() { return color; }
     }
 }

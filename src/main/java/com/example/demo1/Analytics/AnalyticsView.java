@@ -64,6 +64,15 @@ public class AnalyticsView {
         // Time range selector
         HBox timeRangeSelector = createTimeRangeSelector();
 
+        // Listen for tab changes to show/hide time range
+        tabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
+            if (newTab != null) {
+                boolean isAchievementsTab = "Achievements".equals(newTab.getText());
+                timeRangeSelector.setVisible(!isAchievementsTab);
+                timeRangeSelector.setManaged(!isAchievementsTab);
+            }
+        });
+
         mainContent.getChildren().addAll(header, navBar, timeRangeSelector, tabPane);
 
         return mainContent;
@@ -233,9 +242,34 @@ public class AnalyticsView {
         Tab wellbeingTab = new Tab("Wellbeing", createWellbeingContent());
         Tab achievementsTab = new Tab("Achievements", createAchievementsContent());
 
-        // Hide the tab headers but keep the content visible
-        tabPane.setStyle("-fx-tab-max-height: 0; -fx-tab-min-height: 0; -fx-tab-max-width: 0; -fx-tab-min-width: 0;");
-        tabPane.getTabs().forEach(tab -> tab.setStyle("-fx-padding: 0; -fx-background-color: transparent;"));
+        // Nuclear option - hide everything
+        tabPane.setStyle(
+                "-fx-tab-max-height: 0; " +
+                        "-fx-tab-min-height: 0; " +
+                        "-fx-background-color: transparent; " +
+                        "-fx-border-color: transparent; " +
+                        "-fx-padding: 0; " +
+                        "-fx-background-insets: 0; " +
+                        "-fx-border-insets: 0; " +
+                        "-fx-border-width: 0; " +
+                        "-fx-control-inner-background: transparent; " +
+                        "-fx-shadow-highlight-color: transparent; " +
+                        "-fx-outer-border: transparent; " +
+                        "-fx-inner-border: transparent; " +
+                        "-fx-body-color: transparent; " +
+                        "-fx-focus-color: transparent; " +
+                        "-fx-faint-focus-color: transparent;"
+        );
+
+        // Hide individual tabs
+        for (Tab tab : tabPane.getTabs()) {
+            tab.setStyle(
+                    "-fx-padding: 0; " +
+                            "-fx-background-color: transparent; " +
+                            "-fx-background-insets: 0; " +
+                            "-fx-border-width: 0;"
+            );
+        }
 
         // Reset time range to weekly when switching tabs
         tabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
@@ -1027,10 +1061,68 @@ public class AnalyticsView {
         else return "Your pet needs attention";
     }
 
+
+    private VBox createLevelCard() {
+        VBox card = new VBox(15);
+        card.setPadding(new Insets(25));
+        card.setStyle("-fx-background-color: linear-gradient(to bottom right, #E2D6FF, #F0D2F7); " +
+                "-fx-background-radius: 20; -fx-border-color: #C084FC; -fx-border-width: 2; " +
+                "-fx-border-radius: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.5, 0, 6);");
+        card.setMaxWidth(800);
+        card.setAlignment(Pos.CENTER);
+
+        // Get user XP and calculate level
+        int userXP = controller.getUserXP();
+        int currentLevel = calculateLevel(userXP);
+        int xpForNextLevel = getXpForLevel(currentLevel + 1);
+        int xpForCurrentLevel = getXpForLevel(currentLevel);
+        int xpProgress = userXP - xpForCurrentLevel;
+        int xpNeeded = xpForNextLevel - xpForCurrentLevel;
+        double progressPercentage = (double) xpProgress / xpNeeded;
+
+        Label levelIcon = new Label("⭐");
+        levelIcon.setStyle("-fx-font-size: 32;");
+
+        Label levelTitle = new Label("Level " + currentLevel + " " + getLevelTitle(currentLevel));
+        levelTitle.setStyle("-fx-font-size: 24; -fx-font-weight: bold; -fx-text-fill: #5c5470;");
+
+        Label xpLabel = new Label(userXP + " Total XP");
+        xpLabel.setStyle("-fx-font-size: 16; -fx-text-fill: #756f86;");
+
+        // Progress bar
+        ProgressBar progressBar = new ProgressBar();
+        progressBar.setProgress(progressPercentage);
+        progressBar.setPrefWidth(400);
+        progressBar.setPrefHeight(12);
+        progressBar.setStyle("-fx-accent: #A78BFA; -fx-background-color: #E5E7EB; -fx-background-radius: 6;");
+
+        Label progressLabel = new Label(xpProgress + "/" + xpNeeded + " XP to Level " + (currentLevel + 1));
+        progressLabel.setStyle("-fx-font-size: 14; -fx-text-fill: #5c5470; -fx-font-weight: bold;");
+
+        card.getChildren().addAll(levelIcon, levelTitle, xpLabel, progressBar, progressLabel);
+        return card;
+    }
+
+    private int calculateLevel(int xp) {
+        if (xp < 1000) return 1;      // Newbie
+        if (xp < 2500) return 2;      // Beginner
+        if (xp < 5000) return 3;      // Enthusiast
+        if (xp < 10000) return 4;     // Productive
+        if (xp < 20000) return 5;     // Focused
+        if (xp < 40000) return 6;     // Master
+        if (xp < 80000) return 7;     // Guru
+        if (xp < 150000) return 8;    // Legend
+        if (xp < 300000) return 9;    // Elite
+        return 10 + (xp - 300000) / 100000; // Every 100k XP after 300k
+    }
+
     private Node createAchievementsContent() {
         VBox content = new VBox(25);
         content.setAlignment(Pos.TOP_CENTER);
         content.setPadding(new Insets(10));
+
+        // Level and XP Card
+        VBox levelCard = createLevelCard();
 
         FlowPane achievementsGrid = new FlowPane();
         achievementsGrid.setHgap(25);
@@ -1039,15 +1131,49 @@ public class AnalyticsView {
         achievementsGrid.setAlignment(Pos.CENTER);
         achievementsGrid.setPadding(new Insets(10));
 
-        for (AnalyticsController.Achievement achievement : controller.getAchievements()) {
+        // Get real badges from database instead of mock data
+        for (AnalyticsController.Achievement achievement : controller.getRealAchievements()) {
             VBox achievementCard = createAchievementCard(achievement);
             achievementsGrid.getChildren().add(achievementCard);
         }
 
         VBox progressSummary = createProgressSummary();
 
-        content.getChildren().addAll(achievementsGrid, progressSummary);
+        content.getChildren().addAll(levelCard, achievementsGrid, progressSummary);
         return content;
+    }
+
+
+
+    private int getXpForLevel(int level) {
+        switch (level) {
+            case 1: return 0;
+            case 2: return 1000;
+            case 3: return 2500;
+            case 4: return 5000;
+            case 5: return 10000;
+            case 6: return 20000;
+            case 7: return 40000;
+            case 8: return 80000;
+            case 9: return 150000;
+            case 10: return 300000;
+            default: return 300000 + (level - 10) * 100000;
+        }
+    }
+
+    private String getLevelTitle(int level) {
+        switch (level) {
+            case 1: return "Newbie";
+            case 2: return "Beginner";
+            case 3: return "Enthusiast";
+            case 4: return "Productive";
+            case 5: return "Focused";
+            case 6: return "Master";
+            case 7: return "Guru";
+            case 8: return "Legend";
+            case 9: return "Elite";
+            default: return "Grand Master";
+        }
     }
 
     private VBox createAchievementCard(AnalyticsController.Achievement achievement) {
