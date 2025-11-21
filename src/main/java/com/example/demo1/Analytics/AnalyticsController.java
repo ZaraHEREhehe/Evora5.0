@@ -74,7 +74,7 @@ public class AnalyticsController {
                         (SELECT COUNT(*) FROM (
                             SELECT task_id FROM ToDoTasks WHERE user_id = ? AND is_completed = 1
                             UNION ALL
-                            SELECT log_id FROM TaskCompletionLog WHERE user_id = ?
+                            SELECT log_id FROM TaskDeletionLog WHERE user_id = ? AND is_completed = 1
                         ) AS combined_tasks)
                     WHEN b.condition_type = 'pomodoro_sessions' THEN 
                         (SELECT COUNT(*) FROM PomodoroSessions WHERE user_id = ? AND status = 'Completed')
@@ -89,7 +89,7 @@ public class AnalyticsController {
                             FROM (
                                 SELECT CAST(created_at as DATE) as activity_date FROM ToDoTasks WHERE user_id = ? AND is_completed = 1
                                 UNION
-                                SELECT CAST(completed_at as DATE) as activity_date FROM TaskCompletionLog WHERE user_id = ?
+                                SELECT CAST(deleted_at as DATE) as activity_date FROM TaskDeletionLog WHERE user_id = ? AND is_completed = 1
                                 UNION
                                 SELECT CAST(start_time as DATE) as activity_date FROM PomodoroSessions WHERE user_id = ? AND status = 'Completed'
                                 UNION
@@ -120,7 +120,7 @@ public class AnalyticsController {
             stmt.setInt(8, userId);
             stmt.setInt(9, userId);
             stmt.setInt(10, userId);
-            stmt.setInt(11, userId); // This was missing - parameter #11
+            stmt.setInt(11, userId);
 
             ResultSet rs = stmt.executeQuery();
 
@@ -242,9 +242,9 @@ public class AnalyticsController {
                 WHERE user_id = ? AND is_completed = 1 
                 AND created_at """ + dateFilter + """
                 UNION ALL
-                SELECT log_id FROM TaskCompletionLog 
-                WHERE user_id = ? 
-                AND completed_at """ + dateFilter + """
+                SELECT log_id FROM TaskDeletionLog 
+                WHERE user_id = ? AND is_completed = 1
+                AND deleted_at """ + dateFilter + """
             ) combined_tasks
             """;
 
@@ -319,14 +319,15 @@ public class AnalyticsController {
         String activitySql = """
             SELECT DISTINCT activity_date 
             FROM (
-                -- Task completions
+                -- Current task completions
                 SELECT CAST(created_at as DATE) as activity_date 
                 FROM ToDoTasks 
                 WHERE user_id = ? AND is_completed = 1
                 UNION
-                SELECT CAST(completed_at as DATE) as activity_date 
-                FROM TaskCompletionLog 
-                WHERE user_id = ?
+                -- Historical completed tasks from deletion log
+                SELECT CAST(deleted_at as DATE) as activity_date 
+                FROM TaskDeletionLog 
+                WHERE user_id = ? AND is_completed = 1
                 UNION
                 -- Pomodoro sessions
                 SELECT CAST(start_time as DATE) as activity_date 
@@ -604,11 +605,11 @@ public class AnalyticsController {
                     AND created_at >= DATEADD(month, -1, GETDATE())
                     UNION ALL
                     SELECT 
-                        'Week ' + CAST(DATEPART(WEEK, completed_at) - DATEPART(WEEK, DATEADD(MONTH, DATEDIFF(MONTH, 0, completed_at), 0)) + 1 as VARCHAR) as period,
+                        'Week ' + CAST(DATEPART(WEEK, deleted_at) - DATEPART(WEEK, DATEADD(MONTH, DATEDIFF(MONTH, 0, deleted_at), 0)) + 1 as VARCHAR) as period,
                         1 as tasks
-                    FROM TaskCompletionLog 
-                    WHERE user_id = ? 
-                    AND completed_at >= DATEADD(month, -1, GETDATE())
+                    FROM TaskDeletionLog 
+                    WHERE user_id = ? AND is_completed = 1
+                    AND deleted_at >= DATEADD(month, -1, GETDATE())
                 ) combined
                 GROUP BY period
                 ORDER BY MIN(
@@ -634,11 +635,11 @@ public class AnalyticsController {
                     AND created_at >= DATEADD(year, -1, GETDATE())
                     UNION ALL
                     SELECT 
-                        DATENAME(MONTH, completed_at) as period,
+                        DATENAME(MONTH, deleted_at) as period,
                         1 as tasks
-                    FROM TaskCompletionLog 
-                    WHERE user_id = ? 
-                    AND completed_at >= DATEADD(year, -1, GETDATE())
+                    FROM TaskDeletionLog 
+                    WHERE user_id = ? AND is_completed = 1
+                    AND deleted_at >= DATEADD(year, -1, GETDATE())
                 ) combined
                 GROUP BY period
                 ORDER BY MIN(
@@ -672,11 +673,11 @@ public class AnalyticsController {
                     AND created_at >= DATEADD(day, -7, GETDATE())
                     UNION ALL
                     SELECT 
-                        DATENAME(WEEKDAY, completed_at) as period,
+                        DATENAME(WEEKDAY, deleted_at) as period,
                         1 as tasks
-                    FROM TaskCompletionLog 
-                    WHERE user_id = ? 
-                    AND completed_at >= DATEADD(day, -7, GETDATE())
+                    FROM TaskDeletionLog 
+                    WHERE user_id = ? AND is_completed = 1
+                    AND deleted_at >= DATEADD(day, -7, GETDATE())
                 ) combined
                 GROUP BY period
                 ORDER BY MIN(
