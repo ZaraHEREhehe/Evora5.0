@@ -1,6 +1,7 @@
 package com.example.demo1.Sidebar;
 
 import com.example.demo1.Login.LoginView;
+import com.example.demo1.Theme.Pastel;
 import com.example.demo1.Theme.Theme;
 import com.example.demo1.Theme.ThemeManager;
 import javafx.geometry.Insets;
@@ -39,7 +40,7 @@ public class Sidebar extends VBox {
     private ThemeManager themeManager;
 
     // In your Sidebar class, add this to the constructor:
-    public Sidebar(SidebarController controller, String userName) {
+    public Sidebar(SidebarController controller, String userName, int userId) {
         this.controller = controller;
         this.themeManager = ThemeManager.getInstance();
 
@@ -48,6 +49,7 @@ public class Sidebar extends VBox {
 
         setupSidebar();
         createHeader(userName);
+       // createMascotSection();
         createNavButtons();
         createMascotSection();
         // Initialize with current experience from database
@@ -86,7 +88,7 @@ public class Sidebar extends VBox {
             // Pet name only (no species)
             Label mascotText = new Label(petName);
             mascotText.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-            mascotText.setTextFill(Color.web(PASTEL_FOREST));
+            mascotText.setTextFill(Color.web(Pastel.FOREST));
             mascotText.setAlignment(Pos.CENTER);
             mascotText.setWrapText(true);
             mascotText.setMaxWidth(150);
@@ -225,11 +227,14 @@ public class Sidebar extends VBox {
             btn.setEffect(new DropShadow(10, Color.web(color).darker()));
         });
     }
+
     private String getButtonColor(String buttonId, Theme theme) {
         // Simple color mapping that works with all themes
         switch (buttonId) {
-            case "dashboard": return theme.getPrimaryColor();        // PINK
-            case "todos": return theme.getSecondaryColor();         // LAVENDER
+            case "dashboard":
+                return theme.getPrimaryColor();        // PINK
+            case "todos":
+                return theme.getSecondaryColor();         // LAVENDER
             case "timer": return theme.getAccentColor();            // PURPLE
             case "notes": return theme.getStatCardColor3();         // BLUE (better than success green)
             case "pet": return theme.getStatCardColor4();           // LILAC
@@ -250,7 +255,7 @@ public class Sidebar extends VBox {
             // Cute little animation
             expLabel.setScaleX(1.1);
             expLabel.setScaleY(1.1);
-            expLabel.setTextFill(Color.web(PASTEL_GOLD));
+            expLabel.setTextFill(Color.web(Pastel.GOLD));
 
             javafx.animation.ScaleTransition scaleTransition =
                     new javafx.animation.ScaleTransition(javafx.util.Duration.millis(200), expLabel);
@@ -260,7 +265,7 @@ public class Sidebar extends VBox {
 
             javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(500));
             pause.setOnFinished(e -> {
-                expLabel.setTextFill(Color.web(PASTEL_SAGE));
+                expLabel.setTextFill(Color.web(Pastel.SAGE));
             });
             pause.play();
         }
@@ -429,17 +434,17 @@ public class Sidebar extends VBox {
 
     private String getOriginalColor(String buttonId) {
         switch (buttonId) {
-            case "dashboard": return PASTEL_PINK;
-            case "todos": return PASTEL_LAVENDER;
-            case "timer": return PASTEL_BLUE;
-            case "notes": return PASTEL_PURPLE;
-            case "pet": return PASTEL_LILAC;
-            case "stats": return PASTEL_ROSE;
-            case "calendar": return PASTEL_SKY;
-            case "mood": return PASTEL_MINT;
-            case "whitenoise": return PASTEL_PEACH;
-            case "settings": return PASTEL_LEMON;
-            default: return PASTEL_PINK;
+            case "dashboard": return Pastel.PINK;
+            case "todos": return Pastel.LAVENDER;
+            case "timer": return Pastel.BLUE;
+            case "notes": return Pastel.PURPLE;
+            case "pet": return Pastel.LILAC;
+            case "stats": return Pastel.ROSE;
+            case "calendar": return Pastel.SKY;
+            case "mood": return Pastel.MINT;
+            case "whitenoise": return Pastel.PEACH;
+            case "settings": return Pastel.LEMON;
+            default: return Pastel.PINK;
         }
     }
 
@@ -453,12 +458,12 @@ public class Sidebar extends VBox {
         mascotContainer.setAlignment(Pos.CENTER);
         mascotContainer.setPadding(new Insets(15));
         mascotContainer.setBackground(new Background(new BackgroundFill(
-                Color.web(PASTEL_IVORY),
+                Color.web(Pastel.IVORY),
                 new CornerRadii(15),
                 Insets.EMPTY
         )));
         mascotContainer.setBorder(new Border(new BorderStroke(
-                Color.web(PASTEL_PINK, 0.3),
+                Color.web(Pastel.PINK, 0.3),
                 BorderStrokeStyle.SOLID,
                 new CornerRadii(15),
                 new BorderWidths(2)
@@ -479,7 +484,7 @@ public class Sidebar extends VBox {
         tempStar.setFont(Font.font(12));
         expLabel = new Label("Loading...");
         expLabel.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 12));
-        expLabel.setTextFill(Color.web(PASTEL_SAGE));
+        expLabel.setTextFill(Color.web(Pastel.SAGE));
         tempExpBox.getChildren().addAll(tempStar, expLabel);
 
         mascotContainer.getChildren().addAll(defaultMascot, defaultText, tempExpBox);

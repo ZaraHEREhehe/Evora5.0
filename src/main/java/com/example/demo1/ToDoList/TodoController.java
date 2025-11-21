@@ -1,7 +1,8 @@
-// src/main/java/com/example/demo1/ToDoList/Database.java
+// src/main/java/com/example/demo1/ToDoList/TodoController.java
 package com.example.demo1.ToDoList;
 
 import com.example.demo1.Database.DatabaseConnection;
+import javafx.scene.input.DataFormat;
 
 import java.io.Serializable;
 import java.sql.*;
@@ -10,13 +11,15 @@ import java.util.List;
 
 public class TodoController {
     private Connection conn;
-    private int CURRENT_USER_ID;
+    private int currentUserId;
     private List<Todo> todos;
+
+    public static final DataFormat TODO_FORMAT = new DataFormat("application/x-todo-object");
 
     public TodoController(int userId) {
         connectToDatabase();
-        CURRENT_USER_ID = userId;
-        this.todos = getTodos(CURRENT_USER_ID);
+        this.currentUserId = userId;
+        this.todos = getTodos(currentUserId);
     }
 
     private void connectToDatabase() {
@@ -59,7 +62,9 @@ public class TodoController {
                         rs.getDate("due_date") != null ? rs.getDate("due_date").toLocalDate().toString() : null
                 ));
             }
-        } catch (SQLException e) { e.printStackTrace(); }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return todos;
     }
 
@@ -95,7 +100,9 @@ public class TodoController {
             ps.setBoolean(5, todo.isCompleted());
             ps.setInt(6, userId);
             ps.executeUpdate();
-        } catch (SQLException e) { e.printStackTrace(); }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public void updateTodo(Todo todo) {
@@ -105,7 +112,9 @@ public class TodoController {
             ps.setTimestamp(2, todo.isCompleted() ? Timestamp.valueOf(java.time.LocalDateTime.now()) : null);
             ps.setInt(3, Integer.parseInt(todo.getId()));
             ps.executeUpdate();
-        } catch (SQLException e) { e.printStackTrace(); }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public void deleteTodo(String taskId) {
@@ -113,7 +122,9 @@ public class TodoController {
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, Integer.parseInt(taskId));
             ps.executeUpdate();
-        } catch (SQLException e) { e.printStackTrace(); }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public List<Todo> getTodos() {
@@ -124,16 +135,16 @@ public class TodoController {
         this.todos = todos;
     }
 
-    public void incrementUserExperience(int experienceToAdd) {
+    public void incrementUserExperience(int experienceToAdd, int userId) {
         String sql = "UPDATE Users SET experience = experience + ? WHERE user_id = ?";
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, experienceToAdd);
-            ps.setInt(2, CURRENT_USER_ID);
+            ps.setInt(2, userId);
 
             int affectedRows = ps.executeUpdate();
             if (affectedRows > 0) {
-                System.out.println("Added " + experienceToAdd + " experience to user " + CURRENT_USER_ID);
+                System.out.println("Added " + experienceToAdd + " experience to user " + userId);
             }
         } catch (SQLException e) {
             System.err.println("Error updating user experience: " + e.getMessage());
@@ -142,20 +153,20 @@ public class TodoController {
     }
 
     public int getCurrentUserId() {
-        return CURRENT_USER_ID;
+        return currentUserId;
     }
 
     public void refreshTodos() {
-        this.todos = getTodos(CURRENT_USER_ID);
+        this.todos = getTodos(currentUserId);
     }
 
-    static class Todo implements Serializable {
+    public static class Todo implements Serializable {
         private static final long serialVersionUID = 1L;
 
         private final String id, text, priority, dueDate;
         private boolean completed;
 
-        Todo(String id, String text, boolean completed, String priority, String dueDate) {
+        public Todo(String id, String text, boolean completed, String priority, String dueDate) {
             this.id = id;
             this.text = text;
             this.completed = completed;

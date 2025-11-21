@@ -26,9 +26,12 @@ public class WhiteNoiseView {
     // Singleton instance
     private static WhiteNoiseView instance;
     private final WhiteNoiseController controller;
+    int userId;
 
     private record Sound(String id, String name, String emoji, String gradient, String borderColor) {
     }
+
+    public void setUserId(int userId) { this.userId = userId; }
 
     private final Sound[] SOUNDS = {
             new Sound("rain", "Rain", "🌧️",
@@ -66,7 +69,7 @@ public class WhiteNoiseView {
         BorderPane root = new BorderPane();
         root.setStyle("-fx-background-color: " + Pastel.BLUSH + ";");
 
-        Sidebar sidebar = new Sidebar(sidebarController, userName);
+        Sidebar sidebar = new Sidebar(sidebarController, userName, userId);
         root.setLeft(sidebar);
 
         Node whiteNoiseContent = create();

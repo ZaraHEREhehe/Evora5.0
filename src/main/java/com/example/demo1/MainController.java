@@ -267,8 +267,9 @@ public class MainController implements ThemeManager.ThemeChangeListener {
         sidebar.updateMascot(currentPet.getName(), currentPet.getSpecies(), currentPet.getGifFilename());
     }
 
+    // In MainController.java - update the showTodoList method
     private void showTodoList() {
-        TodoView todoView = new TodoView(userId);
+        TodoView todoView = new TodoView(userId, sidebar);
         ScrollPane todoContent = todoView.getContent();
 
         todoView.setUsername(userName);
@@ -350,6 +351,7 @@ public class MainController implements ThemeManager.ThemeChangeListener {
         // Use the singleton instance instead of creating a new one
         WhiteNoiseView whiteNoisePlayer = WhiteNoiseView.getInstance();
         Node whiteNoiseContent = whiteNoisePlayer.getContent();
+        whiteNoisePlayer.setUserId(userId);
 
         // Apply current theme
         Theme currentTheme = themeManager.getCurrentTheme();
@@ -370,32 +372,30 @@ public class MainController implements ThemeManager.ThemeChangeListener {
 
     private void showPomodoroTimer() {
         try {
-        // Create the PomodoroController and PomodoroView
-        if (pomodoroController == null)
-        {
-            pomodoroController = new PomodoroController();
-            PomodoroView pomodoroView = new PomodoroView(pomodoroController);
-            VBox pomodoroContent = pomodoroView.getView();
+            // Create the PomodoroController and PomodoroView
+            if (pomodoroController == null) {
+                pomodoroController = new PomodoroController();
+                PomodoroView pomodoroView = new PomodoroView(pomodoroController);
+                VBox pomodoroContent = pomodoroView.getView();
 
-            // Apply current theme
-            Theme currentTheme = themeManager.getCurrentTheme();
-            pomodoroContent.setStyle("-fx-background-color: " + currentTheme.getBackgroundColor() + ";");
+                // Apply current theme
+                Theme currentTheme = themeManager.getCurrentTheme();
+                pomodoroContent.setStyle("-fx-background-color: " + currentTheme.getBackgroundColor() + ";");
 
-            // Set up the controller with dependencies
-            pomodoroController.setUserId(userId);
-            pomodoroController.setSidebar(sidebar);
+                // Set up the controller with dependencies
+                pomodoroController.setUserId(userId);
+                pomodoroController.setSidebar(sidebar);
 
-            // Create pets controller and set it on the pomodoro controller
-            PetsController petsController = new PetsController(userId);
-            pomodoroController.setPetsController(petsController);
+                // Create pets controller and set it on the pomodoro controller
+                PetsController petsController = new PetsController(userId);
+                pomodoroController.setPetsController(petsController);
 
-            // Make pomodoro content responsive
-            pomodoroContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
-            pomodoroContent.prefHeightProperty().bind(root.heightProperty());
-          }
+                // Make pomodoro content responsive
+                pomodoroContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
+                pomodoroContent.prefHeightProperty().bind(root.heightProperty());
+            }
             root.setCenter(pomodoroContent);
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             System.out.println("♻️ Reusing existing Pomodoro Timer (timer continues in background)");
             showFallbackContent("Pomodoro Timer 🍅", "Error loading timer. Please check the FXML file.");
         }
@@ -453,15 +453,15 @@ public class MainController implements ThemeManager.ThemeChangeListener {
         VBox fallbackContent = new VBox(20);
         fallbackContent.setPadding(new Insets(40));
         fallbackContent.setAlignment(Pos.CENTER);
-        fallbackContent.setStyle("-fx-background-color: " + PASTEL_BLUSH + ";");
+        fallbackContent.setStyle("-fx-background-color: " + Pastel.BLUSH + ";");
         fallbackContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
         fallbackContent.prefHeightProperty().bind(root.heightProperty());
 
             Label timerTitle = new Label("Pomodoro Timer 🍅");
-            timerTitle.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-size: 32px; -fx-font-weight: bold; -fx-font-family: 'Segoe UI';");
+            timerTitle.setStyle("-fx-text-fill: " + Pastel.FOREST + "; -fx-font-size: 32px; -fx-font-weight: bold; -fx-font-family: 'Segoe UI';");
 
             Label timerSubtitle = new Label("Error loading timer. Please check the FXML file.");
-            timerSubtitle.setStyle("-fx-text-fill: " + PASTEL_SAGE + "; -fx-font-size: 16px; -fx-font-family: 'Segoe UI';");
+            timerSubtitle.setStyle("-fx-text-fill: " + Pastel.SAGE + "; -fx-font-size: 16px; -fx-font-family: 'Segoe UI';");
 
             fallbackContent.getChildren().addAll(timerTitle, timerSubtitle);
             root.setCenter(fallbackContent);

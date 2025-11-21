@@ -2,7 +2,6 @@
 package com.example.demo1.ToDoList;
 
 import com.example.demo1.Sidebar.Sidebar;
-import com.example.demo1.Sidebar.SidebarController;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
@@ -28,6 +27,7 @@ import org.kordamp.ikonli.fontawesome6.FontAwesomeSolid;
 import javax.sound.sampled.*;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -42,50 +42,50 @@ public class TodoView {
     private boolean isFirstShow = true;
     private VBox todoList;
     private StackPane overlayRoot;
-    private static final DataFormat TODO_FORMAT = new DataFormat("application/x-todo-object");
-    String userName;
-
+    private int currentUserId;
     private Sidebar sidebar;
-
-    public void setSidebar(Sidebar sidebar) {
-        this.sidebar = sidebar;
-    }
+    private String userName;
 
     public TodoView(int userId) {
+        this.currentUserId = userId;
+        this.controller = new TodoController(userId);
+    }
+
+    public TodoView(int userId, Sidebar sidebar) {
+        this.currentUserId = userId;
+        this.sidebar = sidebar;
         this.controller = new TodoController(userId);
     }
 
     // Keep the stage constructor for backward compatibility
     public TodoView(Stage stage) {
-        this(); // Call the no-arg constructor
         this.stage = stage;
     }
 
-    public void setUsername(String userName)
-    {
+    public void setUserId(int userId) {
+        this.currentUserId = userId;
+        if (this.controller == null) {
+            this.controller = new TodoController(userId);
+        }
+    }
+
+    public void setUsername(String userName) {
         this.userName = userName;
     }
 
+    public void setSidebar(Sidebar sidebar) {
+        this.sidebar = sidebar;
+    }
 
     public void show() {
         if (scene == null) {
             root = new BorderPane();
             root.setStyle("-fx-background-color: #fdf7ff;");
 
-            SidebarController sidebarController = new SidebarController();
-            sidebarController.setStage(stage);
-
-            // Remove the goTo callback and use the navigation directly
-            sidebarController.setOnTabChange(tab -> {
-                System.out.println("Sidebar navigation to: " + tab);
-                // The Dashboard will handle the actual navigation
-            });
-
-         //   Sidebar sidebar = new Sidebar(sidebarController, userName, CURRENT_USER_ID);
-          //  root.setLeft(sidebar);
-
-            //sidebar set in main controller now
-            root.setLeft(sidebar);
+            // Use the sidebar that was set (likely from MainController)
+            if (sidebar != null) {
+                root.setLeft(sidebar);
+            }
 
             scene = new Scene(root, 1400, 900);
             stage.setMinWidth(1000);
@@ -225,13 +225,17 @@ public class TodoView {
                     priorityBox.getValue().toLowerCase(),
                     datePicker.getValue() != null ? datePicker.getValue().toString() : null
             );
-            controller.addTodo(controller.getCurrentUserId(), todo);
+            controller.addTodo(currentUserId, todo);
             controller.refreshTodos();
 
-            //increment exp based on priority of added task
+            // Increment exp based on priority of added task
             int expToAdd = getAddTaskExperience(priorityBox.getValue().toLowerCase());
-            controller.incrementUserExperience(expToAdd, CURRENT_USER_ID);
-            sidebar.refreshExperienceFromDatabase(CURRENT_USER_ID);
+            controller.incrementUserExperience(expToAdd, currentUserId);
+
+            // Refresh sidebar experience if sidebar is available
+            if (sidebar != null) {
+                sidebar.refreshExperienceFromDatabase(currentUserId);
+            }
 
             input.clear();
             datePicker.setValue(null);
@@ -282,7 +286,7 @@ public class TodoView {
 
                         int index = list.getChildren().indexOf(item);
                         TodoController.Todo draggedTodo = controller.getTodos().get(index);
-                        content.put(TODO_FORMAT, draggedTodo);
+                        content.put(TodoController.TODO_FORMAT, draggedTodo);
                         dragboard.setContent(content);
 
                         SnapshotParameters snapParams = new SnapshotParameters();
@@ -316,7 +320,7 @@ public class TodoView {
                 });
 
                 item.setOnDragOver(event -> {
-                    if (event.getGestureSource() != item && event.getDragboard().hasContent(TODO_FORMAT)) {
+                    if (event.getGestureSource() != item && event.getDragboard().hasContent(TodoController.TODO_FORMAT)) {
                         event.acceptTransferModes(TransferMode.MOVE);
 
                         // Store original style if not already stored
@@ -345,8 +349,8 @@ public class TodoView {
                     Dragboard dragboard = event.getDragboard();
                     boolean success = false;
 
-                    if (dragboard.hasContent(TODO_FORMAT) && list.getChildren().contains(item)) {
-                        TodoController.Todo draggedTodo = (TodoController.Todo) dragboard.getContent(TODO_FORMAT);
+                    if (dragboard.hasContent(TodoController.TODO_FORMAT) && list.getChildren().contains(item)) {
+                        TodoController.Todo draggedTodo = (TodoController.Todo) dragboard.getContent(TodoController.TODO_FORMAT);
                         int targetIndex = list.getChildren().indexOf(item);
                         Integer sourceIndex = (Integer) list.getProperties().get("draggedIndex");
 
@@ -368,7 +372,7 @@ public class TodoView {
                                 currentTodos.add(adjustedTargetIndex, draggedTodo);
 
                                 // Update database with new order
-                                controller.updateTaskOrder(controller.getCurrentUserId(), currentTodos);
+                                controller.updateTaskOrder(currentUserId, currentTodos);
                                 success = true;
 
                                 System.out.println("Moved task from position " + sourceIndex + " to " + adjustedTargetIndex);
@@ -477,20 +481,23 @@ public class TodoView {
         item.getChildren().addAll(top, badges, actions);
 
         check.setOnAction(e -> {
-            //for exp
+            // For exp
             boolean wasPreviouslyCompleted = todo.isCompleted();
 
-            //old
+            // Old
             todo.setCompleted(check.isSelected());
             controller.updateTodo(todo);
             controller.refreshTodos();
-            todos = controller.getTodos(CURRENT_USER_ID);
 
-            //for exp
+            // For exp
             if (check.isSelected() && !wasPreviouslyCompleted) {   // Award experience ONLY when task changes from not completed to completed
                 int expToAdd = getCompleteTaskExperience(todo.getPriority());
-                controller.incrementUserExperience(expToAdd, CURRENT_USER_ID);
-                sidebar.refreshExperienceFromDatabase(CURRENT_USER_ID);
+                controller.incrementUserExperience(expToAdd, currentUserId);
+
+                // Refresh sidebar experience if sidebar is available
+                if (sidebar != null) {
+                    sidebar.refreshExperienceFromDatabase(currentUserId);
+                }
             }
 
             refreshTodoList();
@@ -628,7 +635,7 @@ public class TodoView {
         return buildMainContent();
     }
 
-    //helpers for exp calculation
+    // Helpers for exp calculation
     private int getAddTaskExperience(String priority) {
         return switch (priority.toLowerCase()) {
             case "high" -> 30;
@@ -645,27 +652,5 @@ public class TodoView {
             case "low" -> 50;
             default -> 75;
         };
-    }
-
-    static class Todo implements Serializable {
-        private static final long serialVersionUID = 1L;
-
-        private final String id, text, priority, dueDate;
-        private boolean completed;
-
-        Todo(String id, String text, boolean completed, String priority, String dueDate) {
-            this.id = id;
-            this.text = text;
-            this.completed = completed;
-            this.priority = priority;
-            this.dueDate = dueDate;
-        }
-
-        public String getId() { return id; }
-        public String getText() { return text; }
-        public boolean isCompleted() { return completed; }
-        public void setCompleted(boolean completed) { this.completed = completed; }
-        public String getPriority() { return priority; }
-        public String getDueDate() { return dueDate; }
     }
 }
