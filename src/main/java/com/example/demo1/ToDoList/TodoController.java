@@ -1,30 +1,44 @@
-// src/main/java/com/example/demo1/ToDoList/Database.java
+// src/main/java/com/example/demo1/ToDoList/TodoController.java
 package com.example.demo1.ToDoList;
 
 import com.example.demo1.Database.DatabaseConnection;
+
+import java.io.Serializable;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Database {
+public class TodoController {
     private Connection conn;
+    private int CURRENT_USER_ID;
+    private List<Todo> todos;
 
-    public Database() {
-        connect();
+    public TodoController(int userId) {
+        connectToDatabase();
+        CURRENT_USER_ID = userId;
+        this.todos = getTodos(CURRENT_USER_ID);
     }
 
-    private void connect() {
+    private void connectToDatabase() {
         try {
             conn = DatabaseConnection.getConnection();
-            System.out.println("Connected to EvoraDB!");
+            System.out.println("Connected to EvoraDB from TodoController!");
         } catch (SQLException e) {
             System.out.println("DB Connection failed: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    public List<TodoView.Todo> getTodos(int userId) {
-        List<TodoView.Todo> todos = new ArrayList<>();
+    private boolean isConnected() {
+        try {
+            return conn != null && !conn.isClosed();
+        } catch (SQLException e) {
+            return false;
+        }
+    }
+
+    public List<Todo> getTodos(int userId) {
+        List<Todo> todos = new ArrayList<>();
         if (!isConnected()) return todos;
 
         String sql = """
@@ -37,7 +51,7 @@ public class Database {
             ps.setInt(1, userId);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                todos.add(new TodoView.Todo(
+                todos.add(new Todo(
                         String.valueOf(rs.getInt("task_id")),
                         rs.getString("description"),
                         rs.getBoolean("is_completed"),
@@ -49,7 +63,7 @@ public class Database {
         return todos;
     }
 
-    public void updateTaskOrder(int userId, List<TodoView.Todo> todos) {
+    public void updateTaskOrder(int userId, List<Todo> todos) {
         if (!isConnected()) return;
 
         String sql = "UPDATE ToDoTasks SET sort_order = ? WHERE task_id = ? AND user_id = ?";
@@ -67,7 +81,7 @@ public class Database {
         }
     }
 
-    public void addTodo(int userId, TodoView.Todo todo) {
+    public void addTodo(int userId, Todo todo) {
         if (!isConnected()) return;
         String sql = """
         INSERT INTO ToDoTasks (user_id, description, priority, due_date, is_completed, sort_order)
@@ -84,7 +98,7 @@ public class Database {
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
-    public void updateTodo(TodoView.Todo todo) {
+    public void updateTodo(Todo todo) {
         String sql = "UPDATE ToDoTasks SET is_completed = ?, completed_at = ? WHERE task_id = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setBoolean(1, todo.isCompleted());
@@ -102,17 +116,41 @@ public class Database {
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
-    // REQUIRED FOR CalendarView
-    public boolean isConnected() {
-        try {
-            return conn != null && !conn.isClosed();
-        } catch (SQLException e) {
-            return false;
-        }
+    public List<Todo> getTodos() {
+        return todos;
     }
 
-    // REQUIRED FOR CalendarView
-    public Connection getConnection() {
-        return conn;
+    public void setTodos(List<Todo> todos) {
+        this.todos = todos;
+    }
+
+    public int getCurrentUserId() {
+        return CURRENT_USER_ID;
+    }
+
+    public void refreshTodos() {
+        this.todos = getTodos(CURRENT_USER_ID);
+    }
+
+    static class Todo implements Serializable {
+        private static final long serialVersionUID = 1L;
+
+        private final String id, text, priority, dueDate;
+        private boolean completed;
+
+        Todo(String id, String text, boolean completed, String priority, String dueDate) {
+            this.id = id;
+            this.text = text;
+            this.completed = completed;
+            this.priority = priority;
+            this.dueDate = dueDate;
+        }
+
+        public String getId() { return id; }
+        public String getText() { return text; }
+        public boolean isCompleted() { return completed; }
+        public void setCompleted(boolean completed) { this.completed = completed; }
+        public String getPriority() { return priority; }
+        public String getDueDate() { return dueDate; }
     }
 }

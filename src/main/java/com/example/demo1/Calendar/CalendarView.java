@@ -1,7 +1,6 @@
 // src/main/java/com/example/demo1/calendar/CalendarView.java
 package com.example.demo1.Calendar;
-
-import com.example.demo1.ToDoList.Database;
+import com.example.demo1.Database.DatabaseConnection;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.geometry.*;
@@ -14,11 +13,9 @@ import javafx.scene.shape.SVGPath;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.text.Font;
-import javafx.scene.Node;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.Cursor;
 import org.kordamp.ikonli.javafx.FontIcon;
-
 import java.sql.*;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -27,22 +24,30 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class CalendarView {
-
+    private Connection conn;
     private LocalDate currentDate;
     private LocalDate selectedDate;
     private final List<Todo> todos;
-    private final Database db;
-    private final int CURRENT_USER_ID = 1;
+    private  int CURRENT_USER_ID ;
     private Runnable onContentChange;
     private DoubleProperty widthProperty = new SimpleDoubleProperty(1400);
 
-    public CalendarView() {
+    public CalendarView(int userId) {
+        connectToDatabase();
         this.currentDate = LocalDate.now();
         this.selectedDate = null;
-        this.db = new Database();
-        this.todos = loadTodosFromDB();
+        this.CURRENT_USER_ID = userId;    // ← Set FIRST
+        this.todos = loadTodosFromDB();   // ← Then load todos
     }
-
+    private void connectToDatabase() {
+        try {
+            conn = DatabaseConnection.getConnection();
+            System.out.println("Connected to EvoraDB from Calender!");
+        } catch (SQLException e) {
+            System.out.println("DB Connection failed: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
     public void setOnContentChange(Runnable callback) {
         this.onContentChange = callback;
     }
@@ -639,11 +644,10 @@ public class CalendarView {
                 .collect(Collectors.toList());
     }
 
-    // === DATABASE LOADER ===
     private List<Todo> loadTodosFromDB() {
         List<Todo> todoList = new ArrayList<>();
 
-        if (!db.isConnected()) {
+        if (!isConnected()) {
             System.out.println("DB not connected → Using sample data");
             return getSampleTodos();
         }
@@ -655,7 +659,7 @@ public class CalendarView {
             ORDER BY due_date
             """;
 
-        try (PreparedStatement ps = db.getConnection().prepareStatement(sql)) {
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
             ps.setInt(1, CURRENT_USER_ID);
             ResultSet rs = ps.executeQuery();
 
@@ -706,5 +710,18 @@ public class CalendarView {
         public boolean isCompleted() { return completed; }
         public String getPriority() { return priority; }
         public String getDueDate() { return dueDate; }
+    }
+    // REQUIRED FOR CalendarView
+    public boolean isConnected() {
+        try {
+            return conn != null && !conn.isClosed();
+        } catch (SQLException e) {
+            return false;
+        }
+    }
+
+    // REQUIRED FOR CalendarView
+    public Connection getConnection() {
+        return conn;
     }
 }

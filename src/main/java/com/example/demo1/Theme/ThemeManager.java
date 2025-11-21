@@ -20,13 +20,13 @@ public class ThemeManager {
 
         switch (theme) {
             case PASTEL:
-                cssFile = "/com/example/demo1/Theme/pastel.css";
+                cssFile = "Theme/pastel.css";
                 break;
             case GALAXY:
-                cssFile = "/com/example/demo1/Theme/galaxy.css";
+                cssFile = "Theme/galaxy.css";
                 break;
             case NATURE:
-                cssFile = "/com/example/demo1/Theme/nature.css";
+                cssFile = "Theme/nature.css";
                 break;
         }
 

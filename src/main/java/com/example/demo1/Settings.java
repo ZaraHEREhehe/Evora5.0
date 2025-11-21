@@ -1,5 +1,6 @@
 package com.example.demo1;
 
+import com.example.demo1.Theme.Pastel;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -10,28 +11,10 @@ import javafx.scene.text.FontWeight;
 
 public class Settings {
 
-    // Pastel color palette matching your dashboard
-    private final String PASTEL_PINK = "#FACEEA";
-    private final String PASTEL_BLUE = "#C1DAFF";
-    private final String PASTEL_LAVENDER = "#D7D8FF";
-    private final String PASTEL_PURPLE = "#F0D2F7";
-    private final String PASTEL_LILAC = "#E2D6FF";
-    private final String PASTEL_ROSE = "#F3D1F3";
-    private final String PASTEL_BLUSH = "#FCEDF5";
-    private final String PASTEL_SKY = "#E4EFFF";
-    private final String PASTEL_MINT = "#C8E6C9";
-    private final String PASTEL_PEACH = "#FFDAB9";
-    private final String PASTEL_CORAL = "#FFCCBC";
-    private final String PASTEL_LEMON = "#FFF9C4";
-    private final String PASTEL_IVORY = "#FDF5E7";
-    private final String PASTEL_DUSTY_PINK = "#F1DBD0";
-    private final String PASTEL_SAGE = "#8D9383";
-    private final String PASTEL_FOREST = "#343A26";
-
     public VBox getContent() {
         VBox mainLayout = new VBox(20);
         mainLayout.setPadding(new Insets(20));
-        mainLayout.setStyle("-fx-background-color: " + PASTEL_BLUSH + ";");
+        mainLayout.setStyle("-fx-background-color: " + Pastel.BLUSH + ";");
         mainLayout.setAlignment(Pos.TOP_CENTER);
 
         // Header
@@ -60,11 +43,11 @@ public class Settings {
 
         Label title = new Label("Settings ⚙️");
         title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 32));
-        title.setTextFill(Color.web(PASTEL_FOREST));
+        title.setTextFill(Color.web(Pastel.FOREST));
 
         Label subtitle = new Label("Customize your Évora experience");
         subtitle.setFont(Font.font("Segoe UI", 16));
-        subtitle.setTextFill(Color.web(PASTEL_SAGE));
+        subtitle.setTextFill(Color.web(Pastel.SAGE));
 
         header.getChildren().addAll(title, subtitle);
         return header;
@@ -80,9 +63,9 @@ public class Settings {
         themesContainer.setAlignment(Pos.CENTER);
 
         String[][] themes = {
-                {"classic", "🎀 Classic Pastel", "Soft pink, mint, lavender, peach", PASTEL_PINK, PASTEL_LAVENDER},
-                {"nature", "🌿 Nature Pastel", "Leafy green, sky blue, sand beige", PASTEL_MINT, PASTEL_PEACH},
-                {"galaxy", "🌌 Galaxy Pastel", "Pastel purple, midnight blue, starry accents", PASTEL_PURPLE, PASTEL_LILAC}
+                {"classic", "🎀 Classic Pastel", "Soft pink, mint, lavender, peach", Pastel.PINK, Pastel.LAVENDER},
+                {"nature", "🌿 Nature Pastel", "Leafy green, sky blue, sand beige", Pastel.MINT, Pastel.PEACH},
+                {"galaxy", "🌌 Galaxy Pastel", "Pastel purple, midnight blue, starry accents", Pastel.PURPLE, Pastel.LILAC}
         };
 
         for (String[] theme : themes) {
@@ -117,13 +100,13 @@ public class Settings {
 
         Label nameLabel = new Label(name);
         nameLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-        nameLabel.setTextFill(Color.web(PASTEL_FOREST));
+        nameLabel.setTextFill(Color.web(Pastel.FOREST));
         nameLabel.setWrapText(true);
         nameLabel.setAlignment(Pos.CENTER);
 
         Label descLabel = new Label(description);
         descLabel.setFont(Font.font("Segoe UI", 11));
-        descLabel.setTextFill(Color.web(PASTEL_FOREST));
+        descLabel.setTextFill(Color.web(Pastel.FOREST));
         descLabel.setWrapText(true);
         descLabel.setAlignment(Pos.CENTER);
         descLabel.setMaxWidth(150);
@@ -162,10 +145,10 @@ public class Settings {
         mascotsGrid.setAlignment(Pos.CENTER);
 
         String[][] mascots = {
-                {"cat", "🐱 Kitty", "Playful and curious companion", "Purr-fect productivity partner!", PASTEL_PINK},
-                {"owl", "🦉 Hoot", "Wise and focused helper", "Wise choices lead to success!", PASTEL_BLUE},
-                {"bunny", "🐰 Hop", "Energetic and encouraging friend", "Hop to it! You've got this!", PASTEL_MINT},
-                {"bookworm", "🐛 Worm", "Studious and detail-oriented buddy", "Knowledge is the best adventure!", PASTEL_PEACH}
+                {"cat", "🐱 Kitty", "Playful and curious companion", "Purr-fect productivity partner!", Pastel.PINK},
+                {"owl", "🦉 Hoot", "Wise and focused helper", "Wise choices lead to success!", Pastel.BLUE},
+                {"bunny", "🐰 Hop", "Energetic and encouraging friend", "Hop to it! You've got this!", Pastel.MINT},
+                {"bookworm", "🐛 Worm", "Studious and detail-oriented buddy", "Knowledge is the best adventure!", Pastel.PEACH}
         };
 
         int col = 0;
@@ -207,15 +190,15 @@ public class Settings {
 
         Label nameLabel = new Label(name.substring(3)); // Remove emoji from name
         nameLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-        nameLabel.setTextFill(Color.web(PASTEL_FOREST));
+        nameLabel.setTextFill(Color.web(Pastel.FOREST));
 
         Label descLabel = new Label(description);
         descLabel.setFont(Font.font("Segoe UI", 11));
-        descLabel.setTextFill(Color.web(PASTEL_SAGE));
+        descLabel.setTextFill(Color.web(Pastel.SAGE));
 
         Label taglineLabel = new Label("\"" + tagline + "\"");
         taglineLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 10));
-        taglineLabel.setTextFill(Color.web(PASTEL_SAGE));
+        taglineLabel.setTextFill(Color.web(Pastel.SAGE));
         taglineLabel.setStyle("-fx-font-style: italic;");
 
         textContent.getChildren().addAll(nameLabel, descLabel, taglineLabel);
@@ -254,23 +237,23 @@ public class Settings {
 
         Label title = new Label("Évora");
         title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 28));
-        title.setTextFill(Color.web(PASTEL_FOREST));
+        title.setTextFill(Color.web(Pastel.FOREST));
 
         Label subtitle = new Label("Your cozy productivity companion");
         subtitle.setFont(Font.font("Segoe UI", 16));
-        subtitle.setTextFill(Color.web(PASTEL_SAGE));
+        subtitle.setTextFill(Color.web(Pastel.SAGE));
 
         VBox descriptionBox = new VBox(10);
         descriptionBox.setAlignment(Pos.CENTER);
         descriptionBox.setPadding(new Insets(15));
-        descriptionBox.setStyle("-fx-background-color: " + PASTEL_PINK + "; -fx-background-radius: 15;");
+        descriptionBox.setStyle("-fx-background-color: " + Pastel.PINK + "; -fx-background-radius: 15;");
         descriptionBox.setMaxWidth(500);
 
         Label description = new Label("Évora is designed to make productivity fun and stress-free. " +
                 "With cute mascots, calming pastel themes, and gentle reminders, " +
                 "we're here to help you achieve your goals while feeling good about it! 💖");
         description.setFont(Font.font("Segoe UI", 12));
-        description.setTextFill(Color.web(PASTEL_FOREST));
+        description.setTextFill(Color.web(Pastel.FOREST));
         description.setWrapText(true);
         description.setAlignment(Pos.CENTER);
 
@@ -292,10 +275,10 @@ public class Settings {
         actionsGrid.setAlignment(Pos.CENTER);
 
         String[][] actions = {
-                {"📊 Export Data", "Download your productivity data", PASTEL_BLUE},
-                {"🔄 Reset Progress", "Start fresh with a clean slate", PASTEL_MINT},
-                {"📱 Mobile App", "Get Évora on your phone", PASTEL_LAVENDER},
-                {"💬 Send Feedback", "Help us improve Évora", PASTEL_PINK}
+                {"📊 Export Data", "Download your productivity data", Pastel.BLUE},
+                {"🔄 Reset Progress", "Start fresh with a clean slate", Pastel.MINT},
+                {"📱 Mobile App", "Get Évora on your phone", Pastel.LAVENDER},
+                {"💬 Send Feedback", "Help us improve Évora", Pastel.PINK}
         };
 
         int col = 0;
@@ -329,11 +312,11 @@ public class Settings {
 
         Label titleLabel = new Label(title);
         titleLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-        titleLabel.setTextFill(Color.web(PASTEL_FOREST));
+        titleLabel.setTextFill(Color.web(Pastel.FOREST));
 
         Label descLabel = new Label(description);
         descLabel.setFont(Font.font("Segoe UI", 11));
-        descLabel.setTextFill(Color.web(PASTEL_SAGE));
+        descLabel.setTextFill(Color.web(Pastel.SAGE));
 
         actionButton.getChildren().addAll(titleLabel, descLabel);
 
@@ -361,12 +344,12 @@ public class Settings {
         VBox card = new VBox();
         card.setPrefWidth(width);
         card.setMaxWidth(width);
-        card.setStyle("-fx-background-color: " + PASTEL_IVORY + "; -fx-background-radius: 20; " +
+        card.setStyle("-fx-background-color: " + Pastel.IVORY + "; -fx-background-radius: 20; " +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 12, 0, 0, 5);");
 
         Label titleLabel = new Label(title);
         titleLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 20));
-        titleLabel.setTextFill(Color.web(PASTEL_FOREST));
+        titleLabel.setTextFill(Color.web(Pastel.FOREST));
         titleLabel.setPadding(new Insets(20, 20, 10, 20));
         titleLabel.setAlignment(Pos.CENTER);
 

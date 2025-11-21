@@ -1,12 +1,11 @@
 package com.example.demo1;
 import com.example.demo1.Sidebar.SidebarController;
+import com.example.demo1.Theme.Pastel;
 import javafx.animation.ScaleTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
@@ -16,22 +15,6 @@ import javafx.util.Duration;
 import java.io.InputStream;
 
 public class Dashboard {
-
-    // Pastel color palette - single colors
-    private final String PASTEL_PINK = "#FACEEA";
-    private final String PASTEL_BLUE = "#C1DAFF";
-    private final String PASTEL_LAVENDER = "#D7D8FF";
-    private final String PASTEL_PURPLE = "#F0D2F7";
-    private final String PASTEL_LILAC = "#E2D6FF";
-    private final String PASTEL_ROSE = "#F3D1F3";
-    private final String PASTEL_BLUSH = "#FCEDF5";
-    private final String PASTEL_SKY = "#E4EFFF";
-    private final String PASTEL_MIST = "#F7EFFF";
-    private final String PASTEL_IVORY = "#FDF5E7";
-    private final String PASTEL_DUSTY_PINK = "#F1DBD0";
-    private final String PASTEL_MAUVE = "#D3A29D";
-    private final String PASTEL_SAGE = "#8D9383";
-    private final String PASTEL_FOREST = "#343A26";
 
     private SidebarController sidebarController;
 
@@ -70,7 +53,7 @@ public class Dashboard {
         VBox mainContent = new VBox(15);
         mainContent.setPadding(new Insets(20, 30, 20, 30));
         mainContent.setAlignment(Pos.TOP_CENTER);
-        mainContent.setStyle("-fx-background-color: " + PASTEL_BLUSH + ";");
+        mainContent.setStyle("-fx-background-color: " + Pastel.BLUSH + ";");
 
         // Header
         VBox headerBox = new VBox(8);
@@ -78,11 +61,11 @@ public class Dashboard {
         headerBox.setPadding(new Insets(10, 0, 15, 0));
 
         Label title = new Label("Welcome to Your Dashboard! 🌸");
-        title.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-size: 28px; -fx-font-weight: bold; -fx-font-family: 'Segoe UI';");
+        title.setStyle("-fx-text-fill: " + Pastel.FOREST + "; -fx-font-size: 28px; -fx-font-weight: bold; -fx-font-family: 'Segoe UI';");
         title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 28));
 
         Label subtitle = new Label("Ready to make today productive and fun?");
-        subtitle.setStyle("-fx-text-fill: " + PASTEL_SAGE + "; -fx-font-size: 16px; -fx-font-family: 'Segoe UI';");
+        subtitle.setStyle("-fx-text-fill: " + Pastel.SAGE + "; -fx-font-size: 16px; -fx-font-family: 'Segoe UI';");
         subtitle.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 16));
 
         headerBox.getChildren().addAll(title, subtitle);
@@ -98,10 +81,10 @@ public class Dashboard {
         statsRow.setPadding(new Insets(10, 0, 12, 0));
 
         String[][] statsData = {
-                {"12", "Tasks Completed", PASTEL_PINK, "/com/example/demo1/Images/Tasks Icon.png"},
-                {"4", "Pomodoros Today", PASTEL_LAVENDER, "/com/example/demo1/Images/Timer Icon.png"},
-                {"8", "Notes Created", PASTEL_BLUE, "/com/example/demo1/Images/ToDo Icon.png"},
-                {"😊", "Mood Score", PASTEL_LILAC, "/com/example/demo1/Images/Mood Icon.png"}
+                {"12", "Tasks Completed", Pastel.PINK, "/Images/Tasks Icon.png"},
+                {"4", "Pomodoros Today", Pastel.LAVENDER, "/Images/Timer Icon.png"},
+                {"8", "Notes Created", Pastel.BLUE, "/Images/ToDo Icon.png"},
+                {"😊", "Mood Score", Pastel.LILAC, "/Images/Mood Icon.png"}
         };
 
         for (String[] stat : statsData) {
@@ -114,10 +97,10 @@ public class Dashboard {
         actionButtonsRow.setAlignment(Pos.CENTER);
         actionButtonsRow.setPadding(new Insets(5, 0, 0, 0));
 
-        Button addTaskBtn = createSmallActionButton("Add Task", PASTEL_PINK);
-        Button startTimerBtn = createSmallActionButton("Start Timer", PASTEL_LAVENDER);
-        Button createNoteBtn = createSmallActionButton("Create Note", PASTEL_BLUE);
-        Button visitPetBtn = createSmallActionButton("Visit Pet", PASTEL_LILAC);
+        Button addTaskBtn = createSmallActionButton("Add Task", Pastel.PINK);
+        Button startTimerBtn = createSmallActionButton("Start Timer", Pastel.LAVENDER);
+        Button createNoteBtn = createSmallActionButton("Create Note", Pastel.BLUE);
+        Button visitPetBtn = createSmallActionButton("Visit Pet", Pastel.LILAC);
 
         actionButtonsRow.getChildren().addAll(addTaskBtn, startTimerBtn, createNoteBtn, visitPetBtn);
 
@@ -194,11 +177,11 @@ public class Dashboard {
         textContainer.setMaxWidth(150);
 
         Label valueLabel = new Label(value);
-        valueLabel.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-size: 20px; -fx-font-weight: bold; -fx-font-family: 'Segoe UI';");
+        valueLabel.setStyle("-fx-text-fill: " + Pastel.FOREST + "; -fx-font-size: 20px; -fx-font-weight: bold; -fx-font-family: 'Segoe UI';");
         valueLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 20));
 
         Label descLabel = new Label(label);
-        descLabel.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-size: 12px; -fx-font-family: 'Segoe UI';");
+        descLabel.setStyle("-fx-text-fill: " + Pastel.FOREST + "; -fx-font-size: 12px; -fx-font-family: 'Segoe UI';");
         descLabel.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 12));
         descLabel.setWrapText(true);
         descLabel.setAlignment(Pos.CENTER);
@@ -214,18 +197,18 @@ public class Dashboard {
         Button button = new Button(text);
         button.setPrefSize(140, 40);
         button.setStyle("-fx-background-color: " + color + "; " +
-                "-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-weight: bold; -fx-font-size: 13px; " +
+                "-fx-text-fill: " + Pastel.FOREST + "; -fx-font-weight: bold; -fx-font-size: 13px; " +
                 "-fx-background-radius: 15; -fx-border-radius: 15; -fx-font-family: 'Segoe UI'; " +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 10, 0, 0, 3);");
         button.setFont(Font.font("Segoe UI", FontWeight.BOLD, 13));
-        button.setOnAction(e -> handleActionButton(text)); // UNCOMMENTED AND FIXED
+        button.setOnAction(e -> handleActionButton(text));
         addHoverAnimation(button);
         return button;
     }
 
     private void setupFallbackEmoji(StackPane container, String label) {
         Label emojiLabel = new Label(getFallbackEmoji(label));
-        emojiLabel.setStyle("-fx-font-size: 50px; -fx-text-fill: " + PASTEL_FOREST + ";");
+        emojiLabel.setStyle("-fx-font-size: 50px; -fx-text-fill: " + Pastel.FOREST + ";");
 
         StackPane emojiBackground = new StackPane();
         emojiBackground.setPrefSize(140, 110);
@@ -249,24 +232,24 @@ public class Dashboard {
         VBox box = new VBox(15);
         box.setPadding(new Insets(20));
         box.setPrefWidth(400);
-        box.setStyle("-fx-background-color: " + PASTEL_IVORY + "; -fx-background-radius: 15; " +
+        box.setStyle("-fx-background-color: " + Pastel.IVORY + "; -fx-background-radius: 15; " +
                 "-fx-border-radius: 15; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 12, 0, 0, 5);");
 
         Label title = new Label("🎯 Today's Focus");
-        title.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-size: 20px; -fx-font-weight: bold; -fx-font-family: 'Segoe UI';");
+        title.setStyle("-fx-text-fill: " + Pastel.FOREST + "; -fx-font-size: 20px; -fx-font-weight: bold; -fx-font-family: 'Segoe UI';");
         title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 20));
 
         // Main Goal
         VBox mainGoal = new VBox(8);
         mainGoal.setPadding(new Insets(12));
-        mainGoal.setStyle("-fx-background-color: " + PASTEL_DUSTY_PINK + "; -fx-background-radius: 12; -fx-border-radius: 12;");
+        mainGoal.setStyle("-fx-background-color: " + Pastel.DUSTY_PINK + "; -fx-background-radius: 12; -fx-border-radius: 12;");
 
         Label goalTitle = new Label("Main Goal");
-        goalTitle.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-weight: bold; -fx-font-size: 16px; -fx-font-family: 'Segoe UI';");
+        goalTitle.setStyle("-fx-text-fill: " + Pastel.FOREST + "; -fx-font-weight: bold; -fx-font-size: 16px; -fx-font-family: 'Segoe UI';");
         goalTitle.setFont(Font.font("Segoe UI", FontWeight.BOLD, 16));
 
         Label goalDesc = new Label("Complete the quarterly project presentation");
-        goalDesc.setStyle("-fx-text-fill: " + PASTEL_SAGE + "; -fx-font-size: 13px; -fx-font-family: 'Segoe UI';");
+        goalDesc.setStyle("-fx-text-fill: " + Pastel.SAGE + "; -fx-font-size: 13px; -fx-font-family: 'Segoe UI';");
         goalDesc.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 13));
         goalDesc.setWrapText(true);
 
@@ -276,8 +259,8 @@ public class Dashboard {
         HBox subGoals = new HBox(15);
         subGoals.setAlignment(Pos.CENTER);
 
-        VBox priorityCard = createMiniCard("✅ Priority Tasks", "3 high-priority items", PASTEL_PINK);
-        VBox timeCard = createMiniCard("⏰ Time Goal", "6 pomodoro sessions", PASTEL_LAVENDER);
+        VBox priorityCard = createMiniCard("✅ Priority Tasks", "3 high-priority items", Pastel.PINK);
+        VBox timeCard = createMiniCard("⏰ Time Goal", "6 pomodoro sessions", Pastel.LAVENDER);
 
         subGoals.getChildren().addAll(priorityCard, timeCard);
 
@@ -289,7 +272,7 @@ public class Dashboard {
         VBox box = new VBox(15);
         box.setPadding(new Insets(20));
         box.setPrefWidth(400);
-        box.setStyle("-fx-background-color: " + PASTEL_IVORY + "; -fx-background-radius: 15; " +
+        box.setStyle("-fx-background-color: " + Pastel.IVORY + "; -fx-background-radius: 15; " +
                 "-fx-border-radius: 15; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 12, 0, 0, 5);");
 
         HBox titleBox = new HBox();
@@ -297,13 +280,12 @@ public class Dashboard {
         titleBox.setSpacing(10);
 
         Label title = new Label("📊 Productivity Insights");
-        title.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-size: 20px; -fx-font-weight: bold; -fx-font-family: 'Segoe UI';");
+        title.setStyle("-fx-text-fill: " + Pastel.FOREST + "; -fx-font-size: 20px; -fx-font-weight: bold; -fx-font-family: 'Segoe UI';");
         title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 20));
 
         Button viewAnalytics = new Button("View Analytics →");
-        viewAnalytics.setStyle("-fx-text-fill: " + PASTEL_PURPLE + "; -fx-background-color: transparent; -fx-font-family: 'Segoe UI'; " +
+        viewAnalytics.setStyle("-fx-text-fill: " + Pastel.PURPLE + "; -fx-background-color: transparent; -fx-font-family: 'Segoe UI'; " +
                 "-fx-font-size: 12px; -fx-underline: true; -fx-cursor: hand; -fx-font-weight: bold;");
-        // This button can remain without action for now, or you can add navigation to "stats"
 
         HBox.setHgrow(titleBox, Priority.ALWAYS);
         titleBox.getChildren().addAll(title, viewAnalytics);
@@ -311,31 +293,31 @@ public class Dashboard {
         // Weekly Progress
         HBox weeklyBox = new HBox(15);
         weeklyBox.setPadding(new Insets(12));
-        weeklyBox.setStyle("-fx-background-color: " + PASTEL_ROSE + "; -fx-background-radius: 12; -fx-border-radius: 12;");
+        weeklyBox.setStyle("-fx-background-color: " + Pastel.ROSE + "; -fx-background-radius: 12; -fx-border-radius: 12;");
         weeklyBox.setAlignment(Pos.CENTER);
 
         VBox progressText = new VBox(6);
         Label progressTitle = new Label("This Week");
-        progressTitle.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-weight: bold; -fx-font-size: 16px; -fx-font-family: 'Segoe UI';");
+        progressTitle.setStyle("-fx-text-fill: " + Pastel.FOREST + "; -fx-font-weight: bold; -fx-font-size: 16px; -fx-font-family: 'Segoe UI';");
         progressTitle.setFont(Font.font("Segoe UI", FontWeight.BOLD, 16));
 
         Label progressValue = new Label("90%");
-        progressValue.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-size: 28px; -fx-font-weight: bold; -fx-font-family: 'Segoe UI';");
+        progressValue.setStyle("-fx-text-fill: " + Pastel.FOREST + "; -fx-font-size: 28px; -fx-font-weight: bold; -fx-font-family: 'Segoe UI';");
         progressValue.setFont(Font.font("Segoe UI", FontWeight.BOLD, 28));
 
         Label progressDesc = new Label("Task completion rate");
-        progressDesc.setStyle("-fx-text-fill: " + PASTEL_SAGE + "; -fx-font-size: 12px; -fx-font-family: 'Segoe UI';");
+        progressDesc.setStyle("-fx-text-fill: " + Pastel.SAGE + "; -fx-font-size: 12px; -fx-font-family: 'Segoe UI';");
         progressDesc.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 12));
 
         progressText.getChildren().addAll(progressTitle, progressValue, progressDesc);
 
         VBox progressStats = new VBox(3);
         Label progressChange = new Label("↗ +12%");
-        progressChange.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-weight: bold; -fx-font-size: 16px; -fx-font-family: 'Segoe UI';");
+        progressChange.setStyle("-fx-text-fill: " + Pastel.FOREST + "; -fx-font-weight: bold; -fx-font-size: 16px; -fx-font-family: 'Segoe UI';");
         progressChange.setFont(Font.font("Segoe UI", FontWeight.BOLD, 16));
 
         Label progressCompare = new Label("vs last week");
-        progressCompare.setStyle("-fx-text-fill: " + PASTEL_SAGE + "; -fx-font-size: 11px; -fx-font-family: 'Segoe UI';");
+        progressCompare.setStyle("-fx-text-fill: " + Pastel.SAGE + "; -fx-font-size: 11px; -fx-font-family: 'Segoe UI';");
         progressCompare.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 11));
 
         progressStats.getChildren().addAll(progressChange, progressCompare);
@@ -345,20 +327,19 @@ public class Dashboard {
         HBox miniStats = new HBox(15);
         miniStats.setAlignment(Pos.CENTER);
 
-        VBox focusSessions = createMiniCard("Focus Sessions", "23", PASTEL_BLUE);
-        VBox dayStreak = createMiniCard("Day Streak", "5", PASTEL_PURPLE);
+        VBox focusSessions = createMiniCard("Focus Sessions", "23", Pastel.BLUE);
+        VBox dayStreak = createMiniCard("Day Streak", "5", Pastel.PURPLE);
 
         miniStats.getChildren().addAll(focusSessions, dayStreak);
 
         // Analytics Button
         Button analyticsBtn = new Button("Full Analytics Dashboard");
         analyticsBtn.setPrefWidth(300);
-        analyticsBtn.setStyle("-fx-background-color: " + PASTEL_LAVENDER + "; " +
-                "-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-weight: bold; -fx-font-size: 14px; " +
+        analyticsBtn.setStyle("-fx-background-color: " + Pastel.LAVENDER + "; " +
+                "-fx-text-fill: " + Pastel.FOREST + "; -fx-font-weight: bold; -fx-font-size: 14px; " +
                 "-fx-background-radius: 15; -fx-border-radius: 15; -fx-font-family: 'Segoe UI'; " +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 10, 0, 0, 3);");
         analyticsBtn.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-        // This button can remain without action for now, or you can add navigation to "stats"
         addHoverAnimation(analyticsBtn);
 
         box.getChildren().addAll(titleBox, weeklyBox, miniStats, analyticsBtn);
@@ -377,11 +358,11 @@ public class Dashboard {
         mini.setStyle("-fx-background-color: " + color + "; -fx-background-radius: 10; -fx-border-radius: 10;");
 
         Label valueLabel = new Label(value);
-        valueLabel.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-size: 18px; -fx-font-weight: bold; -fx-font-family: 'Segoe UI';");
+        valueLabel.setStyle("-fx-text-fill: " + Pastel.FOREST + "; -fx-font-size: 18px; -fx-font-weight: bold; -fx-font-family: 'Segoe UI';");
         valueLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 18));
 
         Label titleLabel = new Label(title);
-        titleLabel.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-size: 11px; -fx-font-family: 'Segoe UI';");
+        titleLabel.setStyle("-fx-text-fill: " + Pastel.FOREST + "; -fx-font-size: 11px; -fx-font-family: 'Segoe UI';");
         titleLabel.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 11));
 
         mini.getChildren().addAll(valueLabel, titleLabel);

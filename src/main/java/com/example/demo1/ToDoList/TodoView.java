@@ -8,7 +8,6 @@ import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.geometry.*;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.effect.DropShadow;
@@ -29,34 +28,26 @@ import org.kordamp.ikonli.fontawesome6.FontAwesomeSolid;
 import javax.sound.sampled.*;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.List;
+import java.util.Random;
 
 public class TodoView {
 
     private Stage stage;
-    private Database db;
-    private List<Todo> todos;
+    private TodoController controller;
     private BorderPane root;
     private Scene scene;
     private boolean isFirstShow = true;
     private VBox todoList;
     private StackPane overlayRoot;
-    private final int CURRENT_USER_ID = 1;
     private static final DataFormat TODO_FORMAT = new DataFormat("application/x-todo-object");
 
-    public TodoView() {
-        this.db = new Database();
-        this.todos = db.getTodos(CURRENT_USER_ID);
+    public TodoView(int userId) {
+        this.controller = new TodoController(userId);
     }
 
-    // Keep the stage constructor for backward compatibility
-    public TodoView(Stage stage) {
-        this(); // Call the no-arg constructor
-        this.stage = stage;
-    }
     public void show() {
         if (scene == null) {
             root = new BorderPane();
@@ -105,6 +96,10 @@ public class TodoView {
         }
 
         stage.show();
+    }
+
+    public void setStage(Stage stage) {
+        this.stage = stage;
     }
 
     private ScrollPane buildMainContent() {
@@ -203,13 +198,13 @@ public class TodoView {
     private void addTodo(TextField input, DatePicker datePicker, ChoiceBox<String> priorityBox) {
         String text = input.getText().trim();
         if (!text.isEmpty()) {
-            Todo todo = new Todo(
+            TodoController.Todo todo = new TodoController.Todo(
                     "", text, false,
                     priorityBox.getValue().toLowerCase(),
                     datePicker.getValue() != null ? datePicker.getValue().toString() : null
             );
-            db.addTodo(CURRENT_USER_ID, todo);
-            todos = db.getTodos(CURRENT_USER_ID);
+            controller.addTodo(controller.getCurrentUserId(), todo);
+            controller.refreshTodos();
             input.clear();
             datePicker.setValue(null);
             priorityBox.setValue("Medium");
@@ -221,6 +216,7 @@ public class TodoView {
         VBox list = new VBox(12);
         list.setAlignment(Pos.TOP_CENTER);
 
+        List<TodoController.Todo> todos = controller.getTodos();
         if (todos.isEmpty()) {
             VBox empty = new VBox(16);
             empty.setPadding(new Insets(32));
@@ -232,7 +228,7 @@ public class TodoView {
             empty.getChildren().add(msg);
             list.getChildren().add(empty);
         } else {
-            for (Todo todo : todos) {
+            for (TodoController.Todo todo : todos) {
                 list.getChildren().add(createTodoItem(todo));
             }
         }
@@ -257,7 +253,7 @@ public class TodoView {
                         ClipboardContent content = new ClipboardContent();
 
                         int index = list.getChildren().indexOf(item);
-                        Todo draggedTodo = todos.get(index);
+                        TodoController.Todo draggedTodo = controller.getTodos().get(index);
                         content.put(TODO_FORMAT, draggedTodo);
                         dragboard.setContent(content);
 
@@ -322,7 +318,7 @@ public class TodoView {
                     boolean success = false;
 
                     if (dragboard.hasContent(TODO_FORMAT) && list.getChildren().contains(item)) {
-                        Todo draggedTodo = (Todo) dragboard.getContent(TODO_FORMAT);
+                        TodoController.Todo draggedTodo = (TodoController.Todo) dragboard.getContent(TODO_FORMAT);
                         int targetIndex = list.getChildren().indexOf(item);
                         Integer sourceIndex = (Integer) list.getProperties().get("draggedIndex");
 
@@ -330,19 +326,21 @@ public class TodoView {
                             VBox draggedItem = (VBox) list.getProperties().get("draggedItem");
 
                             if (draggedItem != null) {
+                                List<TodoController.Todo> currentTodos = controller.getTodos();
+
                                 // Remove from old position
                                 list.getChildren().remove(draggedItem);
-                                todos.remove(draggedTodo);
+                                currentTodos.remove(draggedTodo);
 
                                 // Calculate adjusted target index
                                 int adjustedTargetIndex = sourceIndex < targetIndex ? targetIndex : targetIndex;
 
                                 // Add to new position
                                 list.getChildren().add(adjustedTargetIndex, draggedItem);
-                                todos.add(adjustedTargetIndex, draggedTodo);
+                                currentTodos.add(adjustedTargetIndex, draggedTodo);
 
                                 // Update database with new order
-                                db.updateTaskOrder(CURRENT_USER_ID, todos);
+                                controller.updateTaskOrder(controller.getCurrentUserId(), currentTodos);
                                 success = true;
 
                                 System.out.println("Moved task from position " + sourceIndex + " to " + adjustedTargetIndex);
@@ -384,7 +382,7 @@ public class TodoView {
         });
     }
 
-    private VBox createTodoItem(Todo todo) {
+    private VBox createTodoItem(TodoController.Todo todo) {
         VBox item = new VBox(0);
         item.setPadding(new Insets(8, 12, 8, 12));
         item.setStyle(getGradientStyle(todo.getPriority()) +
@@ -452,8 +450,8 @@ public class TodoView {
 
         check.setOnAction(e -> {
             todo.setCompleted(check.isSelected());
-            db.updateTodo(todo);
-            todos = db.getTodos(CURRENT_USER_ID);
+            controller.updateTodo(todo);
+            controller.refreshTodos();
             refreshTodoList();
             if (check.isSelected()) {
                 showConfetti();
@@ -462,8 +460,8 @@ public class TodoView {
         });
 
         delete.setOnAction(e -> {
-            db.deleteTodo(todo.getId());
-            todos = db.getTodos(CURRENT_USER_ID);
+            controller.deleteTodo(todo.getId());
+            controller.refreshTodos();
             refreshTodoList();
         });
 
@@ -496,8 +494,9 @@ public class TodoView {
     }
 
     private void refreshTodoList() {
-        todos = db.getTodos(CURRENT_USER_ID);
+        controller.refreshTodos();
         todoList.getChildren().clear();
+        List<TodoController.Todo> todos = controller.getTodos();
         if (todos.isEmpty()) {
             VBox empty = new VBox(16);
             empty.setPadding(new Insets(32));
@@ -509,7 +508,7 @@ public class TodoView {
             empty.getChildren().add(msg);
             todoList.getChildren().add(empty);
         } else {
-            for (Todo todo : todos) {
+            for (TodoController.Todo todo : todos) {
                 todoList.getChildren().add(createTodoItem(todo));
             }
         }
@@ -583,29 +582,8 @@ public class TodoView {
             System.out.println("Could not play chime: " + e.getMessage());
         }
     }
+
     public ScrollPane getContent() {
         return buildMainContent();
-    }
-
-    static class Todo implements Serializable {
-        private static final long serialVersionUID = 1L;
-
-        private final String id, text, priority, dueDate;
-        private boolean completed;
-
-        Todo(String id, String text, boolean completed, String priority, String dueDate) {
-            this.id = id;
-            this.text = text;
-            this.completed = completed;
-            this.priority = priority;
-            this.dueDate = dueDate;
-        }
-
-        public String getId() { return id; }
-        public String getText() { return text; }
-        public boolean isCompleted() { return completed; }
-        public void setCompleted(boolean completed) { this.completed = completed; }
-        public String getPriority() { return priority; }
-        public String getDueDate() { return dueDate; }
     }
 }

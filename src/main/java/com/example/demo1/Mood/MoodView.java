@@ -1,5 +1,6 @@
 package com.example.demo1.Mood;
 
+import com.example.demo1.Theme.Pastel;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -25,16 +26,16 @@ public class MoodView extends BorderPane {
     private VBox recentEntriesCard;
     private Tooltip chartTooltip;
 
-    // Color palette - Softer text colors
+    // Color palette using Pastel colors
     private final Color[] gradientColors = {
-            Color.web("#C084FC"), // Purple
-            Color.web("#F472B6")  // Pink
+            Color.web(Pastel.GRADIENT_PURPLE), // Purple
+            Color.web(Pastel.GRADIENT_PINK)    // Pink
     };
-    private final Color bgColor = Color.web("#fdf7ff");
-    private final Color cardBg = Color.web("#FFFFFF");
-    private final Color textPrimary = Color.web("#5c5470"); // Softer dark color
-    private final Color textSecondary = Color.web("#756f86"); // Softer secondary
-    private final Color borderColor = Color.web("#D8B4FE");
+    private final Color bgColor = Color.web(Pastel.BLUSH);
+    private final Color cardBg = Color.web(Pastel.WHITE);
+    private final Color textPrimary = Color.web(Pastel.DUSTY_PURPLE); // Softer dark color
+    private final Color textSecondary = Color.web(Pastel.LIGHT_PURPLE_TEXT); // Softer secondary
+    private final Color borderColor = Color.web(Pastel.LIGHT_PURPLE);
 
     public MoodView(MoodController controller) {
         this.controller = controller;
@@ -53,7 +54,7 @@ public class MoodView extends BorderPane {
         mainContent = new VBox(25);
         mainContent.setPadding(new Insets(30));
         mainContent.setAlignment(Pos.TOP_CENTER);
-        mainContent.setStyle("-fx-background-color: #fdf7ff;");
+        mainContent.setStyle("-fx-background-color: " + Pastel.BLUSH + ";");
 
         // Header
         VBox headerBox = createHeader();
@@ -87,7 +88,7 @@ public class MoodView extends BorderPane {
         scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 
         this.setCenter(scrollPane);
-        this.setStyle("-fx-background-color: #fdf7ff;");
+        this.setStyle("-fx-background-color: " + Pastel.BLUSH + ";");
 
         // Initial data load
         refreshAllData();
@@ -96,11 +97,11 @@ public class MoodView extends BorderPane {
     private VBox createHeader() {
         Label title = new Label("Mood Logger 😊");
         title.setFont(Font.font("System", FontWeight.BOLD, 32));
-        title.setStyle(forceTextColor(textPrimary)); // FORCE with !important (white background)
+        title.setStyle(forceTextColor(textPrimary));
 
         Label subtitle = new Label("How are you feeling today?");
         subtitle.setFont(Font.font("System", 16));
-        subtitle.setStyle(forceTextColor(textSecondary)); // FORCE with !important (white background)
+        subtitle.setStyle(forceTextColor(textSecondary));
 
         VBox headerBox = new VBox(8, title, subtitle);
         headerBox.setAlignment(Pos.CENTER);
@@ -120,9 +121,9 @@ public class MoodView extends BorderPane {
 
         VBox card = new VBox(20);
         card.setPadding(new Insets(30));
-        card.setStyle("-fx-background-color: " + toHex(cardBg) + ";" +
+        card.setStyle("-fx-background-color: " + Pastel.WHITE + ";" +
                 "-fx-background-radius: 25;" +
-                "-fx-border-color: " + toHex(borderColor) + ";" +
+                "-fx-border-color: " + Pastel.LIGHT_PURPLE + ";" +
                 "-fx-border-width: 2;" +
                 "-fx-border-radius: 25;" +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.5, 0, 6);");
@@ -133,11 +134,11 @@ public class MoodView extends BorderPane {
         MoodController.MoodEntry todaysMood = controller.getTodaysMood();
         Label cardTitle = new Label(todaysMood != null ? "Update Today's Mood" : "Log Your Mood");
         cardTitle.setFont(Font.font("System", FontWeight.BOLD, 24));
-        cardTitle.setStyle(forceTextColor(textPrimary)); // FORCE with !important (white background)
+        cardTitle.setStyle(forceTextColor(textPrimary));
 
         Label instructionLabel = new Label("Select how you're feeling today:");
         instructionLabel.setFont(Font.font("System", 14));
-        instructionLabel.setStyle(forceTextColor(textSecondary)); // FORCE with !important (white background)
+        instructionLabel.setStyle(forceTextColor(textSecondary));
 
         VBox headerBox = new VBox(8);
         headerBox.setAlignment(Pos.CENTER);
@@ -148,7 +149,7 @@ public class MoodView extends BorderPane {
                     controller.getMoodEmojis()[todaysMood.getMoodValue() - 1] + " " +
                     controller.getMoodLabels()[todaysMood.getMoodValue() - 1]);
             currentMoodLabel.setFont(Font.font("System", 16));
-            currentMoodLabel.setStyle(forceTextColor(textSecondary)); // FORCE with !important (white background)
+            currentMoodLabel.setStyle(forceTextColor(textSecondary));
             headerBox.getChildren().add(currentMoodLabel);
         }
 
@@ -187,8 +188,8 @@ public class MoodView extends BorderPane {
                             "-fx-background-radius: 50%;" +
                                     "-fx-border-radius: 50%;" +
                                     "-fx-border-width: 3;" +
-                                    "-fx-border-color: #C084FC;" +
-                                    "-fx-background-color: #F3E8FF;" +
+                                    "-fx-border-color: " + Pastel.GRADIENT_PURPLE + ";" +
+                                    "-fx-background-color: " + Pastel.LIGHT_LILAC + ";" +
                                     "-fx-cursor: hand;" +
                                     "-fx-effect: dropshadow(gaussian, rgba(192, 132, 252, 0.4), 10, 0.5, 0, 2);"
                     );
@@ -216,8 +217,8 @@ public class MoodView extends BorderPane {
                     "-fx-background-radius: 50%;" +
                             "-fx-border-radius: 50%;" +
                             "-fx-border-width: 3;" +
-                            "-fx-border-color: #8B5CF6;" +
-                            "-fx-background-color: linear-gradient(to right, #C084FC, #F472B6);" +
+                            "-fx-border-color: " + Pastel.VIOLET + ";" +
+                            "-fx-background-color: linear-gradient(to right, " + Pastel.GRADIENT_PURPLE + ", " + Pastel.GRADIENT_PINK + ");" +
                             "-fx-effect: dropshadow(gaussian, rgba(139, 92, 246, 0.6), 15, 0.5, 0, 6);" +
                             "-fx-cursor: hand;"
             );
@@ -226,8 +227,8 @@ public class MoodView extends BorderPane {
                     "-fx-background-radius: 50%;" +
                             "-fx-border-radius: 50%;" +
                             "-fx-border-width: 2;" +
-                            "-fx-border-color: #D1D5DB;" +
-                            "-fx-background-color: #F8FAFC;" +
+                            "-fx-border-color: " + Pastel.GRAY_300 + ";" +
+                            "-fx-background-color: " + Pastel.GRAY_50 + ";" +
                             "-fx-cursor: hand;" +
                             "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0.5, 0, 2);"
             );
@@ -249,7 +250,7 @@ public class MoodView extends BorderPane {
         for (String label : labels) {
             Label moodLabel = new Label(label);
             moodLabel.setFont(Font.font("System", 12));
-            moodLabel.setStyle(forceTextColor(textSecondary)); // FORCE with !important (white background)
+            moodLabel.setStyle(forceTextColor(textSecondary));
             moodLabel.setPrefWidth(70);
             moodLabel.setAlignment(Pos.CENTER);
             moodLabels.getChildren().add(moodLabel);
@@ -273,7 +274,7 @@ public class MoodView extends BorderPane {
         noteTextArea.setStyle(
                 "-fx-background-color: white;" +
                         "-fx-background-radius: 15;" +
-                        "-fx-border-color: #D8B4FE;" +
+                        "-fx-border-color: " + Pastel.LIGHT_PURPLE + ";" +
                         "-fx-border-radius: 15;" +
                         "-fx-border-width: 2;" +
                         "-fx-padding: 15;" +
@@ -283,7 +284,7 @@ public class MoodView extends BorderPane {
 
         Button logButton = new Button(controller.getTodaysMood() != null ? "Update Mood" : "Log Mood");
         logButton.setStyle(
-                "-fx-background-color: linear-gradient(to right, #C084FC, #F472B6);" +
+                "-fx-background-color: linear-gradient(to right, " + Pastel.GRADIENT_PURPLE + ", " + Pastel.GRADIENT_PINK + ");" +
                         "-fx-text-fill: white;" +
                         "-fx-font-weight: bold;" +
                         "-fx-font-family: 'System';" +
@@ -317,7 +318,7 @@ public class MoodView extends BorderPane {
                 "Average Mood",
                 averageEmoji,
                 String.format("%.1f/5", averageMood),
-                "#F3E8FF", "#FCE7F3"
+                Pastel.LIGHT_LILAC, Pastel.LIGHT_PURPLE_2
         );
 
         // Entries Logged Card
@@ -326,7 +327,7 @@ public class MoodView extends BorderPane {
                 "Entries Logged",
                 "📊",
                 entries.size() + " days",
-                "#E0F2FE", "#BAE6FD"
+                Pastel.SKY, Pastel.BLUE
         );
 
         statsCards.getChildren().addAll(avgMoodCard, entriesCard);
@@ -351,11 +352,11 @@ public class MoodView extends BorderPane {
 
         Label titleLabel = new Label(title);
         titleLabel.setFont(Font.font("System", FontWeight.BOLD, 16));
-        titleLabel.setTextFill(Color.WHITE); // White text on gradient - NO !important
+        titleLabel.setTextFill(Color.WHITE);
 
         Label valueLabel = new Label(value);
         valueLabel.setFont(Font.font("System", FontWeight.BOLD, 28));
-        valueLabel.setTextFill(Color.WHITE); // White text on gradient - NO !important
+        valueLabel.setTextFill(Color.WHITE);
 
         card.getChildren().addAll(emojiLabel, titleLabel, valueLabel);
         return card;
@@ -368,9 +369,9 @@ public class MoodView extends BorderPane {
     private VBox createChartCard() {
         VBox card = new VBox(20);
         card.setPadding(new Insets(30));
-        card.setStyle("-fx-background-color: " + toHex(cardBg) + ";" +
+        card.setStyle("-fx-background-color: " + Pastel.WHITE + ";" +
                 "-fx-background-radius: 25;" +
-                "-fx-border-color: " + toHex(borderColor) + ";" +
+                "-fx-border-color: " + Pastel.LIGHT_PURPLE + ";" +
                 "-fx-border-width: 2;" +
                 "-fx-border-radius: 25;" +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.5, 0, 6);");
@@ -379,7 +380,7 @@ public class MoodView extends BorderPane {
 
         Label cardTitle = new Label("Mood Trend");
         cardTitle.setFont(Font.font("System", FontWeight.SEMI_BOLD, 22));
-        cardTitle.setStyle(forceTextColor(textPrimary)); // FORCE with !important (white background)
+        cardTitle.setStyle(forceTextColor(textPrimary));
 
         chartCanvas = new Canvas(700, 250);
         chartCanvas.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0.5, 0, 2);");
@@ -455,7 +456,7 @@ public class MoodView extends BorderPane {
     }
 
     private void drawPlaceholderChart(GraphicsContext gc) {
-        gc.setFill(Color.web("#6B7280"));
+        gc.setFill(Color.web(Pastel.GRAY_400));
         gc.setFont(Font.font("System", FontWeight.NORMAL, 16));
         gc.fillText("No mood data yet. Log your first mood!", 220, 125);
     }
@@ -471,13 +472,13 @@ public class MoodView extends BorderPane {
         drawDataPoints(gc, entries, padding, chartWidth, chartHeight);
 
         // Add chart title with softer styling
-        gc.setFill(Color.web("#5c5470"));
+        gc.setFill(Color.web(Pastel.DUSTY_PURPLE));
         gc.setFont(Font.font("System", FontWeight.SEMI_BOLD, 14));
         gc.fillText("Mood Over Time", chartCanvas.getWidth() / 2 - 45, 25);
     }
 
     private void drawGrid(GraphicsContext gc, double padding, double chartWidth, double chartHeight, List<MoodController.MoodEntry> entries) {
-        gc.setStroke(Color.web("#E5E7EB"));
+        gc.setStroke(Color.web(Pastel.GRAY_200));
         gc.setLineWidth(1);
 
         // Horizontal grid lines
@@ -495,7 +496,7 @@ public class MoodView extends BorderPane {
     }
 
     private void drawYAxisLabels(GraphicsContext gc, double padding, double chartHeight) {
-        gc.setFill(Color.web("#6B7280"));
+        gc.setFill(Color.web(Pastel.GRAY_400));
         gc.setFont(Font.font("System", 11));
         String[] moodLevels = {"5 - 😄", "4 - 😊", "3 - 😐", "2 - 😟", "1 - 😢"};
         for (int i = 0; i < 5; i++) {
@@ -534,7 +535,7 @@ public class MoodView extends BorderPane {
 
             // Draw point with gradient effect
             gc.setFill(gradientColors[0]);
-            gc.setStroke(Color.web("#7C3AED"));
+            gc.setStroke(Color.web(Pastel.VIOLET));
             gc.setLineWidth(2);
             gc.fillOval(x - 5, y - 5, 10, 10);
             gc.strokeOval(x - 5, y - 5, 10, 10);
@@ -542,7 +543,7 @@ public class MoodView extends BorderPane {
             // Draw date label for selected points to avoid crowding
             if (i == 0 || i == entries.size() - 1 || i % Math.ceil(entries.size() / 5.0) == 0) {
                 String dateStr = entry.getDate().format(DateTimeFormatter.ofPattern("MM/dd"));
-                gc.setFill(Color.web("#6B7280"));
+                gc.setFill(Color.web(Pastel.GRAY_400));
                 gc.fillText(dateStr, x - 12, chartCanvas.getHeight() - 15);
             }
         }
@@ -553,9 +554,9 @@ public class MoodView extends BorderPane {
 
         VBox card = new VBox(20);
         card.setPadding(new Insets(30));
-        card.setStyle("-fx-background-color: " + toHex(cardBg) + ";" +
+        card.setStyle("-fx-background-color: " + Pastel.WHITE + ";" +
                 "-fx-background-radius: 25;" +
-                "-fx-border-color: " + toHex(borderColor) + ";" +
+                "-fx-border-color: " + Pastel.LIGHT_PURPLE + ";" +
                 "-fx-border-width: 2;" +
                 "-fx-border-radius: 25;" +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.5, 0, 6);");
@@ -564,7 +565,7 @@ public class MoodView extends BorderPane {
 
         Label cardTitle = new Label("Recent Entries");
         cardTitle.setFont(Font.font("System", FontWeight.BOLD, 24));
-        cardTitle.setStyle(forceTextColor(textPrimary)); // FORCE with !important (white background)
+        cardTitle.setStyle(forceTextColor(textPrimary));
 
         VBox entriesContainer = new VBox(15);
         List<MoodController.MoodEntry> recentEntries = controller.getMoodHistory();
@@ -581,7 +582,7 @@ public class MoodView extends BorderPane {
         if (entriesContainer.getChildren().isEmpty()) {
             Label noEntriesLabel = new Label("No mood entries yet. Log your first mood!");
             noEntriesLabel.setFont(Font.font("System", 16));
-            noEntriesLabel.setStyle(forceTextColor(Color.web("#9CA3AF"))); // FORCE with !important (white background)
+            noEntriesLabel.setStyle(forceTextColor(Color.web(Pastel.GRAY_400)));
             noEntriesLabel.setPadding(new Insets(20));
             entriesContainer.getChildren().add(noEntriesLabel);
         }
@@ -598,7 +599,7 @@ public class MoodView extends BorderPane {
         HBox entryBox = new HBox(20);
         entryBox.setPadding(new Insets(20));
         entryBox.setStyle(
-                "-fx-background-color: linear-gradient(to right, #E2D6FF, #F0D2F7);" +
+                "-fx-background-color: linear-gradient(to right, " + Pastel.LIGHT_LILAC + ", " + Pastel.LIGHT_PURPLE_2 + ");" +
                         "-fx-background-radius: 15;" +
                         "-fx-border-radius: 15;" +
                         "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0.5, 0, 2);"
@@ -616,11 +617,11 @@ public class MoodView extends BorderPane {
 
         Label dateLabel = new Label(entry.getDate().format(DateTimeFormatter.ofPattern("MMM dd, yyyy")));
         dateLabel.setFont(Font.font("System", FontWeight.BOLD, 16));
-        dateLabel.setTextFill(Color.WHITE); // White text on gradient - NO !important
+        dateLabel.setTextFill(Color.WHITE);
 
         Label moodLabel = new Label(controller.getMoodLabels()[entry.getMoodValue() - 1]);
         moodLabel.setFont(Font.font("System", 14));
-        moodLabel.setTextFill(Color.WHITE); // White text on gradient - NO !important
+        moodLabel.setTextFill(Color.WHITE);
 
         headerBox.getChildren().addAll(dateLabel, moodLabel);
         detailsBox.getChildren().add(headerBox);
@@ -628,7 +629,7 @@ public class MoodView extends BorderPane {
         if (entry.getNote() != null && !entry.getNote().isEmpty()) {
             Label noteLabel = new Label(entry.getNote());
             noteLabel.setFont(Font.font("System", 14));
-            noteLabel.setTextFill(Color.WHITE); // White text on gradient - NO !important
+            noteLabel.setTextFill(Color.WHITE);
             noteLabel.setWrapText(true);
             noteLabel.setMaxWidth(600);
             detailsBox.getChildren().add(noteLabel);
@@ -649,7 +650,6 @@ public class MoodView extends BorderPane {
                     noteTextArea.clear();
                 }
                 refreshAllData();
-                // showAlert("Mood Logged", "Your mood has been logged successfully!", Alert.AlertType.INFORMATION);
             } else {
                 showAlert("Error", "Failed to log mood. Please try again.", Alert.AlertType.ERROR);
             }

@@ -1,46 +1,42 @@
 package com.example.demo1;
 
-import com.example.demo1.Theme.ThemeManager;
+import com.example.demo1.Login.LoginView;
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-
-import java.io.IOException;
 
 public class HelloApplication extends Application {
 
     private static Stage primaryStage;
 
     @Override
-    public void start(Stage stage) throws IOException {
+    public void start(Stage stage) {
         primaryStage = stage;
-
-        // Load the login page
-        FXMLLoader fxmlLoader = new FXMLLoader(HelloApplication.class.getResource("hello-view.fxml"));
-        Scene scene = new Scene(fxmlLoader.load());
-        ThemeManager.applyTheme(scene, ThemeManager.Theme.PASTEL);
-        stage.setTitle("Pomodoro Timer");
-        stage.setScene(scene);
-        stage.setResizable(true);
-        stage.setMinWidth(500);
-        stage.setMinHeight(500);
-        stage.show();
+        showLoginScreen();
     }
 
-    // Updated method to accept username - Reusing same stage
-    public static void showDashboard(String username, int userId) {
+    private void showLoginScreen() {
         try {
-            MainController mainController = new MainController(primaryStage, username, userId);
-
-            // Update the title
-            primaryStage.setTitle("Pastel Productivity Dashboard - Welcome, " + username);
-
+            LoginView loginViewApp = new LoginView();
+            loginViewApp.start(primaryStage);
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println("❌ Error loading dashboard: " + e.getMessage());
+        }
+    }
+
+    // FIXED: Properly transition to dashboard
+    public static void showDashboard(String username, int userId) {
+        try {
+            System.out.println("🚀 Transitioning to dashboard for: " + username + " (ID: " + userId + ")");
+
+            // Create MainController - it will create its own scene
+            MainController mainController = new MainController(primaryStage, username, userId);
+
+            // MainController's constructor already sets the scene, so we're done here
+            System.out.println("✅ Dashboard transition complete!");
+
+        } catch (Exception e) {
+            System.out.println("❌ Error in showDashboard: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 

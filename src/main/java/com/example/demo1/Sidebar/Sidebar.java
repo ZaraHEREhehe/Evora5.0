@@ -1,5 +1,6 @@
 package com.example.demo1.Sidebar;
 
+import com.example.demo1.Theme.Pastel;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -29,24 +30,6 @@ public class Sidebar extends VBox {
     private VBox experienceContainer; // Store reference to update experience
     private Label expLabel;
 
-    // Pastel color palette matching the dashboard
-    private final String PASTEL_BLUSH = "#FCEDF5";
-    private final String PASTEL_PINK = "#FACEEA";
-    private final String PASTEL_LAVENDER = "#D7D8FF";
-    private final String PASTEL_BLUE = "#C1DAFF";
-    private final String PASTEL_PURPLE = "#F0D2F7";
-    private final String PASTEL_LILAC = "#E2D6FF";
-    private final String PASTEL_ROSE = "#F3D1F3";
-    private final String PASTEL_SKY = "#E4EFFF";
-    private final String PASTEL_MINT = "#C8E6C9";
-    private final String PASTEL_PEACH = "#FFDAB9";
-    private final String PASTEL_CORAL = "#FFCCBC";
-    private final String PASTEL_LEMON = "#FFF9C4";
-    private final String PASTEL_IVORY = "#FDF5E7";
-    private final String PASTEL_SAGE = "#8D9383";
-    private final String PASTEL_FOREST = "#343A26";
-    private final String PASTEL_GOLD = "#FFD700";
-
     public Sidebar(SidebarController controller, String userName) {
         this.controller = controller;
         setupSidebar();
@@ -62,17 +45,17 @@ public class Sidebar extends VBox {
         experienceContainer.setAlignment(Pos.CENTER);
         experienceContainer.setPadding(new Insets(12, 15, 12, 15));
         experienceContainer.setBackground(new Background(new BackgroundFill(
-                Color.web(PASTEL_IVORY),
+                Color.web(Pastel.IVORY),
                 new CornerRadii(12),
                 Insets.EMPTY
         )));
         experienceContainer.setBorder(new Border(new BorderStroke(
-                Color.web(PASTEL_GOLD, 0.3),
+                Color.web(Pastel.GOLD, 0.3),
                 BorderStrokeStyle.SOLID,
                 new CornerRadii(12),
                 new BorderWidths(1.5)
         )));
-        experienceContainer.setEffect(new DropShadow(5, Color.web(PASTEL_GOLD, 0.2)));
+        experienceContainer.setEffect(new DropShadow(5, Color.web(Pastel.GOLD, 0.2)));
 
         // Experience icon and text
         HBox expBox = new HBox(8);
@@ -83,7 +66,7 @@ public class Sidebar extends VBox {
 
         expLabel = new Label("800 XP");
         expLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-        expLabel.setTextFill(Color.web(PASTEL_FOREST));
+        expLabel.setTextFill(Color.web(Pastel.FOREST));
 
         // Sparkle emoji for cuteness
         Label sparkle = new Label("✨");
@@ -109,11 +92,11 @@ public class Sidebar extends VBox {
         scaleTransition.play();
 
         // Add sparkle effect temporarily
-        experienceContainer.setEffect(new DropShadow(10, Color.web(PASTEL_GOLD)));
+        experienceContainer.setEffect(new DropShadow(10, Color.web(Pastel.GOLD)));
 
         javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(500));
         pause.setOnFinished(e -> {
-            experienceContainer.setEffect(new DropShadow(5, Color.web(PASTEL_GOLD, 0.2)));
+            experienceContainer.setEffect(new DropShadow(5, Color.web(Pastel.GOLD, 0.2)));
         });
         pause.play();
     }
@@ -142,7 +125,6 @@ public class Sidebar extends VBox {
         return 0;
     }
 
-
     // Add this method to update the mascot display
     public void updateMascot(String petName, String species, String gifFilename) {
         if (mascotContainer != null) {
@@ -161,7 +143,7 @@ public class Sidebar extends VBox {
 
             Label mascotText = new Label(petName + " the " + species);
             mascotText.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-            mascotText.setTextFill(Color.web(PASTEL_FOREST));
+            mascotText.setTextFill(Color.web(Pastel.FOREST));
             mascotText.setAlignment(Pos.CENTER);
             mascotText.setWrapText(true);
             mascotText.setMaxWidth(150);
@@ -195,14 +177,14 @@ public class Sidebar extends VBox {
         this.setAlignment(Pos.TOP_CENTER);
 
         BackgroundFill backgroundFill = new BackgroundFill(
-                Color.web(PASTEL_BLUSH),
+                Color.web(Pastel.BLUSH),
                 new CornerRadii(0),
                 Insets.EMPTY
         );
         this.setBackground(new Background(backgroundFill));
 
         this.setEffect(new DropShadow(15, 5, 5, Color.gray(0, 0.1)));
-        this.setStyle("-fx-border-color: " + PASTEL_PINK + "; -fx-border-width: 0 2 0 0;");
+        this.setStyle("-fx-border-color: " + Pastel.PINK + "; -fx-border-width: 0 2 0 0;");
     }
 
     private void createHeader(String userName) {
@@ -212,19 +194,19 @@ public class Sidebar extends VBox {
 
         Label title = new Label("Évora 🌸");
         title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 26));
-        title.setTextFill(Color.web(PASTEL_FOREST));
-        title.setStyle("-fx-effect: dropshadow(gaussian, " + PASTEL_PINK + ", 10, 0.3, 0, 2);");
+        title.setTextFill(Color.web(Pastel.FOREST));
+        title.setStyle("-fx-effect: dropshadow(gaussian, " + Pastel.PINK + ", 10, 0.3, 0, 2);");
 
         Label userLabel = new Label("Hello, " + userName + "! 💫");
         userLabel.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 15));
-        userLabel.setTextFill(Color.web(PASTEL_SAGE));
+        userLabel.setTextFill(Color.web(Pastel.SAGE));
         userLabel.setWrapText(true);
         userLabel.setAlignment(Pos.CENTER);
 
         Region separator = new Region();
         separator.setPrefHeight(2);
         separator.setBackground(new Background(new BackgroundFill(
-                Color.web(PASTEL_PINK),
+                Color.web(Pastel.PINK),
                 new CornerRadii(10),
                 Insets.EMPTY
         )));
@@ -240,16 +222,16 @@ public class Sidebar extends VBox {
         navBox.setFillWidth(true);
 
         String[][] items = {
-                {"dashboard", "🏠 Dashboard", PASTEL_PINK},
-                {"todos", "📝 To-Do List", PASTEL_LAVENDER},
-                {"timer", "⏰ Pomodoro Timer", PASTEL_BLUE},
-                {"notes", "📒 Notes", PASTEL_PURPLE},
-                {"pet", "🐾 Virtual Pet", PASTEL_LILAC},
-                {"stats", "📊 Analytics", PASTEL_ROSE},
-                {"calendar", "📅 Calendar", PASTEL_SKY},
-                {"mood", "😊 Mood Tracker", PASTEL_PEACH},
-                {"whitenoise", "🎵 White Noise", PASTEL_CORAL},
-                {"settings", "⚙️ Settings", PASTEL_LEMON}
+                {"dashboard", "🏠 Dashboard", Pastel.PINK},
+                {"todos", "📝 To-Do List", Pastel.LAVENDER},
+                {"timer", "⏰ Pomodoro Timer", Pastel.BLUE},
+                {"notes", "📒 Notes", Pastel.PURPLE},
+                {"pet", "🐾 Virtual Pet", Pastel.LILAC},
+                {"stats", "📊 Analytics", Pastel.ROSE},
+                {"calendar", "📅 Calendar", Pastel.SKY},
+                {"mood", "😊 Mood Tracker", Pastel.MINT},
+                {"whitenoise", "🎵 White Noise", Pastel.PEACH},
+                {"settings", "⚙️ Settings", Pastel.LEMON}
         };
 
         for (String[] item : items) {
@@ -267,7 +249,7 @@ public class Sidebar extends VBox {
         btn.setPrefHeight(50);
         btn.setAlignment(Pos.CENTER_LEFT);
         btn.setFont(Font.font("Segoe UI", FontWeight.SEMI_BOLD, 14));
-        btn.setTextFill(Color.web(PASTEL_FOREST));
+        btn.setTextFill(Color.web(Pastel.FOREST));
 
         btn.setBackground(new Background(new BackgroundFill(
                 Color.web(color),
@@ -327,7 +309,7 @@ public class Sidebar extends VBox {
                         new CornerRadii(12),
                         new Insets(2)
                 )));
-                btn.setTextFill(Color.web(PASTEL_FOREST));
+                btn.setTextFill(Color.web(Pastel.FOREST));
                 btn.setBorder(new Border(new BorderStroke(
                         Color.web(originalColor).darker(),
                         BorderStrokeStyle.SOLID,
@@ -343,17 +325,17 @@ public class Sidebar extends VBox {
 
     private String getOriginalColor(String buttonId) {
         switch (buttonId) {
-            case "dashboard": return PASTEL_PINK;
-            case "todos": return PASTEL_LAVENDER;
-            case "timer": return PASTEL_BLUE;
-            case "notes": return PASTEL_PURPLE;
-            case "pet": return PASTEL_LILAC;
-            case "stats": return PASTEL_ROSE;
-            case "calendar": return PASTEL_SKY;
-            case "mood": return PASTEL_MINT;
-            case "whitenoise": return PASTEL_PEACH;
-            case "settings": return PASTEL_LEMON;
-            default: return PASTEL_PINK;
+            case "dashboard": return Pastel.PINK;
+            case "todos": return Pastel.LAVENDER;
+            case "timer": return Pastel.BLUE;
+            case "notes": return Pastel.PURPLE;
+            case "pet": return Pastel.LILAC;
+            case "stats": return Pastel.ROSE;
+            case "calendar": return Pastel.SKY;
+            case "mood": return Pastel.MINT;
+            case "whitenoise": return Pastel.PEACH;
+            case "settings": return Pastel.LEMON;
+            default: return Pastel.PINK;
         }
     }
 
@@ -367,12 +349,12 @@ public class Sidebar extends VBox {
         mascotContainer.setAlignment(Pos.CENTER);
         mascotContainer.setPadding(new Insets(15));
         mascotContainer.setBackground(new Background(new BackgroundFill(
-                Color.web(PASTEL_IVORY),
+                Color.web(Pastel.IVORY),
                 new CornerRadii(15),
                 Insets.EMPTY
         )));
         mascotContainer.setBorder(new Border(new BorderStroke(
-                Color.web(PASTEL_PINK, 0.3),
+                Color.web(Pastel.PINK, 0.3),
                 BorderStrokeStyle.SOLID,
                 new CornerRadii(15),
                 new BorderWidths(2)
@@ -384,7 +366,7 @@ public class Sidebar extends VBox {
 
         Label defaultText = new Label("Your Companion");
         defaultText.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-        defaultText.setTextFill(Color.web(PASTEL_FOREST));
+        defaultText.setTextFill(Color.web(Pastel.FOREST));
 
         mascotContainer.getChildren().addAll(defaultMascot, defaultText);
 
@@ -393,14 +375,14 @@ public class Sidebar extends VBox {
         logoutBtn.setPrefWidth(180);
         logoutBtn.setPrefHeight(45);
         logoutBtn.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-        logoutBtn.setTextFill(Color.web("#E57373"));
+        logoutBtn.setTextFill(Color.web(Pastel.LOGOUT_RED));
         logoutBtn.setBackground(new Background(new BackgroundFill(
-                Color.web("#FFEBEE"),
+                Color.web(Pastel.LOGOUT_BG),
                 new CornerRadii(12),
                 Insets.EMPTY
         )));
         logoutBtn.setBorder(new Border(new BorderStroke(
-                Color.web("#E57373", 0.4),
+                Color.web(Pastel.LOGOUT_RED, 0.4),
                 BorderStrokeStyle.SOLID,
                 new CornerRadii(12),
                 new BorderWidths(1.5)
@@ -409,7 +391,7 @@ public class Sidebar extends VBox {
         logoutBtn.setOnMouseEntered(e -> {
             logoutBtn.setScaleX(1.03);
             logoutBtn.setScaleY(1.03);
-            logoutBtn.setEffect(new DropShadow(8, Color.web("#E57373")));
+            logoutBtn.setEffect(new DropShadow(8, Color.web(Pastel.LOGOUT_RED)));
         });
 
         logoutBtn.setOnMouseExited(e -> {
