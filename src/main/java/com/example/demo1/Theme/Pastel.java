@@ -2,6 +2,8 @@
 package com.example.demo1.Theme;
 
 public class Pastel {
+
+
     // Pastel color palette - UPDATED WITH EXACT CODES FROM POMODOROVIEW
     public static final String PINK = "#FACEEA";
     public static final String BLUE = "#C1DAFF";

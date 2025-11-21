@@ -1,6 +1,7 @@
 package com.example.demo1.Sidebar;
 
-import com.example.demo1.Theme.Pastel;
+import com.example.demo1.Theme.Theme;
+import com.example.demo1.Theme.ThemeManager;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -20,23 +21,179 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * JavaFX Sidebar component with beautiful pastel theme
+ * JavaFX Sidebar component with dynamic theme support
  */
 public class Sidebar extends VBox {
 
     private final SidebarController controller;
     private final Map<String, Button> navButtons = new HashMap<>();
-    private VBox mascotContainer; // Store reference to update it
-    private VBox experienceContainer; // Store reference to update experience
+    private VBox mascotContainer;
+    private VBox experienceContainer;
     private Label expLabel;
+    private Label title;
+    private Label userLabel;
+    private Region separator;
+    private Button logoutBtn;
+    private ThemeManager themeManager;
 
+    // In your Sidebar class, add this to the constructor:
     public Sidebar(SidebarController controller, String userName) {
         this.controller = controller;
+        this.themeManager = ThemeManager.getInstance();
+
+        // Add theme change listener
+        themeManager.addThemeChangeListener(this::updateTheme);
+
         setupSidebar();
         createHeader(userName);
         createNavButtons();
         createExperienceSection();
         createMascotSection();
+
+        // Apply initial theme
+        applyTheme(themeManager.getCurrentTheme());
+    }
+
+    // Remove the old updateTheme method and replace with:
+    public void updateTheme(Theme newTheme) {
+        applyTheme(newTheme);
+    }
+
+    private void applyTheme(Theme theme) {
+        // Update background
+        this.setBackground(new Background(new BackgroundFill(
+                Color.web(theme.getBackgroundColor()),
+                new CornerRadii(0),
+                Insets.EMPTY
+        )));
+
+        // Update border
+        this.setStyle("-fx-border-color: " + theme.getPrimaryColor() + "; -fx-border-width: 0 2 0 0;");
+
+        // Update header
+        if (title != null) {
+            title.setTextFill(Color.web(theme.getTextPrimary()));
+            title.setStyle("-fx-effect: dropshadow(gaussian, " + theme.getPrimaryColor() + ", 10, 0.3, 0, 2);");
+        }
+
+        if (userLabel != null) {
+            userLabel.setTextFill(Color.web(theme.getTextSecondary()));
+        }
+
+        if (separator != null) {
+            separator.setBackground(new Background(new BackgroundFill(
+                    Color.web(theme.getPrimaryColor()),
+                    new CornerRadii(10),
+                    Insets.EMPTY
+            )));
+        }
+
+        // Update nav buttons
+        for (Map.Entry<String, Button> entry : navButtons.entrySet()) {
+            updateButtonTheme(entry.getValue(), entry.getKey(), theme);
+        }
+
+        // Update experience section
+        if (experienceContainer != null) {
+            experienceContainer.setBackground(new Background(new BackgroundFill(
+                    Color.web(theme.getCardColor()),
+                    new CornerRadii(12),
+                    Insets.EMPTY
+            )));
+            experienceContainer.setBorder(new Border(new BorderStroke(
+                    Color.web(theme.getWarningColor(), 0.3),
+                    BorderStrokeStyle.SOLID,
+                    new CornerRadii(12),
+                    new BorderWidths(1.5)
+            )));
+
+            if (expLabel != null) {
+                expLabel.setTextFill(Color.web(theme.getTextPrimary()));
+            }
+
+            // Update experience container effect
+            experienceContainer.setEffect(new DropShadow(5, Color.web(theme.getWarningColor(), 0.2)));
+        }
+
+        // Update mascot section
+        if (mascotContainer != null) {
+            mascotContainer.setBackground(new Background(new BackgroundFill(
+                    Color.web(theme.getCardColor()),
+                    new CornerRadii(15),
+                    Insets.EMPTY
+            )));
+            mascotContainer.setBorder(new Border(new BorderStroke(
+                    Color.web(theme.getPrimaryColor(), 0.3),
+                    BorderStrokeStyle.SOLID,
+                    new CornerRadii(15),
+                    new BorderWidths(2)
+            )));
+
+            // Update mascot text color if it exists
+            mascotContainer.getChildren().stream()
+                    .filter(node -> node instanceof Label)
+                    .map(node -> (Label) node)
+                    .forEach(label -> {
+                        if (!label.getText().matches(".*[🐱🐰🦉🐉🦊⭐✨].*")) { // Not emoji labels
+                            label.setTextFill(Color.web(theme.getTextPrimary()));
+                        }
+                    });
+        }
+
+        // Update logout button
+        if (logoutBtn != null) {
+            logoutBtn.setTextFill(Color.web(theme.getErrorColor()));
+            logoutBtn.setBackground(new Background(new BackgroundFill(
+                    Color.web(theme.getCardColor()),
+                    new CornerRadii(12),
+                    Insets.EMPTY
+            )));
+            logoutBtn.setBorder(new Border(new BorderStroke(
+                    Color.web(theme.getErrorColor(), 0.4),
+                    BorderStrokeStyle.SOLID,
+                    new CornerRadii(12),
+                    new BorderWidths(1.5)
+            )));
+        }
+    }
+
+    private void updateButtonTheme(Button btn, String buttonId, Theme theme) {
+        String color = getButtonColor(buttonId, theme);
+        btn.setBackground(new Background(new BackgroundFill(
+                Color.web(color),
+                new CornerRadii(12),
+                new Insets(2)
+        )));
+        btn.setBorder(new Border(new BorderStroke(
+                Color.web(color).darker(),
+                BorderStrokeStyle.SOLID,
+                new CornerRadii(12),
+                new BorderWidths(1.5)
+        )));
+        btn.setTextFill(Color.web(theme.getTextPrimary()));
+
+        // Update hover effects
+        btn.setOnMouseEntered(e -> {
+            btn.setScaleX(1.02);
+            btn.setScaleY(1.02);
+            btn.setEffect(new DropShadow(10, Color.web(color).darker()));
+        });
+    }
+    private String getButtonColor(String buttonId, Theme theme) {
+        // Simple color mapping that works with all themes
+        switch (buttonId) {
+            case "dashboard": return theme.getPrimaryColor();        // PINK
+            case "todos": return theme.getSecondaryColor();         // LAVENDER
+            case "timer": return theme.getAccentColor();            // PURPLE
+            case "notes": return theme.getStatCardColor3();         // BLUE (better than success green)
+            case "pet": return theme.getStatCardColor4();           // LILAC
+            case "stats": return theme.getAccentColor();             // LIGHT_PURPLE (better than warning orange)
+            case "calendar": return theme.getStatCardColor2();      // LAVENDER
+            case "mood": return theme.getStatCardColor1();          // PINK
+            case "whitenoise": return theme.getStatCardColor2();    // LAVENDER
+            case "settings": return theme.getAccentColor();      // BLUE
+            default: return theme.getPrimaryColor();
+        }
     }
 
     // Add this method to create the experience display
@@ -44,18 +201,6 @@ public class Sidebar extends VBox {
         experienceContainer = new VBox(5);
         experienceContainer.setAlignment(Pos.CENTER);
         experienceContainer.setPadding(new Insets(12, 15, 12, 15));
-        experienceContainer.setBackground(new Background(new BackgroundFill(
-                Color.web(Pastel.IVORY),
-                new CornerRadii(12),
-                Insets.EMPTY
-        )));
-        experienceContainer.setBorder(new Border(new BorderStroke(
-                Color.web(Pastel.GOLD, 0.3),
-                BorderStrokeStyle.SOLID,
-                new CornerRadii(12),
-                new BorderWidths(1.5)
-        )));
-        experienceContainer.setEffect(new DropShadow(5, Color.web(Pastel.GOLD, 0.2)));
 
         // Experience icon and text
         HBox expBox = new HBox(8);
@@ -66,7 +211,6 @@ public class Sidebar extends VBox {
 
         expLabel = new Label("800 XP");
         expLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-        expLabel.setTextFill(Color.web(Pastel.FOREST));
 
         // Sparkle emoji for cuteness
         Label sparkle = new Label("✨");
@@ -92,11 +236,12 @@ public class Sidebar extends VBox {
         scaleTransition.play();
 
         // Add sparkle effect temporarily
-        experienceContainer.setEffect(new DropShadow(10, Color.web(Pastel.GOLD)));
+        Theme currentTheme = themeManager.getCurrentTheme();
+        experienceContainer.setEffect(new DropShadow(10, Color.web(currentTheme.getWarningColor())));
 
         javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(500));
         pause.setOnFinished(e -> {
-            experienceContainer.setEffect(new DropShadow(5, Color.web(Pastel.GOLD, 0.2)));
+            experienceContainer.setEffect(new DropShadow(5, Color.web(currentTheme.getWarningColor(), 0.2)));
         });
         pause.play();
     }
@@ -143,12 +288,15 @@ public class Sidebar extends VBox {
 
             Label mascotText = new Label(petName + " the " + species);
             mascotText.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-            mascotText.setTextFill(Color.web(Pastel.FOREST));
             mascotText.setAlignment(Pos.CENTER);
             mascotText.setWrapText(true);
             mascotText.setMaxWidth(150);
 
             mascotContainer.getChildren().add(mascotText);
+
+            // Apply current theme to the new text
+            Theme currentTheme = themeManager.getCurrentTheme();
+            mascotText.setTextFill(Color.web(currentTheme.getTextPrimary()));
         }
     }
 
@@ -175,16 +323,7 @@ public class Sidebar extends VBox {
         this.setPadding(new Insets(25, 20, 30, 20));
         this.setSpacing(20);
         this.setAlignment(Pos.TOP_CENTER);
-
-        BackgroundFill backgroundFill = new BackgroundFill(
-                Color.web(Pastel.BLUSH),
-                new CornerRadii(0),
-                Insets.EMPTY
-        );
-        this.setBackground(new Background(backgroundFill));
-
         this.setEffect(new DropShadow(15, 5, 5, Color.gray(0, 0.1)));
-        this.setStyle("-fx-border-color: " + Pastel.PINK + "; -fx-border-width: 0 2 0 0;");
     }
 
     private void createHeader(String userName) {
@@ -192,24 +331,16 @@ public class Sidebar extends VBox {
         header.setAlignment(Pos.CENTER);
         header.setPadding(new Insets(0, 0, 25, 0));
 
-        Label title = new Label("Évora 🌸");
+        title = new Label("Évora 🌸");
         title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 26));
-        title.setTextFill(Color.web(Pastel.FOREST));
-        title.setStyle("-fx-effect: dropshadow(gaussian, " + Pastel.PINK + ", 10, 0.3, 0, 2);");
 
-        Label userLabel = new Label("Hello, " + userName + "! 💫");
+        userLabel = new Label("Hello, " + userName + "! 💫");
         userLabel.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 15));
-        userLabel.setTextFill(Color.web(Pastel.SAGE));
         userLabel.setWrapText(true);
         userLabel.setAlignment(Pos.CENTER);
 
-        Region separator = new Region();
+        separator = new Region();
         separator.setPrefHeight(2);
-        separator.setBackground(new Background(new BackgroundFill(
-                Color.web(Pastel.PINK),
-                new CornerRadii(10),
-                Insets.EMPTY
-        )));
         separator.setMaxWidth(180);
 
         header.getChildren().addAll(title, userLabel, separator);
@@ -222,20 +353,20 @@ public class Sidebar extends VBox {
         navBox.setFillWidth(true);
 
         String[][] items = {
-                {"dashboard", "🏠 Dashboard", Pastel.PINK},
-                {"todos", "📝 To-Do List", Pastel.LAVENDER},
-                {"timer", "⏰ Pomodoro Timer", Pastel.BLUE},
-                {"notes", "📒 Notes", Pastel.PURPLE},
-                {"pet", "🐾 Virtual Pet", Pastel.LILAC},
-                {"stats", "📊 Analytics", Pastel.ROSE},
-                {"calendar", "📅 Calendar", Pastel.SKY},
-                {"mood", "😊 Mood Tracker", Pastel.MINT},
-                {"whitenoise", "🎵 White Noise", Pastel.PEACH},
-                {"settings", "⚙️ Settings", Pastel.LEMON}
+                {"dashboard", "🏠 Dashboard", ""},
+                {"todos", "📝 To-Do List", ""},
+                {"timer", "⏰ Pomodoro Timer", ""},
+                {"notes", "📒 Notes", ""},
+                {"pet", "🐾 Virtual Pet", ""},
+                {"stats", "📊 Analytics", ""},
+                {"calendar", "📅 Calendar", ""},
+                {"mood", "😊 Mood Tracker", ""},
+                {"whitenoise", "🎵 White Noise", ""},
+                {"settings", "⚙️ Settings", ""}
         };
 
         for (String[] item : items) {
-            Button btn = createNavButton(item[0], item[1], item[2]);
+            Button btn = createNavButton(item[0], item[1]);
             navButtons.put(item[0], btn);
             navBox.getChildren().add(btn);
         }
@@ -243,32 +374,12 @@ public class Sidebar extends VBox {
         this.getChildren().add(navBox);
     }
 
-    private Button createNavButton(String id, String label, String color) {
+    private Button createNavButton(String id, String label) {
         Button btn = new Button(label);
         btn.setPrefWidth(220);
         btn.setPrefHeight(50);
         btn.setAlignment(Pos.CENTER_LEFT);
         btn.setFont(Font.font("Segoe UI", FontWeight.SEMI_BOLD, 14));
-        btn.setTextFill(Color.web(Pastel.FOREST));
-
-        btn.setBackground(new Background(new BackgroundFill(
-                Color.web(color),
-                new CornerRadii(12),
-                new Insets(2)
-        )));
-
-        btn.setBorder(new Border(new BorderStroke(
-                Color.web(color).darker(),
-                BorderStrokeStyle.SOLID,
-                new CornerRadii(12),
-                new BorderWidths(1.5)
-        )));
-
-        btn.setOnMouseEntered(e -> {
-            btn.setScaleX(1.02);
-            btn.setScaleY(1.02);
-            btn.setEffect(new DropShadow(10, Color.web(color).darker()));
-        });
 
         btn.setOnMouseExited(e -> {
             btn.setScaleX(1.0);
@@ -285,9 +396,11 @@ public class Sidebar extends VBox {
     }
 
     private void highlightButton(String activeId) {
+        Theme currentTheme = themeManager.getCurrentTheme();
+
         for (Map.Entry<String, Button> entry : navButtons.entrySet()) {
             Button btn = entry.getValue();
-            String originalColor = getOriginalColor(entry.getKey());
+            String originalColor = getButtonColor(entry.getKey(), currentTheme);
 
             if (entry.getKey().equals(activeId)) {
                 btn.setBackground(new Background(new BackgroundFill(
@@ -309,7 +422,7 @@ public class Sidebar extends VBox {
                         new CornerRadii(12),
                         new Insets(2)
                 )));
-                btn.setTextFill(Color.web(Pastel.FOREST));
+                btn.setTextFill(Color.web(currentTheme.getTextPrimary()));
                 btn.setBorder(new Border(new BorderStroke(
                         Color.web(originalColor).darker(),
                         BorderStrokeStyle.SOLID,
@@ -323,22 +436,6 @@ public class Sidebar extends VBox {
         }
     }
 
-    private String getOriginalColor(String buttonId) {
-        switch (buttonId) {
-            case "dashboard": return Pastel.PINK;
-            case "todos": return Pastel.LAVENDER;
-            case "timer": return Pastel.BLUE;
-            case "notes": return Pastel.PURPLE;
-            case "pet": return Pastel.LILAC;
-            case "stats": return Pastel.ROSE;
-            case "calendar": return Pastel.SKY;
-            case "mood": return Pastel.MINT;
-            case "whitenoise": return Pastel.PEACH;
-            case "settings": return Pastel.LEMON;
-            default: return Pastel.PINK;
-        }
-    }
-
     private void createMascotSection() {
         VBox mascotBox = new VBox(15);
         mascotBox.setAlignment(Pos.CENTER);
@@ -348,17 +445,6 @@ public class Sidebar extends VBox {
         mascotContainer = new VBox(8);
         mascotContainer.setAlignment(Pos.CENTER);
         mascotContainer.setPadding(new Insets(15));
-        mascotContainer.setBackground(new Background(new BackgroundFill(
-                Color.web(Pastel.IVORY),
-                new CornerRadii(15),
-                Insets.EMPTY
-        )));
-        mascotContainer.setBorder(new Border(new BorderStroke(
-                Color.web(Pastel.PINK, 0.3),
-                BorderStrokeStyle.SOLID,
-                new CornerRadii(15),
-                new BorderWidths(2)
-        )));
 
         // Default mascot display (will be updated when pet changes)
         Label defaultMascot = new Label("🦊");
@@ -366,32 +452,21 @@ public class Sidebar extends VBox {
 
         Label defaultText = new Label("Your Companion");
         defaultText.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-        defaultText.setTextFill(Color.web(Pastel.FOREST));
+        defaultText.setAlignment(Pos.CENTER);
 
         mascotContainer.getChildren().addAll(defaultMascot, defaultText);
 
         // Logout button
-        Button logoutBtn = new Button("🚪 Log Out");
+        logoutBtn = new Button("🚪 Log Out");
         logoutBtn.setPrefWidth(180);
         logoutBtn.setPrefHeight(45);
         logoutBtn.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-        logoutBtn.setTextFill(Color.web(Pastel.LOGOUT_RED));
-        logoutBtn.setBackground(new Background(new BackgroundFill(
-                Color.web(Pastel.LOGOUT_BG),
-                new CornerRadii(12),
-                Insets.EMPTY
-        )));
-        logoutBtn.setBorder(new Border(new BorderStroke(
-                Color.web(Pastel.LOGOUT_RED, 0.4),
-                BorderStrokeStyle.SOLID,
-                new CornerRadii(12),
-                new BorderWidths(1.5)
-        )));
 
         logoutBtn.setOnMouseEntered(e -> {
             logoutBtn.setScaleX(1.03);
             logoutBtn.setScaleY(1.03);
-            logoutBtn.setEffect(new DropShadow(8, Color.web(Pastel.LOGOUT_RED)));
+            Theme currentTheme = themeManager.getCurrentTheme();
+            logoutBtn.setEffect(new DropShadow(8, Color.web(currentTheme.getErrorColor())));
         });
 
         logoutBtn.setOnMouseExited(e -> {

@@ -12,7 +12,7 @@ import com.example.demo1.Notes.NotesController;
 import com.example.demo1.Calendar.CalendarView;
 import com.example.demo1.ToDoList.TodoView;
 import com.example.demo1.WhiteNoise.WhiteNoiseView;
-import com.example.demo1.Theme.Pastel;
+import com.example.demo1.Theme.*;
 import com.example.demo1.Pomodoro.PomodoroController;
 import com.example.demo1.Pomodoro.PomodoroView;
 import javafx.fxml.FXMLLoader;
@@ -27,23 +27,29 @@ import javafx.stage.Screen;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
-public class MainController {
+public class MainController implements ThemeManager.ThemeChangeListener {
     private Stage stage;
     private BorderPane root;
     private Sidebar sidebar;
     private SidebarController sidebarController;
     private String userName;
     private int userId;
+    private ThemeManager themeManager;
+    private String currentActiveView = "dashboard";
 
     public MainController(Stage stage, String userName, int userId) {
         this.stage = stage;
         this.userName = userName;
         this.userId = userId;
+        this.themeManager = ThemeManager.getInstance();
         initializeUI();
     }
 
     private void initializeUI() {
         root = new BorderPane();
+
+        // Register as theme change listener
+        themeManager.addThemeChangeListener(this);
 
         // Sidebar
         sidebarController = new SidebarController();
@@ -65,7 +71,7 @@ public class MainController {
 
         // Create scene with full screen dimensions
         Scene scene = new Scene(root, screenWidth, screenHeight);
-        scene.getRoot().setStyle("-fx-background-color: " + Pastel.BLUSH + ";");
+        applyThemeToScene(scene, themeManager.getCurrentTheme());
 
         stage.setScene(scene);
         stage.setTitle("Pastel Productivity Dashboard");
@@ -93,7 +99,64 @@ public class MainController {
         stage.show();
     }
 
+    @Override
+    public void onThemeChanged(Theme newTheme) {
+        // Update the scene background
+        applyThemeToScene(root.getScene(), newTheme);
+
+        // Refresh the current active view
+        refreshCurrentView();
+
+        // Update sidebar theme
+        if (sidebar != null) {
+            sidebar.updateTheme(newTheme);
+        }
+    }
+
+    private void applyThemeToScene(Scene scene, Theme theme) {
+        if (scene != null && scene.getRoot() != null) {
+            scene.getRoot().setStyle("-fx-background-color: " + theme.getBackgroundColor() + ";");
+        }
+    }
+
+    private void refreshCurrentView() {
+        // Refresh the currently active view with the new theme
+        switch (currentActiveView) {
+            case "dashboard":
+                showDashboard();
+                break;
+            case "timer":
+                showPomodoroTimer();
+                break;
+            case "mood":
+                showMood();
+                break;
+            case "todos":
+                showTodoList();
+                break;
+            case "calendar":
+                showCalendar();
+                break;
+            case "notes":
+                showNotes();
+                break;
+            case "pet":
+                showPets();
+                break;
+            case "stats":
+                System.out.println("Refreshing Analytics with new theme");
+                break;
+            case "whitenoise":
+                showWhiteNoisePlayer();
+                break;
+            case "settings":
+                showSettings();
+                break;
+        }
+    }
+
     private void handleNavigation(String tab) {
+        this.currentActiveView = tab;
         switch (tab) {
             case "dashboard":
                 showDashboard();
@@ -133,6 +196,11 @@ public class MainController {
     private void showDashboard() {
         Dashboard dashboard = new Dashboard();
         dashboard.setSidebarController(sidebarController);
+
+        // Apply current theme to dashboard
+        Theme currentTheme = themeManager.getCurrentTheme();
+        dashboard.getContent();
+
         root.setCenter(dashboard.getContent());
     }
 
@@ -140,12 +208,20 @@ public class MainController {
         NotesController notesController = new NotesController(userId);
         notesController.setSidebar(sidebar);
         NotesView notesView = new NotesView(notesController);
+
+        // Apply theme to notes view if it supports it
+        applyThemeToNode(notesView, themeManager.getCurrentTheme());
+
         root.setCenter(notesView);
     }
 
     private void showMood() {
         MoodController moodController = new MoodController(userId);
         MoodView moodView = new MoodView(moodController);
+
+        // Apply theme to mood view if it supports it
+        applyThemeToNode(moodView, themeManager.getCurrentTheme());
+
         root.setCenter(moodView);
     }
 
@@ -160,6 +236,10 @@ public class MainController {
         });
 
         PetsView petsView = new PetsView(petsController);
+
+        // Apply theme to pets view if it supports it
+        applyThemeToNode(petsView, themeManager.getCurrentTheme());
+
         root.setCenter(petsView);
 
         // Also update sidebar with current pet when first loading pets tab
@@ -171,6 +251,9 @@ public class MainController {
         TodoView todoView = new TodoView(userId);
         ScrollPane todoContent = todoView.getContent();
 
+        // Apply theme to todo content
+        applyThemeToNode(todoContent, themeManager.getCurrentTheme());
+
         // Make todo content fill available space
         todoContent.prefWidthProperty().bind(root.widthProperty().subtract(200)); // sidebar width
         todoContent.prefHeightProperty().bind(root.heightProperty());
@@ -180,6 +263,9 @@ public class MainController {
 
     private void showCalendar() {
         CalendarView calendarView = new CalendarView(userId);
+
+        // Apply theme to calendar view
+        applyThemeToNode(calendarView.getContent(), themeManager.getCurrentTheme());
 
         // Set the initial width for responsive calculations
         calendarView.setWidth(root.getWidth() - 200); // Account for sidebar
@@ -194,6 +280,9 @@ public class MainController {
             // This will be called when dates are clicked or month changes
             ScrollPane refreshedContent = calendarView.getContent();
 
+            // Apply theme to refreshed content
+            applyThemeToNode(refreshedContent, themeManager.getCurrentTheme());
+
             // Make refreshed content fill available space
             refreshedContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
             refreshedContent.prefHeightProperty().bind(root.heightProperty());
@@ -206,6 +295,9 @@ public class MainController {
 
         ScrollPane calendarContent = calendarView.getContent();
 
+        // Apply theme to calendar content
+        applyThemeToNode(calendarContent, themeManager.getCurrentTheme());
+
         // Make calendar content fill available space
         calendarContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
         calendarContent.prefHeightProperty().bind(root.heightProperty());
@@ -214,12 +306,15 @@ public class MainController {
     }
 
     private void showSettings() {
-        Settings settings = new Settings();
+        Settings settings = new Settings(userId);
         VBox settingsContent = settings.getContent();
 
         ScrollPane scrollPane = new ScrollPane(settingsContent);
         scrollPane.setFitToWidth(true);
-        scrollPane.setStyle("-fx-background: " + Pastel.BLUSH + "; -fx-border-color: " + Pastel.BLUSH + ";");
+
+        // Apply theme to scroll pane
+        Theme currentTheme = themeManager.getCurrentTheme();
+        scrollPane.setStyle("-fx-background: " + currentTheme.getBackgroundColor() + "; -fx-border-color: " + currentTheme.getBackgroundColor() + ";");
 
         // Make settings content responsive
         scrollPane.prefWidthProperty().bind(root.widthProperty().subtract(200));
@@ -231,15 +326,16 @@ public class MainController {
     private void showWhiteNoisePlayer() {
         // Use the singleton instance instead of creating a new one
         WhiteNoiseView whiteNoisePlayer = WhiteNoiseView.getInstance();
-        Node whiteNoiseContent = whiteNoisePlayer.getContent(); // Changed to Node
+        Node whiteNoiseContent = whiteNoisePlayer.getContent();
 
-        // Apply your dashboard theme to match the rest of the app
-        whiteNoiseContent.setStyle("-fx-background-color: " + Pastel.BLUSH + ";");
+        // Apply current theme
+        Theme currentTheme = themeManager.getCurrentTheme();
+        whiteNoiseContent.setStyle("-fx-background-color: " + currentTheme.getBackgroundColor() + ";");
 
         // Create a scroll pane for the content (since white noise player is tall)
         ScrollPane scrollPane = new ScrollPane(whiteNoiseContent);
         scrollPane.setFitToWidth(true);
-        scrollPane.setStyle("-fx-background: " + Pastel.BLUSH + "; -fx-border-color: " + Pastel.BLUSH + ";");
+        scrollPane.setStyle("-fx-background: " + currentTheme.getBackgroundColor() + "; -fx-border-color: " + currentTheme.getBackgroundColor() + ";");
         scrollPane.setPadding(new Insets(20));
 
         // Make white noise content responsive
@@ -255,6 +351,10 @@ public class MainController {
         PomodoroView pomodoroView = new PomodoroView(pomodoroController);
         VBox pomodoroContent = pomodoroView.getView();
 
+        // Apply current theme
+        Theme currentTheme = themeManager.getCurrentTheme();
+        pomodoroContent.setStyle("-fx-background-color: " + currentTheme.getBackgroundColor() + ";");
+
         // Set up the controller with dependencies
         pomodoroController.setUserId(userId);
         pomodoroController.setSidebar(sidebar);
@@ -263,13 +363,35 @@ public class MainController {
         PetsController petsController = new PetsController(userId);
         pomodoroController.setPetsController(petsController);
 
-        // The background is already set in PomodoroView, so remove this line:
-        // pomodoroContent.setStyle("-fx-background-color: " + Pastel.BLUSH + ";");
-
         // Make pomodoro content responsive
         pomodoroContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
         pomodoroContent.prefHeightProperty().bind(root.heightProperty());
 
         root.setCenter(pomodoroContent);
+    }
+
+    private void applyThemeToNode(Node node, Theme theme) {
+        if (node instanceof Region) {
+            Region region = (Region) node;
+            // Check if the node has a style that includes background color
+            String currentStyle = region.getStyle();
+            if (currentStyle != null && currentStyle.contains("-fx-background-color")) {
+                // Replace the background color with the new theme
+                region.setStyle(currentStyle.replaceAll(
+                        "-fx-background-color:\\s*[^;]+;",
+                        "-fx-background-color: " + theme.getBackgroundColor() + ";"
+                ));
+            } else {
+                // Add background color if not present
+                region.setStyle("-fx-background-color: " + theme.getBackgroundColor() + ";" + currentStyle);
+            }
+        }
+    }
+
+    // Clean up when controller is no longer needed
+    public void cleanup() {
+        if (themeManager != null) {
+            themeManager.removeThemeChangeListener(this);
+        }
     }
 }

@@ -1,43 +1,70 @@
+// src/main/java/com/example/demo1/Theme/ThemeManager.java
 package com.example.demo1.Theme;
 
-import javafx.scene.Scene;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ThemeManager {
+    private static ThemeManager instance;
+    private Theme currentTheme;
+    private List<ThemeChangeListener> listeners = new ArrayList<>();
 
-    public enum Theme {
-        PASTEL,
-        GALAXY,
-        NATURE
+    public interface ThemeChangeListener {
+        void onThemeChanged(Theme newTheme);
     }
 
-    private static Theme currentTheme = Theme.PASTEL;
-
-    public static void applyTheme(Scene scene, Theme theme) {
-        scene.getStylesheets().clear();
-        currentTheme = theme;
-
-        String cssFile = null;
-
-        switch (theme) {
-            case PASTEL:
-                cssFile = "Theme/pastel.css";
-                break;
-            case GALAXY:
-                cssFile = "Theme/galaxy.css";
-                break;
-            case NATURE:
-                cssFile = "Theme/nature.css";
-                break;
-        }
-
-        if (cssFile != null && ThemeManager.class.getResource(cssFile) != null) {
-            scene.getStylesheets().add(ThemeManager.class.getResource(cssFile).toExternalForm());
-        } else {
-            System.err.println("Theme CSS file not found: " + cssFile);
-        }
+    private ThemeManager() {
+        this.currentTheme = new PastelTheme();
     }
 
-    public static Theme getCurrentTheme() {
+    public static ThemeManager getInstance() {
+        if (instance == null) {
+            instance = new ThemeManager();
+        }
+        return instance;
+    }
+
+    public void setTheme(Theme theme) {
+        this.currentTheme = theme;
+        notifyThemeChanged();
+    }
+
+    public void setTheme(String themeName) {
+        switch (themeName.toLowerCase()) {
+            case "galaxy":
+                this.currentTheme = new GalaxyTheme();
+                break;
+            case "pastel":
+            default:
+                this.currentTheme = new PastelTheme();
+                break;
+        }
+        notifyThemeChanged();
+    }
+
+    public Theme getCurrentTheme() {
         return currentTheme;
+    }
+
+    public String getThemeName() {
+        if (currentTheme instanceof GalaxyTheme) {
+            return "galaxy";
+        } else {
+            return "pastel";
+        }
+    }
+
+    public void addThemeChangeListener(ThemeChangeListener listener) {
+        listeners.add(listener);
+    }
+
+    public void removeThemeChangeListener(ThemeChangeListener listener) {
+        listeners.remove(listener);
+    }
+
+    private void notifyThemeChanged() {
+        for (ThemeChangeListener listener : listeners) {
+            listener.onThemeChanged(currentTheme);
+        }
     }
 }

@@ -1,6 +1,7 @@
 package com.example.demo1;
 
-import com.example.demo1.Theme.Pastel;
+import com.example.demo1.Theme.*;
+import com.example.demo1.Database.DatabaseConnection;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -8,14 +9,27 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import java.sql.*;
 
 public class Settings {
+
+    private ThemeManager themeManager;
+    private int userId;
+
+    public Settings(int userId) {
+        this.themeManager = ThemeManager.getInstance();
+        this.userId = userId;
+    }
 
     public VBox getContent() {
         VBox mainLayout = new VBox(20);
         mainLayout.setPadding(new Insets(20));
-        mainLayout.setStyle("-fx-background-color: " + Pastel.BLUSH + ";");
         mainLayout.setAlignment(Pos.TOP_CENTER);
+
+        // Apply current theme
+        applyTheme(mainLayout, themeManager.getCurrentTheme());
 
         // Header
         VBox header = createHeader();
@@ -23,17 +37,18 @@ public class Settings {
         // Theme Selection
         VBox themeSection = createThemeSelection();
 
-        // Mascot Selection
-        VBox mascotSection = createMascotSelection();
+        // Profile Settings
+        VBox profileSection = createProfileSettings();
 
         // App Information
         VBox aboutSection = createAboutSection();
 
-        // Quick Actions
-        VBox quickActions = createQuickActions();
-
-        mainLayout.getChildren().addAll(header, themeSection, mascotSection, aboutSection, quickActions);
+        mainLayout.getChildren().addAll(header, themeSection, profileSection, aboutSection);
         return mainLayout;
+    }
+
+    private void applyTheme(VBox mainLayout, Theme theme) {
+        mainLayout.setStyle("-fx-background-color: " + theme.getBackgroundColor() + ";");
     }
 
     private VBox createHeader() {
@@ -43,11 +58,12 @@ public class Settings {
 
         Label title = new Label("Settings ⚙️");
         title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 32));
-        title.setTextFill(Color.web(Pastel.FOREST));
+        // Use dynamic style that checks theme every time
+        title.setStyle(getDynamicTextStyle());
 
         Label subtitle = new Label("Customize your Évora experience");
         subtitle.setFont(Font.font("Segoe UI", 16));
-        subtitle.setTextFill(Color.web(Pastel.SAGE));
+        subtitle.setStyle(getDynamicTextStyle());
 
         header.getChildren().addAll(title, subtitle);
         return header;
@@ -63,9 +79,8 @@ public class Settings {
         themesContainer.setAlignment(Pos.CENTER);
 
         String[][] themes = {
-                {"classic", "🎀 Classic Pastel", "Soft pink, mint, lavender, peach", Pastel.PINK, Pastel.LAVENDER},
-                {"nature", "🌿 Nature Pastel", "Leafy green, sky blue, sand beige", Pastel.MINT, Pastel.PEACH},
-                {"galaxy", "🌌 Galaxy Pastel", "Pastel purple, midnight blue, starry accents", Pastel.PURPLE, Pastel.LILAC}
+                {"pastel", "🎀 Classic Pastel", "Soft pink, mint, lavender, peach", Pastel.PINK, Pastel.LAVENDER},
+                {"galaxy", "🌌 Galaxy", "Deep space blues, cosmic purples, starry accents", getGalaxyColor("NEBULA_PURPLE"), getGalaxyColor("STAR_BLUE")}
         };
 
         for (String[] theme : themes) {
@@ -77,7 +92,6 @@ public class Settings {
         themeCard.getChildren().add(content);
         return themeCard;
     }
-
     private VBox createThemeOption(String id, String name, String description, String color1, String color2) {
         VBox themeOption = new VBox(10);
         themeOption.setAlignment(Pos.CENTER);
@@ -100,13 +114,15 @@ public class Settings {
 
         Label nameLabel = new Label(name);
         nameLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-        nameLabel.setTextFill(Color.web(Pastel.FOREST));
+        // ALWAYS BLACK TEXT for theme option labels
+        nameLabel.setStyle("-fx-text-fill: black; -fx-font-weight: bold;");
         nameLabel.setWrapText(true);
         nameLabel.setAlignment(Pos.CENTER);
 
         Label descLabel = new Label(description);
         descLabel.setFont(Font.font("Segoe UI", 11));
-        descLabel.setTextFill(Color.web(Pastel.FOREST));
+        // ALWAYS BLACK TEXT for theme option labels
+        descLabel.setStyle("-fx-text-fill: black; -fx-font-size: 11;");
         descLabel.setWrapText(true);
         descLabel.setAlignment(Pos.CENTER);
         descLabel.setMaxWidth(150);
@@ -130,235 +146,455 @@ public class Settings {
             ));
         });
 
+        // Add click handler to change theme
+        themeOption.setOnMouseClicked(e -> {
+            themeManager.setTheme(id);
+            // Force the entire application to refresh by showing a notification
+            showThemeChangeNotification(id);
+        });
+
         return themeOption;
     }
 
-    private VBox createMascotSelection() {
-        VBox mascotCard = createCard("Choose Your Mascot", 800);
-        VBox content = new VBox(15);
+    private void showThemeChangeNotification(String themeName) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Theme Changed");
+        alert.setHeaderText(null);
+        alert.setContentText("Theme successfully changed to " + themeName);
+
+        // Style the alert with current theme
+        DialogPane dialogPane = alert.getDialogPane();
+        dialogPane.setStyle("-fx-background-color: " + themeManager.getCurrentTheme().getCardColor() + ";");
+        dialogPane.lookup(".content.label").setStyle("-fx-text-fill: " + (isGalaxyTheme() ? "#FFFFFF" : themeManager.getCurrentTheme().getTextPrimary()) + ";");
+
+        alert.showAndWait();
+    }
+
+    private VBox createProfileSettings() {
+        VBox profileCard = createCard("👤 Profile Settings", 800);
+        VBox content = new VBox(20);
         content.setPadding(new Insets(20));
 
-        // Mascot options
-        GridPane mascotsGrid = new GridPane();
-        mascotsGrid.setHgap(15);
-        mascotsGrid.setVgap(15);
-        mascotsGrid.setAlignment(Pos.CENTER);
+        // Change Password Section
+        VBox passwordSection = createPasswordSection();
 
-        String[][] mascots = {
-                {"cat", "🐱 Kitty", "Playful and curious companion", "Purr-fect productivity partner!", Pastel.PINK},
-                {"owl", "🦉 Hoot", "Wise and focused helper", "Wise choices lead to success!", Pastel.BLUE},
-                {"bunny", "🐰 Hop", "Energetic and encouraging friend", "Hop to it! You've got this!", Pastel.MINT},
-                {"bookworm", "🐛 Worm", "Studious and detail-oriented buddy", "Knowledge is the best adventure!", Pastel.PEACH}
-        };
+        // Change Username Section
+        VBox usernameSection = createUsernameSection();
 
-        int col = 0;
-        int row = 0;
-        for (String[] mascot : mascots) {
-            HBox mascotOption = createMascotOption(mascot[0], mascot[1], mascot[2], mascot[3], mascot[4]);
-            mascotsGrid.add(mascotOption, col, row);
+        content.getChildren().addAll(passwordSection, usernameSection);
+        profileCard.getChildren().add(content);
+        return profileCard;
+    }
 
-            col++;
-            if (col >= 2) {
-                col = 0;
-                row++;
+    private VBox createPasswordSection() {
+        VBox passwordSection = new VBox(10);
+        passwordSection.setPadding(new Insets(15));
+        passwordSection.setStyle("-fx-background-color: " + themeManager.getCurrentTheme().getCardColor() + "; -fx-background-radius: 15;");
+
+        Label sectionTitle = new Label("🔐 Change Password");
+        sectionTitle.setFont(Font.font("Segoe UI", FontWeight.BOLD, 18));
+        sectionTitle.setStyle(getDynamicTextStyle());
+
+        // Current Password
+        VBox currentPassBox = new VBox(5);
+        Label currentPassLabel = new Label("Current Password");
+        currentPassLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 12));
+        currentPassLabel.setStyle(getDynamicTextStyle());
+
+        PasswordField currentPassField = new PasswordField();
+        currentPassField.setPromptText("Enter current password");
+        currentPassField.setStyle(getTextFieldStyle());
+        currentPassBox.getChildren().addAll(currentPassLabel, currentPassField);
+
+        // New Password
+        VBox newPassBox = new VBox(5);
+        Label newPassLabel = new Label("New Password");
+        newPassLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 12));
+        newPassLabel.setStyle(getDynamicTextStyle());
+
+        PasswordField newPassField = new PasswordField();
+        newPassField.setPromptText("Enter new password");
+        newPassField.setStyle(getTextFieldStyle());
+        newPassBox.getChildren().addAll(newPassLabel, newPassField);
+
+        // Confirm New Password
+        VBox confirmPassBox = new VBox(5);
+        Label confirmPassLabel = new Label("Confirm New Password");
+        confirmPassLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 12));
+        confirmPassLabel.setStyle(getDynamicTextStyle());
+
+        PasswordField confirmPassField = new PasswordField();
+        confirmPassField.setPromptText("Confirm new password");
+        confirmPassField.setStyle(getTextFieldStyle());
+        confirmPassBox.getChildren().addAll(confirmPassLabel, confirmPassField);
+
+        // Update Password Button
+        Button updatePassButton = new Button("Update Password 🔑");
+        updatePassButton.setStyle(getButtonStyle(themeManager.getCurrentTheme().getPrimaryColor()));
+        updatePassButton.setOnAction(e -> updatePassword(currentPassField.getText(), newPassField.getText(), confirmPassField.getText()));
+
+        passwordSection.getChildren().addAll(sectionTitle, currentPassBox, newPassBox, confirmPassBox, updatePassButton);
+        return passwordSection;
+    }
+
+    private VBox createUsernameSection() {
+        VBox usernameSection = new VBox(10);
+        usernameSection.setPadding(new Insets(15));
+        usernameSection.setStyle("-fx-background-color: " + themeManager.getCurrentTheme().getCardColor() + "; -fx-background-radius: 15;");
+
+        Label sectionTitle = new Label("👤 Change Username");
+        sectionTitle.setFont(Font.font("Segoe UI", FontWeight.BOLD, 18));
+        sectionTitle.setStyle(getDynamicTextStyle());
+
+        // New Username
+        VBox usernameBox = new VBox(5);
+        Label usernameLabel = new Label("New Username");
+        usernameLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 12));
+        usernameLabel.setStyle(getDynamicTextStyle());
+
+        TextField usernameField = new TextField();
+        usernameField.setPromptText("Enter new username");
+        usernameField.setStyle(getTextFieldStyle());
+        usernameBox.getChildren().addAll(usernameLabel, usernameField);
+
+        // Update Username Button
+        Button updateUsernameButton = new Button("Update Username ✨");
+        updateUsernameButton.setStyle(getButtonStyle(themeManager.getCurrentTheme().getSecondaryColor()));
+        updateUsernameButton.setOnAction(e -> updateUsername(usernameField.getText()));
+
+        usernameSection.getChildren().addAll(sectionTitle, usernameBox, updateUsernameButton);
+        return usernameSection;
+    }
+
+    private String getTextFieldStyle() {
+        return "-fx-background-color: " + themeManager.getCurrentTheme().getCardColor() + "; " +
+                "-fx-border-color: " + themeManager.getCurrentTheme().getPrimaryColor() + "; " +
+                "-fx-border-radius: 8; -fx-background-radius: 8; " +
+                "-fx-padding: 8; -fx-font-size: 14; " +
+                "-fx-text-fill: " + (isGalaxyTheme() ? "#FFFFFF" : themeManager.getCurrentTheme().getTextPrimary()) + ";";
+    }
+
+    private String getButtonStyle(String color) {
+        String baseStyle = "-fx-background-color: " + color + "; " +
+                "-fx-text-fill: white; -fx-font-weight: bold; " +
+                "-fx-background-radius: 10; -fx-border-radius: 10; " +
+                "-fx-padding: 12 25; -fx-cursor: hand;";
+
+        return baseStyle;
+    }
+
+    // NEW: Dynamic text style that checks current theme
+    private String getDynamicTextStyle() {
+        if (isGalaxyTheme()) {
+            return "-fx-text-fill: #FFFFFF;"; // White for galaxy
+        } else {
+            return "-fx-text-fill: " + themeManager.getCurrentTheme().getTextPrimary() + ";";
+        }
+    }
+
+    // Helper method to check if current theme is Galaxy
+    private boolean isGalaxyTheme() {
+        return "galaxy".equals(themeManager.getThemeName().toLowerCase());
+    }
+
+    private String getGalaxyColor(String colorName) {
+        try {
+            java.lang.reflect.Field field = Class.forName("com.example.demo1.Theme.Galaxy").getField(colorName);
+            return (String) field.get(null);
+        } catch (Exception e) {
+            switch (colorName) {
+                case "NEBULA_PURPLE": return "#9d99d6";
+                case "STAR_BLUE": return "#7988ad";
+                case "COSMIC_PINK": return "#b8a7c5";
+                case "SUPERNOVA_YELLOW": return "#b8a7c5";
+                default: return "#9d99d6";
             }
         }
-
-        content.getChildren().add(mascotsGrid);
-        mascotCard.getChildren().add(content);
-        return mascotCard;
     }
 
-    private HBox createMascotOption(String id, String name, String description, String tagline, String color) {
-        HBox mascotOption = new HBox(15);
-        mascotOption.setAlignment(Pos.CENTER_LEFT);
-        mascotOption.setPadding(new Insets(15));
-        mascotOption.setPrefSize(350, 100);
-        mascotOption.setStyle(String.format(
-                "-fx-background-color: %s; -fx-background-radius: 20; " +
-                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2); -fx-cursor: hand;",
-                color
-        ));
+    // ... (keep the rest of your methods the same: updatePassword, updateUsername, verifyCurrentPassword, etc.)
 
-        // Emoji
-        Label emoji = new Label(name.split(" ")[0]); // Get the emoji part
-        emoji.setFont(Font.font(24));
+    private void updatePassword(String currentPass, String newPass, String confirmPass) {
+        if (currentPass.isEmpty() || newPass.isEmpty() || confirmPass.isEmpty()) {
+            showAlert("Error", "Please fill in all password fields.");
+            return;
+        }
 
-        // Text content
-        VBox textContent = new VBox(4);
-        textContent.setAlignment(Pos.CENTER_LEFT);
+        if (!newPass.equals(confirmPass)) {
+            showAlert("Error", "New passwords do not match.");
+            return;
+        }
 
-        Label nameLabel = new Label(name.substring(3)); // Remove emoji from name
-        nameLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-        nameLabel.setTextFill(Color.web(Pastel.FOREST));
+        if (newPass.length() < 6) {
+            showAlert("Error", "Password must be at least 6 characters long.");
+            return;
+        }
 
-        Label descLabel = new Label(description);
-        descLabel.setFont(Font.font("Segoe UI", 11));
-        descLabel.setTextFill(Color.web(Pastel.SAGE));
-
-        Label taglineLabel = new Label("\"" + tagline + "\"");
-        taglineLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 10));
-        taglineLabel.setTextFill(Color.web(Pastel.SAGE));
-        taglineLabel.setStyle("-fx-font-style: italic;");
-
-        textContent.getChildren().addAll(nameLabel, descLabel, taglineLabel);
-
-        HBox.setHgrow(textContent, Priority.ALWAYS);
-        mascotOption.getChildren().addAll(emoji, textContent);
-
-        // Add hover effect
-        mascotOption.setOnMouseEntered(e -> {
-            mascotOption.setStyle(String.format(
-                    "-fx-background-color: %s; -fx-background-radius: 20; " +
-                            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 12, 0, 0, 4); -fx-cursor: hand;",
-                    color
-            ));
-        });
-
-        mascotOption.setOnMouseExited(e -> {
-            mascotOption.setStyle(String.format(
-                    "-fx-background-color: %s; -fx-background-radius: 20; " +
-                            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2); -fx-cursor: hand;",
-                    color
-            ));
-        });
-
-        return mascotOption;
+        // Verify current password and update in database
+        if (verifyCurrentPassword(currentPass)) {
+            if (updatePasswordInDatabase(newPass)) {
+                showAlert("Success", "Password updated successfully! 🔑");
+            } else {
+                showAlert("Error", "Failed to update password. Please try again.");
+            }
+        } else {
+            showAlert("Error", "Current password is incorrect.");
+        }
     }
 
+    private void updateUsername(String newUsername) {
+        if (newUsername.isEmpty()) {
+            showAlert("Error", "Please enter a new username.");
+            return;
+        }
+
+        if (newUsername.length() < 3) {
+            showAlert("Error", "Username must be at least 3 characters long.");
+            return;
+        }
+
+        if (updateUsernameInDatabase(newUsername)) {
+            showAlert("Success", "Username updated successfully! ✨");
+        } else {
+            showAlert("Error", "Failed to update username. Please try again.");
+        }
+    }
+
+    private boolean verifyCurrentPassword(String currentPass) {
+        String sql = "SELECT password FROM Users WHERE user_id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, userId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                String storedPassword = rs.getString("password");
+                return storedPassword.equals(currentPass);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error verifying password: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    private boolean updatePasswordInDatabase(String newPassword) {
+        String sql = "UPDATE Users SET password = ? WHERE user_id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, newPassword);
+            stmt.setInt(2, userId);
+
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            System.err.println("Error updating password: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    private boolean updateUsernameInDatabase(String newUsername) {
+        String sql = "UPDATE Users SET username = ? WHERE user_id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, newUsername);
+            stmt.setInt(2, userId);
+
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            System.err.println("Error updating username: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    private void showAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+
+        // Style the alert with current theme
+        DialogPane dialogPane = alert.getDialogPane();
+        dialogPane.setStyle("-fx-background-color: " + themeManager.getCurrentTheme().getCardColor() + ";");
+        dialogPane.lookup(".content.label").setStyle("-fx-text-fill: " + (isGalaxyTheme() ? "#FFFFFF" : themeManager.getCurrentTheme().getTextPrimary()) + ";");
+
+        alert.showAndWait();
+    }
     private VBox createAboutSection() {
-        VBox aboutCard = createCard("About Évora", 600);
+        VBox aboutCard = createCard("🌸 About Évora", 800);
         VBox content = new VBox(15);
         content.setPadding(new Insets(20));
         content.setAlignment(Pos.CENTER);
 
-        Label flower = new Label("🌸");
+         Label flower = new Label("🌸");
         flower.setFont(Font.font(48));
+        flower.setStyle(getDynamicTextStyle());
 
-        Label title = new Label("Évora");
-        title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 28));
-        title.setTextFill(Color.web(Pastel.FOREST));
+        Label title = new Label("Évora - Your Magical Productivity Companion");
+        title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 24));
+        title.setStyle(getDynamicTextStyle());
+        title.setAlignment(Pos.CENTER);
+        title.setWrapText(true);
 
-        Label subtitle = new Label("Your cozy productivity companion");
-        subtitle.setFont(Font.font("Segoe UI", 16));
-        subtitle.setTextFill(Color.web(Pastel.SAGE));
+        // Pets Section
+        VBox petsSection = new VBox(15);
+        petsSection.setAlignment(Pos.CENTER);
+        petsSection.setPadding(new Insets(20));
+        petsSection.setStyle("-fx-background-color: " + themeManager.getCurrentTheme().getCardColor() + "; -fx-background-radius: 15;");
 
-        VBox descriptionBox = new VBox(10);
-        descriptionBox.setAlignment(Pos.CENTER);
-        descriptionBox.setPadding(new Insets(15));
-        descriptionBox.setStyle("-fx-background-color: " + Pastel.PINK + "; -fx-background-radius: 15;");
-        descriptionBox.setMaxWidth(500);
+        Label petsTitle = new Label("🐾 Meet Your Adorable Companions!");
+        petsTitle.setFont(Font.font("Segoe UI", FontWeight.BOLD, 18));
+        petsTitle.setStyle(getDynamicTextStyle());
 
-        Label description = new Label("Évora is designed to make productivity fun and stress-free. " +
-                "With cute mascots, calming pastel themes, and gentle reminders, " +
-                "we're here to help you achieve your goals while feeling good about it! 💖");
-        description.setFont(Font.font("Segoe UI", 12));
-        description.setTextFill(Color.web(Pastel.FOREST));
-        description.setWrapText(true);
-        description.setAlignment(Pos.CENTER);
+        HBox petsContainer = new HBox(30);
+        petsContainer.setAlignment(Pos.CENTER);
 
-        descriptionBox.getChildren().add(description);
+        String[] petGifs = {"cat.gif", "bunny.gif", "owl.gif", "dragon.gif"};
+        String[] petNames = {"Luna", "Cocoa", "Hoot", "Sage"};
 
-        content.getChildren().addAll(flower, title, subtitle, descriptionBox);
+        for (int i = 0; i < petGifs.length; i++) {
+            VBox petDisplay = createPetDisplay(petGifs[i], petNames[i]);
+            petsContainer.getChildren().add(petDisplay);
+        }
+
+        petsSection.getChildren().addAll(petsTitle, petsContainer);
+
+        // Features Section
+        VBox featuresSection = new VBox(15);
+        featuresSection.setAlignment(Pos.CENTER_LEFT);
+        featuresSection.setPadding(new Insets(20));
+        featuresSection.setStyle("-fx-background-color: " + themeManager.getCurrentTheme().getCardColor() + "; -fx-background-radius: 15;");
+        featuresSection.setMaxWidth(600);
+
+        Label featuresTitle = new Label("🎯 How Évora Works Its Magic:");
+        featuresTitle.setFont(Font.font("Segoe UI", FontWeight.BOLD, 18));
+        featuresTitle.setStyle(getDynamicTextStyle());
+
+        VBox featuresList = new VBox(8);
+        featuresList.setAlignment(Pos.CENTER_LEFT);
+
+        String[] features = {
+                "🍅 Complete Pomodoro sessions → Earn cute pets & experience!",
+                "📝 Add sticky notes & to-dos → Level up your productivity!",
+                "😊 Log your daily mood → Gain XP and grow with your pet!",
+                "🎵 Use white noise → Focus better and earn rewards!",
+                "📅 Track your calendar → Stay organized and productive!",
+                "⭐ Level up → Unlock new pets and special abilities!"
+        };
+
+        for (String feature : features) {
+            Label featureLabel = new Label(feature);
+            featureLabel.setFont(Font.font("Segoe UI", 13));
+            featureLabel.setStyle(getDynamicTextStyle());
+            featureLabel.setWrapText(true);
+            featuresList.getChildren().add(featureLabel);
+        }
+
+        featuresSection.getChildren().addAll(featuresTitle, featuresList);
+
+        // Final Message - Gradient Effect Section
+        VBox gradientMessageBox = new VBox(10);
+        gradientMessageBox.setAlignment(Pos.CENTER);
+        gradientMessageBox.setPadding(new Insets(25));
+        gradientMessageBox.setMaxWidth(600);
+
+        // Create beautiful gradient based on theme
+        if (isGalaxyTheme()) {
+            gradientMessageBox.setStyle("-fx-background-color: linear-gradient(to right, " +
+                    getGalaxyColor("NEBULA_PURPLE") + ", " + getGalaxyColor("COSMIC_PINK") + ", " + getGalaxyColor("STAR_BLUE") + "); " +
+                    "-fx-background-radius: 20; " +
+                    "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 15, 0, 0, 5); " +
+                    "-fx-border-color: " + getGalaxyColor("SUPERNOVA_YELLOW") + "; " +
+                    "-fx-border-width: 2; -fx-border-radius: 20;");
+        } else {
+            gradientMessageBox.setStyle("-fx-background-color: linear-gradient(to right, " +
+                    Pastel.PINK + ", " + Pastel.LAVENDER + ", " + Pastel.BLUE + "); " +
+                    "-fx-background-radius: 20; " +
+                    "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 15, 0, 0, 5); " +
+                    "-fx-border-color: " + Pastel.GOLD + "; " +
+                    "-fx-border-width: 2; -fx-border-radius: 20;");
+        }
+
+        Label finalMessage = new Label("Évora turns productivity into a magical adventure! " +
+                "With every task completed and every mood logged, you're not just being productive - " +
+                "you're growing with your adorable companion! 💫");
+        finalMessage.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
+        // FIXED: Use dynamic text color instead of hardcoded white
+        finalMessage.setStyle(getDynamicTextStyle() + " -fx-font-style: italic; " +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 5, 0, 1, 1);");
+        finalMessage.setWrapText(true);
+        finalMessage.setAlignment(Pos.CENTER);
+
+        Label sparkle = new Label("✨");
+        sparkle.setFont(Font.font(24));
+        sparkle.setStyle(getDynamicTextStyle());
+
+        gradientMessageBox.getChildren().addAll(finalMessage, sparkle);
+
+        content.getChildren().addAll(flower, title, petsSection, featuresSection, gradientMessageBox);
         aboutCard.getChildren().add(content);
         return aboutCard;
     }
 
-    private VBox createQuickActions() {
-        VBox actionsCard = createCard("Quick Actions", 800);
-        VBox content = new VBox(15);
-        content.setPadding(new Insets(20));
+    private VBox createPetDisplay(String gifFilename, String petName) {
+        VBox petDisplay = new VBox(8);
+        petDisplay.setAlignment(Pos.CENTER);
+        petDisplay.setPadding(new Insets(10));
 
-        GridPane actionsGrid = new GridPane();
-        actionsGrid.setHgap(15);
-        actionsGrid.setVgap(15);
-        actionsGrid.setAlignment(Pos.CENTER);
-
-        String[][] actions = {
-                {"📊 Export Data", "Download your productivity data", Pastel.BLUE},
-                {"🔄 Reset Progress", "Start fresh with a clean slate", Pastel.MINT},
-                {"📱 Mobile App", "Get Évora on your phone", Pastel.LAVENDER},
-                {"💬 Send Feedback", "Help us improve Évora", Pastel.PINK}
-        };
-
-        int col = 0;
-        int row = 0;
-        for (String[] action : actions) {
-            VBox actionButton = createActionButton(action[0], action[1], action[2]);
-            actionsGrid.add(actionButton, col, row);
-
-            col++;
-            if (col >= 2) {
-                col = 0;
-                row++;
-            }
+        try {
+            ImageView petImage = new ImageView(new Image(getClass().getResource("/pet_gifs/" + gifFilename).toExternalForm()));
+            petImage.setFitWidth(100);
+            petImage.setFitHeight(100);
+            petImage.setPreserveRatio(true);
+            petImage.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 3);");
+            petDisplay.getChildren().add(petImage);
+        } catch (Exception e) {
+            Label emojiLabel = new Label(getEmojiForPet(petName));
+            emojiLabel.setFont(Font.font(36));
+            petDisplay.getChildren().add(emojiLabel);
         }
 
-        content.getChildren().add(actionsGrid);
-        actionsCard.getChildren().add(content);
-        return actionsCard;
+        Label nameLabel = new Label(petName);
+        nameLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
+        nameLabel.setStyle(getDynamicTextStyle());
+        petDisplay.getChildren().add(nameLabel);
+
+        return petDisplay;
     }
 
-    private VBox createActionButton(String title, String description, String color) {
-        VBox actionButton = new VBox(8);
-        actionButton.setAlignment(Pos.CENTER_LEFT);
-        actionButton.setPadding(new Insets(15));
-        actionButton.setPrefSize(350, 80);
-        actionButton.setStyle(String.format(
-                "-fx-background-color: white; -fx-border-color: %s; -fx-border-width: 2; -fx-border-radius: 15; " +
-                        "-fx-background-radius: 15; -fx-cursor: hand;",
-                color
-        ));
-
-        Label titleLabel = new Label(title);
-        titleLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-        titleLabel.setTextFill(Color.web(Pastel.FOREST));
-
-        Label descLabel = new Label(description);
-        descLabel.setFont(Font.font("Segoe UI", 11));
-        descLabel.setTextFill(Color.web(Pastel.SAGE));
-
-        actionButton.getChildren().addAll(titleLabel, descLabel);
-
-        // Add hover effect
-        actionButton.setOnMouseEntered(e -> {
-            actionButton.setStyle(String.format(
-                    "-fx-background-color: %s; -fx-border-color: %s; -fx-border-width: 2; -fx-border-radius: 15; " +
-                            "-fx-background-radius: 15; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 2);",
-                    lightenColor(color), color
-            ));
-        });
-
-        actionButton.setOnMouseExited(e -> {
-            actionButton.setStyle(String.format(
-                    "-fx-background-color: white; -fx-border-color: %s; -fx-border-width: 2; -fx-border-radius: 15; " +
-                            "-fx-background-radius: 15; -fx-cursor: hand;",
-                    color
-            ));
-        });
-
-        return actionButton;
+    private String getEmojiForPet(String petName) {
+        switch (petName.toLowerCase()) {
+            case "luna": return "🐱";
+            case "cocoa": return "🐰";
+            case "hoot": return "🦉";
+            case "sage": return "🐉";
+            default: return "🐾";
+        }
     }
 
     private VBox createCard(String title, double width) {
         VBox card = new VBox();
         card.setPrefWidth(width);
         card.setMaxWidth(width);
-        card.setStyle("-fx-background-color: " + Pastel.IVORY + "; -fx-background-radius: 20; " +
+        card.setStyle("-fx-background-color: " + themeManager.getCurrentTheme().getCardColor() + "; -fx-background-radius: 20; " +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 12, 0, 0, 5);");
 
         Label titleLabel = new Label(title);
         titleLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 20));
-        titleLabel.setTextFill(Color.web(Pastel.FOREST));
+        titleLabel.setStyle(getDynamicTextStyle());
         titleLabel.setPadding(new Insets(20, 20, 10, 20));
         titleLabel.setAlignment(Pos.CENTER);
 
         card.getChildren().add(titleLabel);
         return card;
-    }
-
-    private String lightenColor(String color) {
-        // Simple color lightening for hover effects
-        return color + "80"; // Add transparency to lighten
     }
 }
