@@ -111,6 +111,23 @@ public class Database {
         }
     }
 
+    public void incrementUserExperience(int experienceToAdd, int CURRENT_USER_ID) {
+        String sql = "UPDATE Users SET experience = experience + ? WHERE user_id = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, experienceToAdd);
+            ps.setInt(2, CURRENT_USER_ID);
+
+            int affectedRows = ps.executeUpdate();
+            if (affectedRows > 0) {
+                System.out.println("Added " + experienceToAdd + " experience to user " + CURRENT_USER_ID);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error updating user experience: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     // REQUIRED FOR CalendarView
     public Connection getConnection() {
         return conn;

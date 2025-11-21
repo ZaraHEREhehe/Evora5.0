@@ -180,6 +180,7 @@ public class MainController {
             TodoView todoView = new TodoView();
             ScrollPane todoContent = todoView.getContent();
             todoView.setUsername(userName);
+            todoView.setSidebar(sidebar);
             todoContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
             todoContent.prefHeightProperty().bind(root.heightProperty());
             root.setCenter(todoContent);

@@ -50,9 +50,9 @@ public class Sidebar extends VBox {
         this.controller = controller;
         setupSidebar();
         createHeader(userName);
-       // createMascotSection();
-        createNavButtons();
         createMascotSection();
+        createNavButtons();
+       // createMascotSection();
         // Initialize with current experience from database
         refreshExperienceFromDatabase(userId);
     }

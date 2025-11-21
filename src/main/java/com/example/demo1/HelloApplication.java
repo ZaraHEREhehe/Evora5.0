@@ -35,7 +35,7 @@ public class HelloApplication extends Application {
             MainController mainController = new MainController(primaryStage, username, userId);
 
             // Update the title
-            primaryStage.setTitle("Pastel Productivity Dashboard - Welcome, " + username);
+            primaryStage.setTitle("Productivity Dashboard - Welcome, " + username);
 
         } catch (Exception e) {
             e.printStackTrace();
