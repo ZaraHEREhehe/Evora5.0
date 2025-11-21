@@ -157,6 +157,10 @@ public class LoginView extends Application {
         VBox header = new VBox(6);
         header.setAlignment(Pos.CENTER);
 
+        Label Phool = new Label("🌸");
+        Phool.setFont(Font.font("Segoe UI", FontWeight.BOLD, 32));
+        Phool.setTextFill(Color.web("#e75480"));
+        Phool.setStyle("-fx-font-family: 'Segoe UI', 'Brush Script MT', cursive;");
         Label appName = new Label("Évora");
         appName.setFont(Font.font("Segoe UI", FontWeight.BOLD, 32));
         appName.setTextFill(Color.web("#e75480"));
@@ -167,7 +171,7 @@ public class LoginView extends Application {
         tagline.setTextFill(Color.web("#888"));
         tagline.setStyle("-fx-font-style: italic;");
 
-        header.getChildren().addAll(appName, tagline);
+        header.getChildren().addAll(Phool, appName, tagline);
         return header;
     }
 
@@ -214,12 +218,12 @@ public class LoginView extends Application {
         VBox passwordBox = createFormField("Password", "Enter your password", true);
         passwordField = (PasswordField) passwordBox.getChildren().get(1);
 
-        HBox options = createFormOptions();
+      //  HBox options = createFormOptions();
         Button loginButton = createLoginButton();
         HBox signupLink = createSignupLink();
 
         form.getChildren().addAll(
-                emailBox, passwordBox, options, loginButton, signupLink
+                emailBox, passwordBox, loginButton, signupLink
         );
 
         return form;
@@ -298,7 +302,7 @@ public class LoginView extends Application {
                 "-fx-underline: true; " +
                 "-fx-padding: 0;");
 
-        options.getChildren().addAll(rememberMe, forgotPassword);
+        options.getChildren().addAll(rememberMe);
         return options;
     }
 

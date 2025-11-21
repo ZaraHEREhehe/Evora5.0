@@ -419,7 +419,7 @@ public class PetsView extends BorderPane {
         petName.setStyle(forceTextColor(Color.web(Pastel.FOREST)));
 
         // Cute edit button
-        Button editNameBtn = new Button("✏️");
+        Button editNameBtn = new Button("✏ Edit Name");
         editNameBtn.setStyle(
                 "-fx-background-color: transparent;" +
                         "-fx-border-color: transparent;" +

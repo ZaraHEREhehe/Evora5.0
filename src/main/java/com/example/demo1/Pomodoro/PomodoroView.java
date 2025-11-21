@@ -98,7 +98,7 @@ public class PomodoroView {
         // Add all components to main container
         mainContainer.getChildren().addAll(
                 headerBox, presetsBox, customTimerContainer,
-                timerCard, petContainer, happinessLabel
+                timerCard, petContainer//, happinessLabel
         );
     }
 
@@ -221,7 +221,7 @@ public class PomodoroView {
         Label title = new Label("Your Pet is Working Hard! 💪");
         title.setStyle("-fx-text-fill: " + Pastel.FOREST + "; -fx-font-weight: bold; -fx-font-size: 14px;");
 
-        Label subtitle = new Label("Pet happiness will increase after this session!");
+        Label subtitle = new Label("");
         subtitle.setStyle("-fx-text-fill: " + Pastel.SAGE + "; -fx-font-size: 11px;");
 
         HBox petContent = new HBox(15);
