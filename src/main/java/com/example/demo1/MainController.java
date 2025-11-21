@@ -105,7 +105,7 @@ public class MainController {
 
     private void handleNavigation(String tab) {
 
-       // refreshSidebarExperience(); //refresh whenever user navigates
+        refreshSidebarExperience(); //refresh whenever user navigates
 
         switch (tab) {
             case "dashboard":
