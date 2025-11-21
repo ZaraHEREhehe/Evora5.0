@@ -594,3 +594,61 @@ where user_id = 1
 
 select * from users
 select * from petmascot
+
+
+
+
+--------------------------------------------------------------------------------------
+-- Create a table to permanently log completed tasks even after deletion
+CREATE TABLE TaskCompletionLog (
+    log_id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id INT NOT NULL,
+    task_description NVARCHAR(500) NOT NULL,
+    priority NVARCHAR(10) NOT NULL,
+    completed_at DATETIME NOT NULL,
+    original_task_id INT NULL, -- Reference to original task if needed
+    logged_at DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (user_id) REFERENCES Users(user_id)
+);
+
+-- Add index for better performance on analytics queries
+CREATE INDEX IX_TaskCompletionLog_UserDate ON TaskCompletionLog(user_id, completed_at);
+
+
+-- Trigger to log when a task is marked as completed
+CREATE OR ALTER TRIGGER trg_LogCompletedTask
+ON ToDoTasks
+AFTER UPDATE
+AS
+BEGIN
+    IF UPDATE(is_completed)
+    BEGIN
+        INSERT INTO TaskCompletionLog (user_id, task_description, priority, completed_at, original_task_id)
+        SELECT 
+            i.user_id,
+            i.description,
+            i.priority,
+            COALESCE(i.completed_at, GETDATE()), -- Use completed_at if available, otherwise current time
+            i.task_id
+        FROM inserted i
+        INNER JOIN deleted d ON i.task_id = d.task_id
+        WHERE i.is_completed = 1 AND (d.is_completed = 0 OR d.is_completed IS NULL);
+    END
+END;
+
+-- Trigger to log tasks that are deleted while completed
+CREATE OR ALTER TRIGGER trg_LogDeletedCompletedTask
+ON ToDoTasks
+AFTER DELETE
+AS
+BEGIN
+    INSERT INTO TaskCompletionLog (user_id, task_description, priority, completed_at, original_task_id)
+    SELECT 
+        d.user_id,
+        d.description,
+        d.priority,
+        COALESCE(d.completed_at, GETDATE()),
+        d.task_id
+    FROM deleted d
+    WHERE d.is_completed = 1;
+END;
