@@ -23,26 +23,12 @@ public class AnalyticsController {
     private final DoubleProperty averageMood = new SimpleDoubleProperty(0.0);
     private final IntegerProperty currentStreak = new SimpleIntegerProperty(0);
     private final IntegerProperty longestStreak = new SimpleIntegerProperty(0);
-    private final IntegerProperty petHappiness = new SimpleIntegerProperty(0);
-    private final IntegerProperty coinsEarned = new SimpleIntegerProperty(0);
+    private final IntegerProperty productivityScore = new SimpleIntegerProperty(0);
 
     // Data for charts
     private final ObservableList<WeeklyData> weeklyData = FXCollections.observableArrayList();
     private final ObservableList<MoodDistribution> moodDistribution = FXCollections.observableArrayList();
     private final ObservableList<Achievement> achievements = FXCollections.observableArrayList();
-
-    // Color scheme matching your pastel theme
-    private final Map<String, String> colors = Map.of(
-            "pink", "#FF9FB5",
-            "blue", "#B5E5FF",
-            "purple", "#A28BF0",
-            "green", "#B5E5B5",
-            "yellow", "#FFE5B5",
-            "lightPink", "#FFD1DC",
-            "lightBlue", "#D4F0FF",
-            "lightPurple", "#D4C2FF",
-            "lightGreen", "#D4F0D4"
-    );
 
     public AnalyticsController(int userId, String userName) {
         this.userId = userId;
@@ -96,6 +82,23 @@ public class AnalyticsController {
                         (SELECT COUNT(*) FROM StickyNotes WHERE user_id = ?)
                     WHEN b.condition_type = 'mood_entries' THEN 
                         (SELECT COUNT(*) FROM MoodLogger WHERE user_id = ?)
+                    WHEN b.condition_type = 'streak_days' THEN 
+                        -- Calculate current streak from all activity data
+                        (SELECT COUNT(*) FROM (
+                            SELECT DISTINCT activity_date 
+                            FROM (
+                                SELECT CAST(created_at as DATE) as activity_date FROM ToDoTasks WHERE user_id = ? AND is_completed = 1
+                                UNION
+                                SELECT CAST(completed_at as DATE) as activity_date FROM TaskCompletionLog WHERE user_id = ?
+                                UNION
+                                SELECT CAST(start_time as DATE) as activity_date FROM PomodoroSessions WHERE user_id = ? AND status = 'Completed'
+                                UNION
+                                SELECT CAST(entry_date as DATE) as activity_date FROM MoodLogger WHERE user_id = ?
+                                UNION
+                                SELECT CAST(created_at as DATE) as activity_date FROM StickyNotes WHERE user_id = ?
+                            ) all_activities
+                            WHERE activity_date IS NOT NULL
+                        ) user_activities)
                     ELSE 0
                 END as current_progress
             FROM Badges b
@@ -106,21 +109,27 @@ public class AnalyticsController {
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            // Set parameters for all the user_id placeholders
+            // Set all 11 parameters
             stmt.setInt(1, userId);
             stmt.setInt(2, userId);
             stmt.setInt(3, userId);
             stmt.setInt(4, userId);
             stmt.setInt(5, userId);
             stmt.setInt(6, userId);
+            stmt.setInt(7, userId);
+            stmt.setInt(8, userId);
+            stmt.setInt(9, userId);
+            stmt.setInt(10, userId);
+            stmt.setInt(11, userId); // This was missing - parameter #11
 
             ResultSet rs = stmt.executeQuery();
 
             while (rs.next()) {
+                String emoji = getEmojiForBadge(rs.getString("badge_icon"));
                 Achievement achievement = new Achievement(
                         rs.getString("name"),
                         rs.getString("description"),
-                        rs.getString("badge_icon"),
+                        emoji,
                         rs.getInt("current_progress"),
                         rs.getInt("condition_value"),
                         rs.getBoolean("is_unlocked"),
@@ -132,49 +141,51 @@ public class AnalyticsController {
 
         } catch (SQLException e) {
             e.printStackTrace();
-            // Fallback to mock achievements if database fails
             return getMockAchievements();
         }
 
         return achievements;
     }
 
-    // Helper method to get color based on achievement type
+    private String getEmojiForBadge(String badgeIcon) {
+        if (badgeIcon == null) return "🏆";
+
+        // Your badges use emoji icons directly, so return them as-is
+        switch (badgeIcon) {
+            case "🌟": return "🌟";
+            case "⚡": return "⚡";
+            case "📝": return "📝";
+            case "😊": return "😊";
+            case "👑": return "👑";
+            case "🏆": return "🏆";
+            case "🔥": return "🔥";
+            case "📚": return "📚";
+            default: return "🏆";
+        }
+    }
+
     private String getAchievementColor(String conditionType) {
         switch (conditionType) {
-            case "tasks_completed": return "#F472B6"; // Pink
-            case "pomodoro_sessions": return "#60A5FA"; // Blue
-            case "notes_created": return "#34D399"; // Green
-            case "mood_entries": return "#A78BFA"; // Purple
-            default: return "#FBBF24"; // Yellow
+            case "tasks_completed": return "#F472B6";
+            case "pomodoro_sessions": return "#60A5FA";
+            case "notes_created": return "#34D399";
+            case "mood_entries": return "#A78BFA";
+            case "streak_days": return "#FBBF24";
+            default: return "#FBBF24";
         }
     }
 
-    // Mock achievements fallback
     private List<Achievement> getMockAchievements() {
         List<Achievement> mockAchievements = new ArrayList<>();
-        mockAchievements.add(new Achievement("First Steps", "Complete your first task", "🌟", 1, 1, true, "#F472B6"));
-        mockAchievements.add(new Achievement("Focus Master", "Complete 5 pomodoro sessions", "⚡", 3, 5, false, "#60A5FA"));
-        mockAchievements.add(new Achievement("Note Taker", "Create 10 sticky notes", "📝", 8, 10, false, "#34D399"));
-        mockAchievements.add(new Achievement("Mood Tracker", "Log 20 mood entries", "😊", 15, 20, false, "#A78BFA"));
-        mockAchievements.add(new Achievement("Task Champion", "Complete 50 tasks", "👑", 47, 50, false, "#FBBF24"));
-        mockAchievements.add(new Achievement("Productivity Guru", "Complete 25 pomodoro sessions", "🏆", 23, 25, false, "#A78BFA"));
+        mockAchievements.add(new Achievement("First Steps", "Complete your first task", "🌟", 0, 1, false, "#F472B6"));
+        mockAchievements.add(new Achievement("Focus Master", "Complete 5 pomodoro sessions", "⚡", 0, 5, false, "#60A5FA"));
+        mockAchievements.add(new Achievement("Note Taker", "Create 10 sticky notes", "📝", 0, 10, false, "#34D399"));
+        mockAchievements.add(new Achievement("Mood Tracker", "Log 20 mood entries", "😊", 0, 20, false, "#A78BFA"));
+        mockAchievements.add(new Achievement("Task Champion", "Complete 50 tasks", "👑", 0, 50, false, "#FBBF24"));
+        mockAchievements.add(new Achievement("Productivity Guru", "Complete 25 pomodoro sessions", "🏆", 0, 25, false, "#A78BFA"));
+        mockAchievements.add(new Achievement("Consistent Logger", "Log 50 mood entries", "🔥", 0, 50, false, "#FF6B6B"));
+        mockAchievements.add(new Achievement("Note Archivist", "Create 25 notes", "📚", 0, 25, false, "#4ECDC4"));
         return mockAchievements;
-    }
-
-    // You might also want to add a method to check and award any new badges
-    public void checkAndAwardNewBadges() {
-        String sql = "EXEC CheckAllBadgesForUser ?";
-
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setInt(1, userId);
-            stmt.execute();
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
     }
 
     public void setTimeRange(String timeRange) {
@@ -193,7 +204,6 @@ public class AnalyticsController {
         generateAchievements();
     }
 
-    // Database connection method
     private Connection getConnection() throws SQLException {
         try {
             Class.forName(DatabaseConfig.getDriver());
@@ -207,14 +217,13 @@ public class AnalyticsController {
         );
     }
 
-    // Data loading methods with real database queries
     private void loadStatistics() {
         try (Connection conn = getConnection()) {
             loadTaskStatistics(conn);
             loadPomodoroStatistics(conn);
             loadMoodStatistics(conn);
             loadStreakStatistics(conn);
-            loadPetAndCoinStatistics(conn);
+            loadProductivityScore(conn);
         } catch (SQLException e) {
             System.err.println("Error loading statistics: " + e.getMessage());
             e.printStackTrace();
@@ -225,27 +234,21 @@ public class AnalyticsController {
     private void loadTaskStatistics(Connection conn) throws SQLException {
         String dateFilter = getDateFilterForTasks();
 
-        // Query that combines current completed tasks and historical log
-        String sql = """
-        SELECT COUNT(*) as completed_count
-        FROM (
-            -- Current completed tasks that haven't been deleted
-            SELECT task_id 
-            FROM ToDoTasks 
-            WHERE user_id = ? AND is_completed = 1 
-            AND created_at >= DATEADD(day, -30, GETDATE())
-            
-            UNION ALL
-            
-            -- Historical completed tasks from log (including deleted ones)
-            SELECT log_id as task_id
-            FROM TaskCompletionLog 
-            WHERE user_id = ? 
-            AND completed_at >= DATEADD(day, -30, GETDATE())
-        ) combined_tasks
-        """;
+        // Get completed tasks count (current + historical) for current time range
+        String completedSql = """
+            SELECT COUNT(*) as completed_count
+            FROM (
+                SELECT task_id FROM ToDoTasks 
+                WHERE user_id = ? AND is_completed = 1 
+                AND created_at """ + dateFilter + """
+                UNION ALL
+                SELECT log_id FROM TaskCompletionLog 
+                WHERE user_id = ? 
+                AND completed_at """ + dateFilter + """
+            ) combined_tasks
+            """;
 
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement stmt = conn.prepareStatement(completedSql)) {
             stmt.setInt(1, userId);
             stmt.setInt(2, userId);
             ResultSet rs = stmt.executeQuery();
@@ -254,13 +257,13 @@ public class AnalyticsController {
             }
         }
 
-        // Total tasks count (only current, non-deleted tasks)
+        // Total tasks count (only current, non-deleted tasks) for current time range
         totalTasks.set(getTotalTasksCount(conn));
     }
 
     private int getTotalTasksCount(Connection conn) throws SQLException {
-        // This counts only current (non-deleted) tasks
-        String sql = "SELECT COUNT(*) as total FROM ToDoTasks WHERE user_id = ?";
+        String dateFilter = getDateFilterForToDoTasks();
+        String sql = "SELECT COUNT(*) as total FROM ToDoTasks WHERE user_id = ? " + dateFilter;
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, userId);
             ResultSet rs = stmt.executeQuery();
@@ -272,7 +275,7 @@ public class AnalyticsController {
     }
 
     private void loadPomodoroStatistics(Connection conn) throws SQLException {
-        String dateFilter = getDateFilter("start_time");
+        String dateFilter = getDateFilterForPomodoro();
         String sessionSql = "SELECT COUNT(*) as sessions FROM PomodoroSessions " +
                 "WHERE user_id = ? AND status = 'Completed' " + dateFilter;
 
@@ -284,14 +287,12 @@ public class AnalyticsController {
             }
         }
 
-        // Calculate total focus minutes (25 minutes per session + actual work_duration if available)
         focusMinutes.set(pomodoroSessions.get() * 25);
     }
 
     private void loadMoodStatistics(Connection conn) throws SQLException {
-        String dateFilter = getDateFilter("entry_date");
+        String dateFilter = getDateFilterForMood();
 
-        // Count mood entries
         String countSql = "SELECT COUNT(*) as entries FROM MoodLogger WHERE user_id = ? " + dateFilter;
         try (PreparedStatement stmt = conn.prepareStatement(countSql)) {
             stmt.setInt(1, userId);
@@ -301,7 +302,6 @@ public class AnalyticsController {
             }
         }
 
-        // Calculate average mood for current time range
         String avgSql = "SELECT AVG(CAST(mood_value as FLOAT)) as avg_mood FROM MoodLogger " +
                 "WHERE user_id = ? " + dateFilter;
         try (PreparedStatement stmt = conn.prepareStatement(avgSql)) {
@@ -315,90 +315,218 @@ public class AnalyticsController {
     }
 
     private void loadStreakStatistics(Connection conn) throws SQLException {
-        // Improved streak calculation
-        String streakSql = "SELECT DISTINCT CAST(entry_date as DATE) as activity_date FROM MoodLogger " +
-                "WHERE user_id = ? AND entry_date >= DATEADD(day, -30, GETDATE()) " +
-                "ORDER BY activity_date DESC";
+        // Calculate streaks from all activity data
+        String activitySql = """
+            SELECT DISTINCT activity_date 
+            FROM (
+                -- Task completions
+                SELECT CAST(created_at as DATE) as activity_date 
+                FROM ToDoTasks 
+                WHERE user_id = ? AND is_completed = 1
+                UNION
+                SELECT CAST(completed_at as DATE) as activity_date 
+                FROM TaskCompletionLog 
+                WHERE user_id = ?
+                UNION
+                -- Pomodoro sessions
+                SELECT CAST(start_time as DATE) as activity_date 
+                FROM PomodoroSessions 
+                WHERE user_id = ? AND status = 'Completed'
+                UNION
+                -- Mood entries
+                SELECT CAST(entry_date as DATE) as activity_date 
+                FROM MoodLogger 
+                WHERE user_id = ?
+                UNION
+                -- Sticky notes
+                SELECT CAST(created_at as DATE) as activity_date 
+                FROM StickyNotes 
+                WHERE user_id = ?
+            ) activities
+            WHERE activity_date IS NOT NULL
+            ORDER BY activity_date DESC
+            """;
 
-        try (PreparedStatement stmt = conn.prepareStatement(streakSql)) {
+        try (PreparedStatement stmt = conn.prepareStatement(activitySql)) {
             stmt.setInt(1, userId);
+            stmt.setInt(2, userId);
+            stmt.setInt(3, userId);
+            stmt.setInt(4, userId);
+            stmt.setInt(5, userId);
             ResultSet rs = stmt.executeQuery();
 
-            int currentStreakCount = 0;
-            int longestStreakCount = 0;
-            int tempStreak = 0;
-            LocalDate lastDate = null;
-            LocalDate expectedDate = null;
-
+            List<LocalDate> activityDates = new ArrayList<>();
             while (rs.next()) {
-                LocalDate currentDate = rs.getDate("activity_date").toLocalDate();
-
-                if (lastDate == null) {
-                    currentStreakCount = 1;
-                    tempStreak = 1;
-                    expectedDate = currentDate.minusDays(1);
-                } else if (currentDate.equals(expectedDate)) {
-                    tempStreak++;
-                    expectedDate = currentDate.minusDays(1);
-                } else {
-                    longestStreakCount = Math.max(longestStreakCount, tempStreak);
-                    tempStreak = 1;
-                    expectedDate = currentDate.minusDays(1);
-                }
-
-                lastDate = currentDate;
+                activityDates.add(rs.getDate("activity_date").toLocalDate());
             }
 
-            longestStreakCount = Math.max(longestStreakCount, tempStreak);
+            // Calculate streaks
+            int currentStreakCount = calculateCurrentStreak(activityDates);
+            int longestStreakCount = calculateLongestStreak(activityDates);
+
             currentStreak.set(currentStreakCount);
             longestStreak.set(longestStreakCount);
         }
     }
 
-    private void loadPetAndCoinStatistics(Connection conn) throws SQLException {
-        // Get actual pet happiness from database if available
-        String petSql = "SELECT COUNT(DISTINCT CAST(activity_date as DATE)) as active_days FROM (" +
-                "SELECT created_at as activity_date FROM ToDoTasks WHERE user_id = ? AND is_completed = 1 " +
-                "UNION ALL SELECT start_time as activity_date FROM PomodoroSessions WHERE user_id = ? AND status = 'Completed'" +
-                ") activities WHERE activity_date >= DATEADD(day, -7, GETDATE())";
+    private int calculateCurrentStreak(List<LocalDate> activityDates) {
+        if (activityDates.isEmpty()) return 0;
 
-        try (PreparedStatement stmt = conn.prepareStatement(petSql)) {
-            stmt.setInt(1, userId);
-            stmt.setInt(2, userId);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                int activeDays = rs.getInt("active_days");
-                petHappiness.set(Math.min(activeDays * 15, 100)); // Scale based on active days
+        LocalDate today = LocalDate.now();
+        int streak = 0;
+        LocalDate currentDate = today;
+
+        // Check consecutive days backwards from today
+        while (activityDates.contains(currentDate)) {
+            streak++;
+            currentDate = currentDate.minusDays(1);
+        }
+
+        return streak;
+    }
+
+    private int calculateLongestStreak(List<LocalDate> activityDates) {
+        if (activityDates.isEmpty()) return 0;
+
+        // Sort dates in ascending order for streak calculation
+        Collections.sort(activityDates);
+
+        int longestStreak = 1;
+        int currentStreak = 1;
+
+        for (int i = 1; i < activityDates.size(); i++) {
+            LocalDate currentDate = activityDates.get(i);
+            LocalDate previousDate = activityDates.get(i - 1);
+
+            if (previousDate.plusDays(1).equals(currentDate)) {
+                currentStreak++;
+                longestStreak = Math.max(longestStreak, currentStreak);
             } else {
-                petHappiness.set(85);
+                currentStreak = 1;
             }
         }
 
-        // Coins earned based on actual activities
-        coinsEarned.set(tasksCompleted.get() * 2 + pomodoroSessions.get() * 5);
+        return longestStreak;
     }
 
-    private String getDateFilter(String dateColumn) {
+    private void loadProductivityScore(Connection conn) throws SQLException {
+        int score = 0;
+
+        // Factor 1: Task completion rate (up to 40 points)
+        if (totalTasks.get() > 0) {
+            double completionRate = (double) tasksCompleted.get() / totalTasks.get();
+            score += (int) (completionRate * 40);
+        }
+
+        // Factor 2: Focus sessions relative to time range target (up to 30 points)
+        int targetSessions = getTargetSessionsForTimeRange();
+        if (targetSessions > 0) {
+            double sessionRate = Math.min((double) pomodoroSessions.get() / targetSessions, 1.0);
+            score += (int) (sessionRate * 30);
+        }
+
+        // Factor 3: Consistency - active days vs total days in time range (up to 30 points)
+        int activeDays = getActiveDaysCount(conn);
+        int totalDaysInRange = getTotalDaysInTimeRange();
+        if (totalDaysInRange > 0) {
+            double activityRate = Math.min((double) activeDays / totalDaysInRange, 1.0);
+            score += (int) (activityRate * 30);
+        }
+
+        productivityScore.set(Math.min(score, 100));
+    }
+
+    private int getActiveDaysCount(Connection conn) throws SQLException {
+        String activitySql = """
+            SELECT COUNT(DISTINCT activity_date) as active_days 
+            FROM (
+                SELECT CAST(created_at as DATE) as activity_date FROM ToDoTasks 
+                WHERE user_id = ? """ + getDateFilterForToDoTasks() + """
+                UNION 
+                SELECT CAST(start_time as DATE) as activity_date FROM PomodoroSessions 
+                WHERE user_id = ? """ + getDateFilterForPomodoro() + """
+                UNION 
+                SELECT CAST(entry_date as DATE) as activity_date FROM MoodLogger 
+                WHERE user_id = ? """ + getDateFilterForMood() + """
+            ) activities
+            """;
+
+        try (PreparedStatement stmt = conn.prepareStatement(activitySql)) {
+            stmt.setInt(1, userId);
+            stmt.setInt(2, userId);
+            stmt.setInt(3, userId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("active_days");
+            }
+        }
+        return 0;
+    }
+
+    private int getTargetSessionsForTimeRange() {
+        switch (currentTimeRange) {
+            case "month": return 20;
+            case "year": return 104;
+            case "week":
+            default: return 5;
+        }
+    }
+
+    private int getTotalDaysInTimeRange() {
+        switch (currentTimeRange) {
+            case "month": return 30;
+            case "year": return 365;
+            case "week":
+            default: return 7;
+        }
+    }
+
+    // Date filter methods for different tables
+    private String getDateFilterForToDoTasks() {
         switch (currentTimeRange) {
             case "month":
-                return "AND " + dateColumn + " >= DATEADD(month, -1, GETDATE())";
+                return "AND created_at >= DATEADD(month, -1, GETDATE())";
             case "year":
-                return "AND " + dateColumn + " >= DATEADD(year, -1, GETDATE())";
+                return "AND created_at >= DATEADD(year, -1, GETDATE())";
             case "week":
             default:
-                return "AND " + dateColumn + " >= DATEADD(day, -7, GETDATE())";
+                return "AND created_at >= DATEADD(day, -7, GETDATE())";
+        }
+    }
+
+    private String getDateFilterForPomodoro() {
+        switch (currentTimeRange) {
+            case "month":
+                return "AND start_time >= DATEADD(month, -1, GETDATE())";
+            case "year":
+                return "AND start_time >= DATEADD(year, -1, GETDATE())";
+            case "week":
+            default:
+                return "AND start_time >= DATEADD(day, -7, GETDATE())";
+        }
+    }
+
+    private String getDateFilterForMood() {
+        switch (currentTimeRange) {
+            case "month":
+                return "AND entry_date >= DATEADD(month, -1, GETDATE())";
+            case "year":
+                return "AND entry_date >= DATEADD(year, -1, GETDATE())";
+            case "week":
+            default:
+                return "AND entry_date >= DATEADD(day, -7, GETDATE())";
         }
     }
 
     private String getDateFilterForTasks() {
         switch (currentTimeRange) {
             case "month":
-                return "AND completed_at >= DATEADD(month, -1, GETDATE())";
+                return ">= DATEADD(month, -1, GETDATE())";
             case "year":
-                return "AND completed_at >= DATEADD(year, -1, GETDATE())";
+                return ">= DATEADD(year, -1, GETDATE())";
             case "week":
             default:
-                return "AND completed_at >= DATEADD(day, -7, GETDATE())";
+                return ">= DATEADD(day, -7, GETDATE())";
         }
     }
 
@@ -406,7 +534,6 @@ public class AnalyticsController {
         weeklyData.clear();
 
         try (Connection conn = getConnection()) {
-            // Get tasks completed per day for the current time range
             String tasksSql = getTasksQuery();
             String pomodoroSql = getPomodoroQuery();
             String moodSql = getMoodQuery();
@@ -415,12 +542,11 @@ public class AnalyticsController {
             Map<String, Integer> dailyPomodoros = new LinkedHashMap<>();
             Map<String, Double> dailyMoods = new LinkedHashMap<>();
 
-            // Initialize with appropriate periods based on time range
             initializePeriods(dailyTasks, dailyPomodoros, dailyMoods);
 
             try (PreparedStatement stmt = conn.prepareStatement(tasksSql)) {
                 stmt.setInt(1, userId);
-                stmt.setInt(2, userId); // Second parameter for the UNION query
+                stmt.setInt(2, userId);
                 ResultSet rs = stmt.executeQuery();
                 while (rs.next()) {
                     String period = rs.getString("period");
@@ -449,7 +575,6 @@ public class AnalyticsController {
                 }
             }
 
-            // Convert to weekly data
             for (String period : dailyTasks.keySet()) {
                 weeklyData.add(new WeeklyData(
                         period,
@@ -471,17 +596,13 @@ public class AnalyticsController {
                 return """
                 SELECT period, SUM(tasks) as tasks
                 FROM (
-                    -- Current tasks
                     SELECT 
                         'Week ' + CAST(DATEPART(WEEK, created_at) - DATEPART(WEEK, DATEADD(MONTH, DATEDIFF(MONTH, 0, created_at), 0)) + 1 as VARCHAR) as period,
                         1 as tasks
                     FROM ToDoTasks 
                     WHERE user_id = ? AND is_completed = 1 
                     AND created_at >= DATEADD(month, -1, GETDATE())
-                    
                     UNION ALL
-                    
-                    -- Historical tasks from log
                     SELECT 
                         'Week ' + CAST(DATEPART(WEEK, completed_at) - DATEPART(WEEK, DATEADD(MONTH, DATEDIFF(MONTH, 0, completed_at), 0)) + 1 as VARCHAR) as period,
                         1 as tasks
@@ -505,17 +626,13 @@ public class AnalyticsController {
                 return """
                 SELECT period, SUM(tasks) as tasks
                 FROM (
-                    -- Current tasks
                     SELECT 
                         DATENAME(MONTH, created_at) as period,
                         1 as tasks
                     FROM ToDoTasks 
                     WHERE user_id = ? AND is_completed = 1 
                     AND created_at >= DATEADD(year, -1, GETDATE())
-                    
                     UNION ALL
-                    
-                    -- Historical tasks from log
                     SELECT 
                         DATENAME(MONTH, completed_at) as period,
                         1 as tasks
@@ -547,17 +664,13 @@ public class AnalyticsController {
                 return """
                 SELECT period, SUM(tasks) as tasks
                 FROM (
-                    -- Current tasks
                     SELECT 
                         DATENAME(WEEKDAY, created_at) as period,
                         1 as tasks
                     FROM ToDoTasks 
                     WHERE user_id = ? AND is_completed = 1 
                     AND created_at >= DATEADD(day, -7, GETDATE())
-                    
                     UNION ALL
-                    
-                    -- Historical tasks from log
                     SELECT 
                         DATENAME(WEEKDAY, completed_at) as period,
                         1 as tasks
@@ -683,44 +796,22 @@ public class AnalyticsController {
 
     private void generateMockWeeklyData() {
         weeklyData.clear();
+        // Return empty data for new users
         if ("month".equals(currentTimeRange)) {
-            weeklyData.addAll(
-                    Arrays.asList(
-                            new WeeklyData("Week 1", 15, 8, 4),
-                            new WeeklyData("Week 2", 22, 12, 5),
-                            new WeeklyData("Week 3", 18, 10, 4),
-                            new WeeklyData("Week 4", 25, 14, 5)
-                    )
-            );
+            for (int week = 1; week <= 5; week++) {
+                weeklyData.add(new WeeklyData("Week " + week, 0, 0, 4));
+            }
         } else if ("year".equals(currentTimeRange)) {
-            weeklyData.addAll(
-                    Arrays.asList(
-                            new WeeklyData("Jan", 45, 20, 4),
-                            new WeeklyData("Feb", 52, 25, 4),
-                            new WeeklyData("Mar", 48, 22, 4),
-                            new WeeklyData("Apr", 55, 28, 5),
-                            new WeeklyData("May", 60, 30, 5),
-                            new WeeklyData("Jun", 58, 29, 4),
-                            new WeeklyData("Jul", 42, 18, 3),
-                            new WeeklyData("Aug", 50, 24, 4),
-                            new WeeklyData("Sep", 65, 32, 5),
-                            new WeeklyData("Oct", 70, 35, 5),
-                            new WeeklyData("Nov", 68, 34, 5),
-                            new WeeklyData("Dec", 40, 15, 4)
-                    )
-            );
+            String[] months = {"January", "February", "March", "April", "May", "June",
+                    "July", "August", "September", "October", "November", "December"};
+            for (String month : months) {
+                weeklyData.add(new WeeklyData(month, 0, 0, 4));
+            }
         } else {
-            weeklyData.addAll(
-                    Arrays.asList(
-                            new WeeklyData("Mon", 8, 4, 4),
-                            new WeeklyData("Tue", 6, 3, 5),
-                            new WeeklyData("Wed", 10, 5, 4),
-                            new WeeklyData("Thu", 7, 4, 3),
-                            new WeeklyData("Fri", 9, 6, 5),
-                            new WeeklyData("Sat", 4, 2, 4),
-                            new WeeklyData("Sun", 3, 1, 4)
-                    )
-            );
+            String[] days = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
+            for (String day : days) {
+                weeklyData.add(new WeeklyData(day, 0, 0, 4));
+            }
         }
     }
 
@@ -728,7 +819,7 @@ public class AnalyticsController {
         moodDistribution.clear();
 
         try (Connection conn = getConnection()) {
-            String dateFilter = getDateFilter("entry_date");
+            String dateFilter = getDateFilterForMood();
             String sql = "SELECT " +
                     "SUM(CASE WHEN mood_value = 5 THEN 1 ELSE 0 END) as excellent, " +
                     "SUM(CASE WHEN mood_value = 4 THEN 1 ELSE 0 END) as good, " +
@@ -746,10 +837,10 @@ public class AnalyticsController {
                     if (total > 0) {
                         moodDistribution.addAll(
                                 Arrays.asList(
-                                        new MoodDistribution("Excellent", (int) ((rs.getInt("excellent") / (double) total) * 100), colors.get("pink")),
-                                        new MoodDistribution("Good", (int) ((rs.getInt("good") / (double) total) * 100), colors.get("green")),
-                                        new MoodDistribution("Neutral", (int) ((rs.getInt("neutral") / (double) total) * 100), colors.get("lightBlue")),
-                                        new MoodDistribution("Low", (int) ((rs.getInt("low") / (double) total) * 100), colors.get("yellow"))
+                                        new MoodDistribution("Excellent", (int) ((rs.getInt("excellent") / (double) total) * 100), "#FF9FB5"),
+                                        new MoodDistribution("Good", (int) ((rs.getInt("good") / (double) total) * 100), "#B5E5B5"),
+                                        new MoodDistribution("Neutral", (int) ((rs.getInt("neutral") / (double) total) * 100), "#B5E5FF"),
+                                        new MoodDistribution("Low", (int) ((rs.getInt("low") / (double) total) * 100), "#FFE5B5")
                                 )
                         );
                         return;
@@ -760,37 +851,36 @@ public class AnalyticsController {
             System.err.println("Error generating mood distribution: " + e.getMessage());
         }
 
-        // Fallback mock data
+        // Empty distribution for new users
         moodDistribution.addAll(
                 Arrays.asList(
-                        new MoodDistribution("Excellent", 25, colors.get("pink")),
-                        new MoodDistribution("Good", 35, colors.get("green")),
-                        new MoodDistribution("Neutral", 25, colors.get("lightBlue")),
-                        new MoodDistribution("Low", 15, colors.get("yellow"))
+                        new MoodDistribution("Excellent", 0, "#FF9FB5"),
+                        new MoodDistribution("Good", 0, "#B5E5B5"),
+                        new MoodDistribution("Neutral", 0, "#B5E5FF"),
+                        new MoodDistribution("Low", 0, "#FFE5B5")
                 )
         );
     }
 
     private void generateAchievements() {
         achievements.clear();
-        // This is now handled by getRealAchievements()
-        achievements.addAll(getMockAchievements());
+        achievements.addAll(getRealAchievements());
     }
 
     private void loadMockStatistics() {
-        tasksCompleted.set(47);
-        totalTasks.set(52);
-        pomodoroSessions.set(23);
-        focusMinutes.set(575);
-        moodEntries.set(12);
-        averageMood.set(4.2);
-        currentStreak.set(5);
-        longestStreak.set(12);
-        petHappiness.set(85);
-        coinsEarned.set(230);
+        // Reset all values to 0 for new users
+        tasksCompleted.set(0);
+        totalTasks.set(0);
+        pomodoroSessions.set(0);
+        focusMinutes.set(0);
+        moodEntries.set(0);
+        averageMood.set(0.0);
+        currentStreak.set(0);
+        longestStreak.set(0);
+        productivityScore.set(0);
     }
 
-    // Getter methods for the view
+    // Getter methods
     public IntegerProperty tasksCompletedProperty() { return tasksCompleted; }
     public IntegerProperty totalTasksProperty() { return totalTasks; }
     public IntegerProperty pomodoroSessionsProperty() { return pomodoroSessions; }
@@ -799,13 +889,11 @@ public class AnalyticsController {
     public DoubleProperty averageMoodProperty() { return averageMood; }
     public IntegerProperty currentStreakProperty() { return currentStreak; }
     public IntegerProperty longestStreakProperty() { return longestStreak; }
-    public IntegerProperty petHappinessProperty() { return petHappiness; }
-    public IntegerProperty coinsEarnedProperty() { return coinsEarned; }
+    public IntegerProperty productivityScoreProperty() { return productivityScore; }
 
     public ObservableList<WeeklyData> getWeeklyData() { return weeklyData; }
     public ObservableList<MoodDistribution> getMoodDistribution() { return moodDistribution; }
     public ObservableList<Achievement> getAchievements() { return achievements; }
-    public Map<String, String> getColors() { return colors; }
 
     // Data classes
     public static class WeeklyData {

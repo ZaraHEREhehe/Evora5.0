@@ -11,6 +11,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.MouseEvent;
 import java.util.List;
+import java.util.Map;
 
 public class AnalyticsView {
     private final AnalyticsController controller;
@@ -24,45 +25,72 @@ public class AnalyticsView {
     private ToggleGroup timeGroup;
     private ToggleButton weekButton, monthButton, yearButton;
 
-    // Pastel color palette
-    private final Color bgColor = Color.web("#fdf7ff");
-    private final Color cardBg = Color.web("#FFFFFF");
-    private final Color textPrimary = Color.web("#5c5470");
-    private final Color textSecondary = Color.web("#756f86");
-    private final Color borderColor = Color.web("#D8B4FE");
-    private final Color navBarColor = Color.web("#E6F2FF"); // Pastel blue for navigation
+    // Color theme mapping for easy customization
+    private final Map<String, String> colors = Map.ofEntries(
+            // Background colors
+            Map.entry("bg_primary", "#fdf7ff"),
+            Map.entry("bg_card", "#FFFFFF"),
+            Map.entry("bg_nav", "#E6F2FF"),
 
+            // Text colors
+            Map.entry("text_primary", "#5c5470"),
+            Map.entry("text_secondary", "#756f86"),
+            Map.entry("text_dark", "#2A2D3A"),
+
+            // Border and accent colors
+            Map.entry("border_primary", "#D8B4FE"),
+            Map.entry("accent_purple", "#A78BFA"),
+            Map.entry("accent_pink", "#F472B6"),
+            Map.entry("accent_green", "#34D399"),
+            Map.entry("accent_blue", "#60A5FA"),
+            Map.entry("accent_yellow", "#FBBF24"),
+            Map.entry("accent_orange", "#FB923C"),
+
+            // Gradient colors for cards
+            Map.entry("gradient_task_start", "#F3E8FF"),
+            Map.entry("gradient_task_end", "#FCE7F3"),
+            Map.entry("gradient_focus_start", "#E0F2FE"),
+            Map.entry("gradient_focus_end", "#BAE6FD"),
+            Map.entry("gradient_streak_start", "#F0E8FF"),
+            Map.entry("gradient_streak_end", "#E8D6FF"),
+            Map.entry("gradient_productivity_start", "#E8F5E8"),
+            Map.entry("gradient_productivity_end", "#D4F0D4"),
+            Map.entry("gradient_mood_start", "#F3E8FF"),
+            Map.entry("gradient_mood_end", "#FCE7F3")
+    );
+
+    // Chart colors array
     private final Color[] chartColors = {
-            Color.web("#A78BFA"), // Pastel Purple
-            Color.web("#F472B6"), // Pastel Pink
-            Color.web("#34D399"), // Pastel Green
-            Color.web("#60A5FA"), // Pastel Blue
-            Color.web("#FBBF24"), // Pastel Yellow
-            Color.web("#FB923C")  // Pastel Orange
+            Color.web(colors.get("accent_purple")),
+            Color.web(colors.get("accent_pink")),
+            Color.web(colors.get("accent_green")),
+            Color.web(colors.get("accent_blue")),
+            Color.web(colors.get("accent_yellow")),
+            Color.web(colors.get("accent_orange"))
     };
 
     public AnalyticsView(int userId, String userName) {
         this.controller = new AnalyticsController(userId, userName);
         this.chartTooltip = new Tooltip();
-        this.chartTooltip.setStyle("-fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: #5c5470; -fx-border-color: #D8B4FE; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-radius: 5;");
+        this.chartTooltip.setStyle("-fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: " + colors.get("text_primary") + "; -fx-border-color: " + colors.get("border_primary") + "; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-radius: 5;");
     }
 
     public Node create() {
         mainContent = new VBox(20);
         mainContent.setPadding(new Insets(20));
-        mainContent.setStyle("-fx-background-color: #fdf7ff;");
+        mainContent.setStyle("-fx-background-color: " + colors.get("bg_primary") + ";");
 
         // Header
         VBox header = createHeader();
 
-        // Create tab pane first
+        // Create time range selector FIRST (this initializes the buttons)
+        HBox timeRangeSelector = createTimeRangeSelector();
+
+        // Then create tab pane
         tabPane = createTabPane();
 
-        // Custom Navigation Bar (needs tabPane reference)
+        // Custom Navigation Bar
         HBox navBar = createCustomNavBar();
-
-        // Time range selector
-        HBox timeRangeSelector = createTimeRangeSelector();
 
         // Listen for tab changes to show/hide time range
         tabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
@@ -80,9 +108,9 @@ public class AnalyticsView {
 
     private HBox createCustomNavBar() {
         HBox navBar = new HBox();
-        navBar.setStyle("-fx-background-color: " + toHex(navBarColor) + ";" +
+        navBar.setStyle("-fx-background-color: " + colors.get("bg_nav") + ";" +
                 "-fx-background-radius: 25;" +
-                "-fx-border-color: " + toHex(borderColor) + ";" +
+                "-fx-border-color: " + colors.get("border_primary") + ";" +
                 "-fx-border-width: 1;" +
                 "-fx-border-radius: 25;" +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0.5, 0, 2);");
@@ -130,23 +158,23 @@ public class AnalyticsView {
         if (selected) {
             button.setSelected(true);
             button.setStyle(button.getStyle() +
-                    " -fx-background-color: linear-gradient(to right, #A78BFA, #F472B6);" +
+                    " -fx-background-color: linear-gradient(to right, " + colors.get("accent_purple") + ", " + colors.get("accent_pink") + ");" +
                     " -fx-text-fill: white;");
         } else {
             button.setStyle(button.getStyle() +
                     " -fx-background-color: transparent;" +
-                    " -fx-text-fill: #5c5470;");
+                    " -fx-text-fill: " + colors.get("text_primary") + ";");
         }
 
         button.selectedProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal) {
                 button.setStyle("-fx-background-radius: 20; -fx-padding: 12 20; -fx-font-size: 14; -fx-font-weight: bold;" +
-                        " -fx-background-color: linear-gradient(to right, #A78BFA, #F472B6);" +
+                        " -fx-background-color: linear-gradient(to right, " + colors.get("accent_purple") + ", " + colors.get("accent_pink") + ");" +
                         " -fx-text-fill: white;");
             } else {
                 button.setStyle("-fx-background-radius: 20; -fx-padding: 12 20; -fx-font-size: 14; -fx-font-weight: bold;" +
                         " -fx-background-color: transparent;" +
-                        " -fx-text-fill: #5c5470;");
+                        " -fx-text-fill: " + colors.get("text_primary") + ";");
             }
         });
 
@@ -174,10 +202,10 @@ public class AnalyticsView {
 
     private VBox createHeader() {
         Label title = new Label("Productivity Analytics");
-        title.setStyle("-fx-font-size: 32; -fx-font-weight: bold; -fx-text-fill: #5c5470;");
+        title.setStyle("-fx-font-size: 32; -fx-font-weight: bold; -fx-text-fill: " + colors.get("text_primary") + ";");
 
         Label subtitle = new Label("Track your progress and celebrate achievements");
-        subtitle.setStyle("-fx-font-size: 16; -fx-text-fill: #756f86;");
+        subtitle.setStyle("-fx-font-size: 16; -fx-text-fill: " + colors.get("text_secondary") + ";");
 
         VBox header = new VBox(8, title, subtitle);
         header.setAlignment(Pos.CENTER_LEFT);
@@ -208,18 +236,18 @@ public class AnalyticsView {
 
         if (selected) {
             button.setSelected(true);
-            button.setStyle(button.getStyle() + " -fx-background-color: linear-gradient(to right, #C084FC, #F472B6); -fx-text-fill: white;");
+            button.setStyle(button.getStyle() + " -fx-background-color: linear-gradient(to right, #C084FC, " + colors.get("accent_pink") + "); -fx-text-fill: white;");
         } else {
-            button.setStyle(button.getStyle() + " -fx-background-color: transparent; -fx-border-color: #C084FC; -fx-text-fill: #5c5470;");
+            button.setStyle(button.getStyle() + " -fx-background-color: transparent; -fx-border-color: #C084FC; -fx-text-fill: " + colors.get("text_primary") + ";");
         }
 
         button.selectedProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal) {
-                button.setStyle("-fx-background-radius: 15; -fx-padding: 8 16; -fx-font-size: 12; -fx-min-width: 80; -fx-background-color: linear-gradient(to right, #C084FC, #F472B6); -fx-text-fill: white;");
+                button.setStyle("-fx-background-radius: 15; -fx-padding: 8 16; -fx-font-size: 12; -fx-min-width: 80; -fx-background-color: linear-gradient(to right, #C084FC, " + colors.get("accent_pink") + "); -fx-text-fill: white;");
                 controller.setTimeRange(button.getText().toLowerCase());
                 refreshTabContent();
             } else {
-                button.setStyle("-fx-background-radius: 15; -fx-padding: 8 16; -fx-font-size: 12; -fx-min-width: 80; -fx-background-color: transparent; -fx-border-color: #C084FC; -fx-text-fill: #5c5470;");
+                button.setStyle("-fx-background-radius: 15; -fx-padding: 8 16; -fx-font-size: 12; -fx-min-width: 80; -fx-background-color: transparent; -fx-border-color: #C084FC; -fx-text-fill: " + colors.get("text_primary") + ";");
             }
         });
 
@@ -227,10 +255,18 @@ public class AnalyticsView {
     }
 
     private void resetTimeRangeToWeekly() {
-        weekButton.setSelected(true);
-        monthButton.setSelected(false);
-        yearButton.setSelected(false);
-        controller.setTimeRange("week");
+        if (weekButton != null) {
+            weekButton.setSelected(true);
+        }
+        if (monthButton != null) {
+            monthButton.setSelected(false);
+        }
+        if (yearButton != null) {
+            yearButton.setSelected(false);
+        }
+        if (controller != null) {
+            controller.setTimeRange("week");
+        }
     }
 
     private TabPane createTabPane() {
@@ -334,32 +370,39 @@ public class AnalyticsView {
                 "Task Completion",
                 completionRate + "%",
                 controller.tasksCompletedProperty().get() + " of " + controller.totalTasksProperty().get() + " tasks",
-                "#F3E8FF", "#FCE7F3", "✓"
+                colors.get("gradient_task_start"), colors.get("gradient_task_end"), "✓"
         );
 
         VBox focusCard = createOverviewStatCard(
                 "Focus Time",
                 focusHours + "h " + focusMinutesRemaining + "m",
                 controller.pomodoroSessionsProperty().get() + " sessions",
-                "#E0F2FE", "#BAE6FD", "⏰"
+                colors.get("gradient_focus_start"), colors.get("gradient_focus_end"), "⏰"
         );
 
         VBox streakCard = createOverviewStatCard(
                 "Current Streak",
                 controller.currentStreakProperty().get() + " days",
                 "Best: " + controller.longestStreakProperty().get() + " days",
-                "#F0E8FF", "#E8D6FF", "⚡"
+                colors.get("gradient_streak_start"), colors.get("gradient_streak_end"), "⚡"
         );
 
-        VBox coinsCard = createOverviewStatCard(
-                "Coins Earned",
-                String.valueOf(controller.coinsEarnedProperty().get()),
-                "Pet happiness: " + controller.petHappinessProperty().get() + "%",
-                "#E8F5E8", "#D4F0D4", "⭐"
+        VBox productivityCard = createOverviewStatCard(
+                "Productivity Score",
+                controller.productivityScoreProperty().get() + "%",
+                getProductivityMessage(controller.productivityScoreProperty().get()),
+                colors.get("gradient_productivity_start"), colors.get("gradient_productivity_end"), "📊"
         );
 
-        statsRow.getChildren().addAll(taskCard, focusCard, streakCard, coinsCard);
+        statsRow.getChildren().addAll(taskCard, focusCard, streakCard, productivityCard);
         return statsRow;
+    }
+
+    private String getProductivityMessage(int score) {
+        if (score >= 90) return "Excellent performance!";
+        else if (score >= 70) return "Great work!";
+        else if (score >= 50) return "Good progress";
+        else return "Keep going!";
     }
 
     private VBox createOverviewStatCard(String title, String value, String subtitle, String startColor, String endColor, String emoji) {
@@ -380,14 +423,14 @@ public class AnalyticsView {
         emojiLabel.setStyle("-fx-font-size: 28;");
 
         Label titleLabel = new Label(title);
-        titleLabel.setStyle("-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #2A2D3A; -fx-text-alignment: center; -fx-wrap-text: true;");
+        titleLabel.setStyle("-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: " + colors.get("text_dark") + "; -fx-text-alignment: center; -fx-wrap-text: true;");
         titleLabel.setMaxWidth(180);
 
         Label valueLabel = new Label(value);
-        valueLabel.setStyle("-fx-font-size: 22; -fx-font-weight: bold; -fx-text-fill: #2A2D3A; -fx-text-alignment: center;");
+        valueLabel.setStyle("-fx-font-size: 22; -fx-font-weight: bold; -fx-text-fill: " + colors.get("text_dark") + "; -fx-text-alignment: center;");
 
         Label subtitleLabel = new Label(subtitle);
-        subtitleLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #2A2D3A; -fx-text-alignment: center; -fx-wrap-text: true;");
+        subtitleLabel.setStyle("-fx-font-size: 12; -fx-text-fill: " + colors.get("text_dark") + "; -fx-text-alignment: center; -fx-wrap-text: true;");
         subtitleLabel.setMaxWidth(180);
 
         card.getChildren().addAll(emojiLabel, titleLabel, valueLabel, subtitleLabel);
@@ -401,9 +444,9 @@ public class AnalyticsView {
     private VBox createActivityChart() {
         VBox chartContainer = new VBox(15);
         chartContainer.setPadding(new Insets(25));
-        chartContainer.setStyle("-fx-background-color: " + toHex(cardBg) + ";" +
+        chartContainer.setStyle("-fx-background-color: " + colors.get("bg_card") + ";" +
                 "-fx-background-radius: 25;" +
-                "-fx-border-color: " + toHex(borderColor) + ";" +
+                "-fx-border-color: " + colors.get("border_primary") + ";" +
                 "-fx-border-width: 2;" +
                 "-fx-border-radius: 25;" +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.5, 0, 6);");
@@ -411,7 +454,7 @@ public class AnalyticsView {
         chartContainer.setAlignment(Pos.CENTER);
 
         Label title = new Label("Weekly Activity");
-        title.setStyle("-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: #5c5470;");
+        title.setStyle("-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: " + colors.get("text_primary") + ";");
 
         activityChartCanvas = new Canvas(900, 400); // Larger canvas
         drawActivityChart(activityChartCanvas);
@@ -636,9 +679,9 @@ public class AnalyticsView {
     private VBox createTaskCompletionChart() {
         VBox chartContainer = new VBox(15);
         chartContainer.setPadding(new Insets(25));
-        chartContainer.setStyle("-fx-background-color: " + toHex(cardBg) + ";" +
+        chartContainer.setStyle("-fx-background-color: " + colors.get("bg_card") + ";" +
                 "-fx-background-radius: 25;" +
-                "-fx-border-color: " + toHex(borderColor) + ";" +
+                "-fx-border-color: " + colors.get("border_primary") + ";" +
                 "-fx-border-width: 2;" +
                 "-fx-border-radius: 25;" +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.5, 0, 6);");
@@ -646,7 +689,7 @@ public class AnalyticsView {
         chartContainer.setAlignment(Pos.CENTER);
 
         Label chartTitle = new Label("Daily Task Completion");
-        chartTitle.setStyle("-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #5c5470;");
+        chartTitle.setStyle("-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: " + colors.get("text_primary") + ";");
 
         taskChartCanvas = new Canvas(500, 300); // Larger canvas
         drawBarChart(taskChartCanvas, "tasks");
@@ -659,9 +702,9 @@ public class AnalyticsView {
     private VBox createFocusSessionChart() {
         VBox chartContainer = new VBox(15);
         chartContainer.setPadding(new Insets(25));
-        chartContainer.setStyle("-fx-background-color: " + toHex(cardBg) + ";" +
+        chartContainer.setStyle("-fx-background-color: " + colors.get("bg_card") + ";" +
                 "-fx-background-radius: 25;" +
-                "-fx-border-color: " + toHex(borderColor) + ";" +
+                "-fx-border-color: " + colors.get("border_primary") + ";" +
                 "-fx-border-width: 2;" +
                 "-fx-border-radius: 25;" +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.5, 0, 6);");
@@ -669,7 +712,7 @@ public class AnalyticsView {
         chartContainer.setAlignment(Pos.CENTER);
 
         Label chartTitle = new Label("Focus Session Intensity");
-        chartTitle.setStyle("-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #5c5470;");
+        chartTitle.setStyle("-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: " + colors.get("text_primary") + ";");
 
         focusChartCanvas = new Canvas(500, 300); // Larger canvas
         drawBarChart(focusChartCanvas, "pomodoros");
@@ -732,27 +775,24 @@ public class AnalyticsView {
         statsRow.setAlignment(Pos.CENTER);
         statsRow.setPadding(new Insets(10));
 
+        // Calculate average session length (25 minutes per pomodoro)
         String avgSession = "25 min";
         String sessionNote = "Perfect pomodoro length";
 
-        int totalPossible = 0;
-        int actualCompleted = 0;
+        // Calculate daily goal achievement (target: 3 tasks per day)
+        int totalDays = 7; // For weekly view
+        int targetTasks = totalDays * 3; // 3 tasks per day
+        int actualCompleted = controller.tasksCompletedProperty().get();
+        int goalPercentage = targetTasks > 0 ? Math.min((actualCompleted * 100) / targetTasks, 100) : 0;
 
-        for (AnalyticsController.WeeklyData data : controller.getWeeklyData()) {
-            actualCompleted += data.getTasks();
-            totalPossible += 3;
-        }
-
-        int goalPercentage = totalPossible > 0 ? (actualCompleted * 100) / totalPossible : 0;
-        goalPercentage = Math.min(goalPercentage, 100);
-
+        // Calculate productivity trend (compare current week to previous week)
         int trend = calculateProductivityTrend();
 
-        VBox avgSessionCard = createProductivityStatCard("⏰", "Average Focus Session", avgSession, sessionNote, "#E0F2FE", "#BAE6FD");
+        VBox avgSessionCard = createProductivityStatCard("⏰", "Average Focus Session", avgSession, sessionNote, colors.get("gradient_focus_start"), colors.get("gradient_focus_end"));
         VBox goalCard = createProductivityStatCard("🎯", "Daily Goal Achievement", goalPercentage + "%",
-                Math.min(actualCompleted, 7) + " out of 7 days", "#E8F5E8", "#D4F0D4");
+                actualCompleted + " of " + targetTasks + " target tasks", colors.get("gradient_productivity_start"), colors.get("gradient_productivity_end"));
         VBox trendCard = createProductivityStatCard("📈", "Productivity Trend", getTrendArrow(trend),
-                getTrendDescription(trend), "#F0E8FF", "#E8D6FF");
+                getTrendDescription(trend), colors.get("gradient_streak_start"), colors.get("gradient_streak_end"));
 
         statsRow.getChildren().addAll(avgSessionCard, goalCard, trendCard);
         return statsRow;
@@ -777,14 +817,14 @@ public class AnalyticsView {
         emojiLabel.setStyle("-fx-font-size: 28;");
 
         Label titleLabel = new Label(title);
-        titleLabel.setStyle("-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #2A2D3A; -fx-text-alignment: center; -fx-wrap-text: true;");
+        titleLabel.setStyle("-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: " + colors.get("text_dark") + "; -fx-text-alignment: center; -fx-wrap-text: true;");
         titleLabel.setMaxWidth(180);
 
         Label valueLabel = new Label(value);
-        valueLabel.setStyle("-fx-font-size: 22; -fx-font-weight: bold; -fx-text-fill: #2A2D3A; -fx-text-alignment: center;");
+        valueLabel.setStyle("-fx-font-size: 22; -fx-font-weight: bold; -fx-text-fill: " + colors.get("text_dark") + "; -fx-text-alignment: center;");
 
         Label subtitleLabel = new Label(subtitle);
-        subtitleLabel.setStyle("-fx-font-size: 12; -fx-text-fill: #2A2D3A; -fx-text-alignment: center; -fx-wrap-text: true;");
+        subtitleLabel.setStyle("-fx-font-size: 12; -fx-text-fill: " + colors.get("text_dark") + "; -fx-text-alignment: center; -fx-wrap-text: true;");
         subtitleLabel.setMaxWidth(180);
 
         card.getChildren().addAll(emojiLabel, titleLabel, valueLabel, subtitleLabel);
@@ -849,9 +889,9 @@ public class AnalyticsView {
     private VBox createMoodDistributionChart() {
         VBox chartContainer = new VBox(15);
         chartContainer.setPadding(new Insets(25));
-        chartContainer.setStyle("-fx-background-color: " + toHex(cardBg) + ";" +
+        chartContainer.setStyle("-fx-background-color: " + colors.get("bg_card") + ";" +
                 "-fx-background-radius: 25;" +
-                "-fx-border-color: " + toHex(borderColor) + ";" +
+                "-fx-border-color: " + colors.get("border_primary") + ";" +
                 "-fx-border-width: 2;" +
                 "-fx-border-radius: 25;" +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.5, 0, 6);");
@@ -859,7 +899,7 @@ public class AnalyticsView {
         chartContainer.setAlignment(Pos.CENTER);
 
         Label title = new Label("Mood Distribution");
-        title.setStyle("-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #5c5470;");
+        title.setStyle("-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: " + colors.get("text_primary") + ";");
 
         Canvas canvas = new Canvas(500, 350);
         drawMoodDistributionChart(canvas);
@@ -954,9 +994,9 @@ public class AnalyticsView {
     private VBox createMoodTrendChart() {
         VBox chartContainer = new VBox(15);
         chartContainer.setPadding(new Insets(25));
-        chartContainer.setStyle("-fx-background-color: " + toHex(cardBg) + ";" +
+        chartContainer.setStyle("-fx-background-color: " + colors.get("bg_card") + ";" +
                 "-fx-background-radius: 25;" +
-                "-fx-border-color: " + toHex(borderColor) + ";" +
+                "-fx-border-color: " + colors.get("border_primary") + ";" +
                 "-fx-border-width: 2;" +
                 "-fx-border-radius: 25;" +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.5, 0, 6);");
@@ -964,7 +1004,7 @@ public class AnalyticsView {
         chartContainer.setAlignment(Pos.CENTER);
 
         Label title = new Label("Weekly Mood Trend");
-        title.setStyle("-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #5c5470;");
+        title.setStyle("-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: " + colors.get("text_primary") + ";");
 
         moodTrendCanvas = new Canvas(500, 350);
         drawMoodTrendChart(moodTrendCanvas);
@@ -1039,28 +1079,19 @@ public class AnalyticsView {
 
         VBox moodCard = createProductivityStatCard("❤️", "Average Mood",
                 String.format("%.1f/5", controller.averageMoodProperty().get()),
-                getMoodTimeRangeText(), "#F3E8FF", "#FCE7F3");
+                getMoodTimeRangeText(), colors.get("gradient_mood_start"), colors.get("gradient_mood_end"));
 
-        VBox petCard = createProductivityStatCard("⭐", "Pet Happiness",
-                controller.petHappinessProperty().get() + "%",
-                getPetHappinessMessage(), "#E8F5E8", "#D4F0D4");
+        VBox consistencyCard = createProductivityStatCard("📅", "Mood Entries",
+                controller.moodEntriesProperty().get() + " logged",
+                "Keep tracking daily", colors.get("gradient_productivity_start"), colors.get("gradient_productivity_end"));
 
-        statsRow.getChildren().addAll(moodCard, petCard);
+        statsRow.getChildren().addAll(moodCard, consistencyCard);
         return statsRow;
     }
 
     private String getMoodTimeRangeText() {
         return "This week";
     }
-
-    private String getPetHappinessMessage() {
-        int happiness = controller.petHappinessProperty().get();
-        if (happiness >= 90) return "Your pet adores you!";
-        else if (happiness >= 70) return "Your pet is very happy!";
-        else if (happiness >= 50) return "Your pet is content";
-        else return "Your pet needs attention";
-    }
-
 
     private VBox createLevelCard() {
         VBox card = new VBox(15);
@@ -1084,20 +1115,20 @@ public class AnalyticsView {
         levelIcon.setStyle("-fx-font-size: 32;");
 
         Label levelTitle = new Label("Level " + currentLevel + " " + getLevelTitle(currentLevel));
-        levelTitle.setStyle("-fx-font-size: 24; -fx-font-weight: bold; -fx-text-fill: #5c5470;");
+        levelTitle.setStyle("-fx-font-size: 24; -fx-font-weight: bold; -fx-text-fill: " + colors.get("text_primary") + ";");
 
         Label xpLabel = new Label(userXP + " Total XP");
-        xpLabel.setStyle("-fx-font-size: 16; -fx-text-fill: #756f86;");
+        xpLabel.setStyle("-fx-font-size: 16; -fx-text-fill: " + colors.get("text_secondary") + ";");
 
         // Progress bar
         ProgressBar progressBar = new ProgressBar();
         progressBar.setProgress(progressPercentage);
         progressBar.setPrefWidth(400);
         progressBar.setPrefHeight(12);
-        progressBar.setStyle("-fx-accent: #A78BFA; -fx-background-color: #E5E7EB; -fx-background-radius: 6;");
+        progressBar.setStyle("-fx-accent: " + colors.get("accent_purple") + "; -fx-background-color: #E5E7EB; -fx-background-radius: 6;");
 
         Label progressLabel = new Label(xpProgress + "/" + xpNeeded + " XP to Level " + (currentLevel + 1));
-        progressLabel.setStyle("-fx-font-size: 14; -fx-text-fill: #5c5470; -fx-font-weight: bold;");
+        progressLabel.setStyle("-fx-font-size: 14; -fx-text-fill: " + colors.get("text_primary") + "; -fx-font-weight: bold;");
 
         card.getChildren().addAll(levelIcon, levelTitle, xpLabel, progressBar, progressLabel);
         return card;
@@ -1137,12 +1168,9 @@ public class AnalyticsView {
             achievementsGrid.getChildren().add(achievementCard);
         }
 
-
         content.getChildren().addAll(levelCard, achievementsGrid);
         return content;
     }
-
-
 
     private int getXpForLevel(int level) {
         switch (level) {
@@ -1258,7 +1286,6 @@ public class AnalyticsView {
         card.getChildren().add(header);
         return card;
     }
-
 
     private void drawPlaceholderChart(GraphicsContext gc, double width, double height) {
         gc.setFill(Color.web("#6B7280"));
