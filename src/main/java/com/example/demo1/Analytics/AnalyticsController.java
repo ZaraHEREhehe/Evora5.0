@@ -85,7 +85,11 @@ public class AnalyticsController {
                 -- Calculate current progress based on condition_type
                 CASE 
                     WHEN b.condition_type = 'tasks_completed' THEN 
-                        (SELECT COUNT(*) FROM ToDoTasks WHERE user_id = ? AND is_completed = 1)
+                        (SELECT COUNT(*) FROM (
+                            SELECT task_id FROM ToDoTasks WHERE user_id = ? AND is_completed = 1
+                            UNION ALL
+                            SELECT log_id FROM TaskCompletionLog WHERE user_id = ?
+                        ) AS combined_tasks)
                     WHEN b.condition_type = 'pomodoro_sessions' THEN 
                         (SELECT COUNT(*) FROM PomodoroSessions WHERE user_id = ? AND status = 'Completed')
                     WHEN b.condition_type = 'notes_created' THEN 
@@ -103,9 +107,12 @@ public class AnalyticsController {
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             // Set parameters for all the user_id placeholders
-            for (int i = 1; i <= 5; i++) {
-                stmt.setInt(i, userId);
-            }
+            stmt.setInt(1, userId);
+            stmt.setInt(2, userId);
+            stmt.setInt(3, userId);
+            stmt.setInt(4, userId);
+            stmt.setInt(5, userId);
+            stmt.setInt(6, userId);
 
             ResultSet rs = stmt.executeQuery();
 
@@ -216,20 +223,52 @@ public class AnalyticsController {
     }
 
     private void loadTaskStatistics(Connection conn) throws SQLException {
-        String dateFilter = getDateFilter("created_at");
-        String sql = "SELECT " +
-                "COUNT(CASE WHEN is_completed = 1 THEN 1 END) as completed, " +
-                "COUNT(*) as total " +
-                "FROM ToDoTasks WHERE user_id = ? " + dateFilter;
+        String dateFilter = getDateFilterForTasks();
 
+        // Query that combines current completed tasks and historical log
+        String sql = """
+        SELECT COUNT(*) as completed_count
+        FROM (
+            -- Current completed tasks that haven't been deleted
+            SELECT task_id 
+            FROM ToDoTasks 
+            WHERE user_id = ? AND is_completed = 1 
+            AND created_at >= DATEADD(day, -30, GETDATE())
+            
+            UNION ALL
+            
+            -- Historical completed tasks from log (including deleted ones)
+            SELECT log_id as task_id
+            FROM TaskCompletionLog 
+            WHERE user_id = ? 
+            AND completed_at >= DATEADD(day, -30, GETDATE())
+        ) combined_tasks
+        """;
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, userId);
+            stmt.setInt(2, userId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                tasksCompleted.set(rs.getInt("completed_count"));
+            }
+        }
+
+        // Total tasks count (only current, non-deleted tasks)
+        totalTasks.set(getTotalTasksCount(conn));
+    }
+
+    private int getTotalTasksCount(Connection conn) throws SQLException {
+        // This counts only current (non-deleted) tasks
+        String sql = "SELECT COUNT(*) as total FROM ToDoTasks WHERE user_id = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, userId);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
-                tasksCompleted.set(rs.getInt("completed"));
-                totalTasks.set(rs.getInt("total"));
+                return rs.getInt("total");
             }
         }
+        return 0;
     }
 
     private void loadPomodoroStatistics(Connection conn) throws SQLException {
@@ -351,6 +390,18 @@ public class AnalyticsController {
         }
     }
 
+    private String getDateFilterForTasks() {
+        switch (currentTimeRange) {
+            case "month":
+                return "AND completed_at >= DATEADD(month, -1, GETDATE())";
+            case "year":
+                return "AND completed_at >= DATEADD(year, -1, GETDATE())";
+            case "week":
+            default:
+                return "AND completed_at >= DATEADD(day, -7, GETDATE())";
+        }
+    }
+
     private void generateWeeklyData() {
         weeklyData.clear();
 
@@ -369,6 +420,7 @@ public class AnalyticsController {
 
             try (PreparedStatement stmt = conn.prepareStatement(tasksSql)) {
                 stmt.setInt(1, userId);
+                stmt.setInt(2, userId); // Second parameter for the UNION query
                 ResultSet rs = stmt.executeQuery();
                 while (rs.next()) {
                     String period = rs.getString("period");
@@ -416,34 +468,117 @@ public class AnalyticsController {
     private String getTasksQuery() {
         switch (currentTimeRange) {
             case "month":
-                return "SELECT " +
-                        "DATEPART(WEEK, created_at) - DATEPART(WEEK, DATEADD(MONTH, DATEDIFF(MONTH, 0, created_at), 0)) + 1 as week_num, " +
-                        "'Week ' + CAST(DATEPART(WEEK, created_at) - DATEPART(WEEK, DATEADD(MONTH, DATEDIFF(MONTH, 0, created_at), 0)) + 1 as VARCHAR) as period, " +
-                        "COUNT(*) as tasks " +
-                        "FROM ToDoTasks " +
-                        "WHERE user_id = ? AND is_completed = 1 " +
-                        "AND created_at >= DATEADD(month, -1, GETDATE()) " +
-                        "GROUP BY DATEPART(WEEK, created_at) - DATEPART(WEEK, DATEADD(MONTH, DATEDIFF(MONTH, 0, created_at), 0)) + 1 " +
-                        "ORDER BY week_num";
+                return """
+                SELECT period, SUM(tasks) as tasks
+                FROM (
+                    -- Current tasks
+                    SELECT 
+                        'Week ' + CAST(DATEPART(WEEK, created_at) - DATEPART(WEEK, DATEADD(MONTH, DATEDIFF(MONTH, 0, created_at), 0)) + 1 as VARCHAR) as period,
+                        1 as tasks
+                    FROM ToDoTasks 
+                    WHERE user_id = ? AND is_completed = 1 
+                    AND created_at >= DATEADD(month, -1, GETDATE())
+                    
+                    UNION ALL
+                    
+                    -- Historical tasks from log
+                    SELECT 
+                        'Week ' + CAST(DATEPART(WEEK, completed_at) - DATEPART(WEEK, DATEADD(MONTH, DATEDIFF(MONTH, 0, completed_at), 0)) + 1 as VARCHAR) as period,
+                        1 as tasks
+                    FROM TaskCompletionLog 
+                    WHERE user_id = ? 
+                    AND completed_at >= DATEADD(month, -1, GETDATE())
+                ) combined
+                GROUP BY period
+                ORDER BY MIN(
+                    CASE 
+                        WHEN period = 'Week 1' THEN 1
+                        WHEN period = 'Week 2' THEN 2
+                        WHEN period = 'Week 3' THEN 3
+                        WHEN period = 'Week 4' THEN 4
+                        WHEN period = 'Week 5' THEN 5
+                        ELSE 6
+                    END
+                )
+                """;
             case "year":
-                return "SELECT " +
-                        "DATENAME(MONTH, created_at) as period, " +
-                        "COUNT(*) as tasks " +
-                        "FROM ToDoTasks " +
-                        "WHERE user_id = ? AND is_completed = 1 " +
-                        "AND created_at >= DATEADD(year, -1, GETDATE()) " +
-                        "GROUP BY DATENAME(MONTH, created_at), MONTH(created_at) " +
-                        "ORDER BY MONTH(created_at)";
+                return """
+                SELECT period, SUM(tasks) as tasks
+                FROM (
+                    -- Current tasks
+                    SELECT 
+                        DATENAME(MONTH, created_at) as period,
+                        1 as tasks
+                    FROM ToDoTasks 
+                    WHERE user_id = ? AND is_completed = 1 
+                    AND created_at >= DATEADD(year, -1, GETDATE())
+                    
+                    UNION ALL
+                    
+                    -- Historical tasks from log
+                    SELECT 
+                        DATENAME(MONTH, completed_at) as period,
+                        1 as tasks
+                    FROM TaskCompletionLog 
+                    WHERE user_id = ? 
+                    AND completed_at >= DATEADD(year, -1, GETDATE())
+                ) combined
+                GROUP BY period
+                ORDER BY MIN(
+                    CASE 
+                        WHEN period = 'January' THEN 1
+                        WHEN period = 'February' THEN 2
+                        WHEN period = 'March' THEN 3
+                        WHEN period = 'April' THEN 4
+                        WHEN period = 'May' THEN 5
+                        WHEN period = 'June' THEN 6
+                        WHEN period = 'July' THEN 7
+                        WHEN period = 'August' THEN 8
+                        WHEN period = 'September' THEN 9
+                        WHEN period = 'October' THEN 10
+                        WHEN period = 'November' THEN 11
+                        WHEN period = 'December' THEN 12
+                        ELSE 13
+                    END
+                )
+                """;
             case "week":
             default:
-                return "SELECT " +
-                        "DATENAME(WEEKDAY, created_at) as period, " +
-                        "COUNT(*) as tasks " +
-                        "FROM ToDoTasks " +
-                        "WHERE user_id = ? AND is_completed = 1 " +
-                        "AND created_at >= DATEADD(day, -7, GETDATE()) " +
-                        "GROUP BY DATENAME(WEEKDAY, created_at), CAST(created_at as DATE) " +
-                        "ORDER BY MIN(CAST(created_at as DATE))";
+                return """
+                SELECT period, SUM(tasks) as tasks
+                FROM (
+                    -- Current tasks
+                    SELECT 
+                        DATENAME(WEEKDAY, created_at) as period,
+                        1 as tasks
+                    FROM ToDoTasks 
+                    WHERE user_id = ? AND is_completed = 1 
+                    AND created_at >= DATEADD(day, -7, GETDATE())
+                    
+                    UNION ALL
+                    
+                    -- Historical tasks from log
+                    SELECT 
+                        DATENAME(WEEKDAY, completed_at) as period,
+                        1 as tasks
+                    FROM TaskCompletionLog 
+                    WHERE user_id = ? 
+                    AND completed_at >= DATEADD(day, -7, GETDATE())
+                ) combined
+                GROUP BY period
+                ORDER BY MIN(
+                    CASE 
+                        WHEN period = 'Monday' THEN 1
+                        WHEN period = 'Tuesday' THEN 2
+                        WHEN period = 'Wednesday' THEN 3
+                        WHEN period = 'Thursday' THEN 4
+                        WHEN period = 'Friday' THEN 5
+                        WHEN period = 'Saturday' THEN 6
+                        WHEN period = 'Sunday' THEN 7
+                        ELSE 8
+                    END
+                )
+                """;
         }
     }
 
