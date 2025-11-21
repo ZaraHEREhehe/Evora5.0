@@ -50,6 +50,7 @@ public class Sidebar extends VBox {
         this.controller = controller;
         setupSidebar();
         createHeader(userName);
+       // createMascotSection();
         createNavButtons();
         createMascotSection();
         // Initialize with current experience from database
@@ -91,10 +92,6 @@ public class Sidebar extends VBox {
 
             Label starIcon = new Label("⭐");
             starIcon.setFont(Font.font(12));
-
-            expLabel = new Label("Loading...");
-            expLabel.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 12));
-            expLabel.setTextFill(Color.web(PASTEL_SAGE));
 
             expBox.getChildren().addAll(starIcon, expLabel);
 

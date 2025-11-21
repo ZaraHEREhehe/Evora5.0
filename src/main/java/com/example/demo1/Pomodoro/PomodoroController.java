@@ -353,8 +353,8 @@ public class PomodoroController {
     private void startBreakSession() {
         isBreak = true;
         sessions++;
-        happiness = Math.min(100, happiness + 10);
-        happinessLabel.setText("😊 Happiness: " + happiness + "%");
+       // happiness = Math.min(100, happiness + 10);
+       // happinessLabel.setText("😊 Happiness: " + happiness + "%");
         timeLeft = breakTime;
         statusLabel.setText("☕ Break Time");
         startPauseButton.setText("Start");
@@ -368,7 +368,7 @@ public class PomodoroController {
             petContainer.setVisible(false);
         }
 
-        showHappinessBoost();
+       // showHappinessBoost();
     }
 
     // Database integration methods

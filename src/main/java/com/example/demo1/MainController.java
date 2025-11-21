@@ -72,6 +72,9 @@ public class MainController {
         PetsController.PetInfo initialPet = petsController.getCurrentPetForSidebar();
         sidebar.updateMascot(initialPet.getName(), initialPet.getSpecies(), initialPet.getGifFilename());
 
+        //refresh experience immediately after mascot setup
+        refreshSidebarExperience();
+
         showDashboard();
 
         Scene scene = new Scene(root, 1200, 800);
@@ -95,7 +98,15 @@ public class MainController {
         stage.show();
     }
 
+    //refresh sidebar experience
+    public void refreshSidebarExperience() {
+        sidebar.refreshExperienceFromDatabase(userId);
+    }
+
     private void handleNavigation(String tab) {
+
+       // refreshSidebarExperience(); //refresh whenever user navigates
+
         switch (tab) {
             case "dashboard":
                 showDashboard();

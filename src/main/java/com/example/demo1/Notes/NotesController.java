@@ -148,7 +148,7 @@ public class NotesController {
         return false;
     }
 
-    // Delete - Remove note
+    // Delete - Remove note and move it to deleted archive
     public boolean deleteNote(int noteId) {
         String sql = "DELETE FROM StickyNotes WHERE note_id = ? AND user_id = ?";
 

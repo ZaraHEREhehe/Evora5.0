@@ -85,6 +85,7 @@
             </VBox>
 
             <!-- Animated Pet During Work -->
+
             <VBox fx:id="petContainer" alignment="CENTER" spacing="8" maxWidth="380" visible="false">
                 <Label text="Your Pet is Working Hard! 💪" style="-fx-text-fill: #343A26; -fx-font-weight: bold; -fx-font-size: 14px;"/>
                 <Label text="Pet happiness will increase after this session!" style="-fx-text-fill: #8D9383; -fx-font-size: 11px;"/>
@@ -102,6 +103,7 @@
                     </VBox>
                 </HBox>
             </VBox>
+
 
             <!-- Simple Happiness Label (No Bar) -->
             <Label fx:id="happinessLabel" text="😊 Happiness: 85%"
