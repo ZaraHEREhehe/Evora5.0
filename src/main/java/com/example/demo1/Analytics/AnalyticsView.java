@@ -1137,9 +1137,8 @@ public class AnalyticsView {
             achievementsGrid.getChildren().add(achievementCard);
         }
 
-        VBox progressSummary = createProgressSummary();
 
-        content.getChildren().addAll(levelCard, achievementsGrid, progressSummary);
+        content.getChildren().addAll(levelCard, achievementsGrid);
         return content;
     }
 
@@ -1260,33 +1259,6 @@ public class AnalyticsView {
         return card;
     }
 
-    private VBox createProgressSummary() {
-        VBox summary = new VBox(15);
-        summary.setPadding(new Insets(25));
-        summary.setAlignment(Pos.CENTER);
-        summary.setStyle("-fx-background-color: linear-gradient(to bottom right, #D4C2FF, #E2D6FF); " +
-                "-fx-background-radius: 20; -fx-border-color: #A28BF0; -fx-border-width: 2; " +
-                "-fx-border-radius: 20;");
-        summary.setPrefWidth(800);
-
-        Label trophyIcon = new Label("🏆");
-        trophyIcon.setStyle("-fx-font-size: 32;");
-
-        Label title = new Label("Achievement Hunter");
-        title.setStyle("-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: #6d7d8d;");
-
-        long unlockedCount = controller.getAchievements().stream().filter(AnalyticsController.Achievement::isUnlocked).count();
-        Label subtitle = new Label("You've unlocked " + unlockedCount + " out of " + controller.getAchievements().size() + " achievements!");
-        subtitle.setStyle("-fx-font-size: 14; -fx-text-fill: #8d9dad; -fx-text-alignment: center;");
-
-        ProgressBar overallProgress = new ProgressBar();
-        overallProgress.setProgress(unlockedCount / (double) controller.getAchievements().size());
-        overallProgress.setPrefWidth(500);
-        overallProgress.setStyle("-fx-accent: #A28BF0; -fx-background-color: #e0e0e0; -fx-pref-height: 8;");
-
-        summary.getChildren().addAll(trophyIcon, title, subtitle, overallProgress);
-        return summary;
-    }
 
     private void drawPlaceholderChart(GraphicsContext gc, double width, double height) {
         gc.setFill(Color.web("#6B7280"));
