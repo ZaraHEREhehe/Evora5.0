@@ -56,7 +56,7 @@ public class Settings {
         header.setAlignment(Pos.CENTER);
         header.setPadding(new Insets(0, 0, 20, 0));
 
-        Label title = new Label("Settings ⚙️");
+        Label title = new Label("Settings ⚙");
         title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 32));
         // Use dynamic style that checks theme every time
         title.setStyle(getDynamicTextStyle());

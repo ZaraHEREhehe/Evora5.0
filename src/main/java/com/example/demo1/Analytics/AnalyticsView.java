@@ -1077,7 +1077,7 @@ public class AnalyticsView {
         statsRow.setAlignment(Pos.CENTER);
         statsRow.setPadding(new Insets(10));
 
-        VBox moodCard = createProductivityStatCard("❤️", "Average Mood",
+        VBox moodCard = createProductivityStatCard("❤", "Average Mood",
                 String.format("%.1f/5", controller.averageMoodProperty().get()),
                 getMoodTimeRangeText(), colors.get("gradient_mood_start"), colors.get("gradient_mood_end"));
 

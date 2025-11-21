@@ -34,7 +34,7 @@ public class WhiteNoiseView {
     public void setUserId(int userId) { this.userId = userId; }
 
     private final Sound[] SOUNDS = {
-            new Sound("rain", "Rain", "🌧️",
+            new Sound("rain", "Rain", "🌧",
                     "linear-gradient(from 0% 0% to 100% 100%, " + Pastel.BLUE + " 0%, " + Pastel.SKY + " 50%, " + Pastel.LAVENDER + " 100%)", Pastel.BLUE),
             new Sound("coffee", "Coffee Shop", "☕",
                     "linear-gradient(from 0% 0% to 100% 100%, " + Pastel.PEACH + " 0%, " + Pastel.CORAL + " 50%, " + Pastel.DUSTY_PINK + " 100%)", Pastel.PEACH),
@@ -124,7 +124,7 @@ public class WhiteNoiseView {
     }
 
     private VBox createMasterControls() {
-        VBox masterCard = createCard("🎛️ Master Controls", 600);
+        VBox masterCard = createCard("🎛 Master Controls", 600);
         VBox content = new VBox(16);
         content.setPadding(new Insets(20));
         content.setAlignment(Pos.CENTER);
@@ -178,7 +178,7 @@ public class WhiteNoiseView {
         playingCounter.getChildren().addAll(playingLabel, playingCount);
 
         // Stop All button
-        Button stopAll = new Button("⏹️ Stop All");
+        Button stopAll = new Button("⏹ Stop All");
         stopAll.setStyle("-fx-background-color: transparent; -fx-text-fill: " + Pastel.LOGOUT_RED + "; -fx-border-color: " + Pastel.LIGHT_RED + "; " +
                 "-fx-border-radius: 20; -fx-background-radius: 20; -fx-padding: 8 16; -fx-font-weight: 600; " +
                 "-fx-cursor: hand;");
@@ -253,7 +253,7 @@ public class WhiteNoiseView {
         boolean isCurrentlyPlaying = isPlayingProp != null && isPlayingProp.get();
 
         Button playButton = new Button();
-        playButton.setText(isCurrentlyPlaying ? "⏸️ Pause" : "▶️ Play");
+        playButton.setText(isCurrentlyPlaying ? "⏸ Pause" : "▶ Play");
         playButton.setStyle(isCurrentlyPlaying
                 ? "-fx-background-color: rgba(255,255,255,0.3); -fx-text-fill: white; -fx-border-color: rgba(255,255,255,0.7); " +
                 "-fx-border-width: 1; -fx-background-radius: 18; -fx-padding: 8 20; -fx-font-weight: bold; -fx-cursor: hand;"
@@ -274,7 +274,7 @@ public class WhiteNoiseView {
 
         if (isPlayingProp != null) {
             isPlayingProp.addListener((obs, oldVal, newVal) -> {
-                playButton.setText(newVal ? "⏸️ Pause" : "▶️ Play");
+                playButton.setText(newVal ? "⏸ Pause" : "▶ Play");
                 playButton.setStyle(newVal
                         ? "-fx-background-color: rgba(255,255,255,0.3); -fx-text-fill: white; -fx-border-color: rgba(255,255,255,0.7); " +
                         "-fx-border-width: 1; -fx-background-radius: 18; -fx-padding: 8 20; -fx-font-weight: bold; -fx-cursor: hand;"

@@ -358,7 +358,7 @@ public class Sidebar extends VBox {
                 {"calendar", "📅 Calendar", ""},
                 {"mood", "😊 Mood Tracker", ""},
                 {"whitenoise", "🎵 White Noise", ""},
-                {"settings", "⚙️ Settings", ""}
+                {"settings", "⚙ Settings", ""}
         };
 
         for (String[] item : items) {
