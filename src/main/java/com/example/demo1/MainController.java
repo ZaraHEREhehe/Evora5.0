@@ -14,6 +14,7 @@ import com.example.demo1.ToDoList.TodoView;
 import com.example.demo1.WhiteNoise.WhiteNoiseView;
 import com.example.demo1.Theme.Pastel;
 import com.example.demo1.Pomodoro.PomodoroController;
+import com.example.demo1.Pomodoro.PomodoroView;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -249,9 +250,10 @@ public class MainController {
     }
 
     private void showPomodoroTimer() {
-        // Create the PomodoroController programmatically (no FXML)
+        // Create the PomodoroController and PomodoroView
         PomodoroController pomodoroController = new PomodoroController();
-        Pane pomodoroContent = pomodoroController.getPomodoroUI().getView();
+        PomodoroView pomodoroView = new PomodoroView(pomodoroController);
+        VBox pomodoroContent = pomodoroView.getView();
 
         // Set up the controller with dependencies
         pomodoroController.setUserId(userId);
@@ -261,8 +263,8 @@ public class MainController {
         PetsController petsController = new PetsController(userId);
         pomodoroController.setPetsController(petsController);
 
-        // Apply the pastel theme to the loaded content
-        pomodoroContent.setStyle("-fx-background-color: " + Pastel.BLUSH + ";");
+        // The background is already set in PomodoroView, so remove this line:
+        // pomodoroContent.setStyle("-fx-background-color: " + Pastel.BLUSH + ";");
 
         // Make pomodoro content responsive
         pomodoroContent.prefWidthProperty().bind(root.widthProperty().subtract(200));

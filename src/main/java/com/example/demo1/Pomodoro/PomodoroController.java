@@ -1,13 +1,13 @@
 package com.example.demo1.Pomodoro;
 
 import com.example.demo1.Pets.PetsController;
+import com.example.demo1.Sidebar.Sidebar;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
-import com.example.demo1.Sidebar.Sidebar;
 import javafx.util.Duration;
 
 public class PomodoroController {
-    private PomodoroView pomodoroViewUI;
+
     private Timeline timeline;
     private boolean running = false;
     private boolean isBreak = false;
@@ -24,41 +24,8 @@ public class PomodoroController {
     private int currentSessionId = -1;
     private int userId;
 
-    public PomodoroController() {
-        this.pomodoroViewUI = new PomodoroView();
-        setupEventHandlers();
-        setupTimer();
-        updateUI();
-    }
-
-    public PomodoroView getPomodoroUI() {
-        return pomodoroViewUI;
-    }
-
-    private void setupEventHandlers() {
-        // Timer controls
-        pomodoroViewUI.getStartPauseButton().setOnAction(e -> toggleTimer());
-        pomodoroViewUI.getResetButton().setOnAction(e -> resetTimer());
-
-        // Preset selection
-        pomodoroViewUI.getPresetBox().setOnAction(e -> presetSelected());
-
-        // Custom timer controls
-        pomodoroViewUI.getSettingsButton().setOnAction(e -> toggleCustomSettings());
-        pomodoroViewUI.getApplyCustomButton().setOnAction(e -> applyCustomTimer());
-    }
-
-    private void setupTimer() {
-        timeLeft = workTime;
-        pomodoroViewUI.updateTimerDisplay(formatTime(timeLeft), 0);
-        pomodoroViewUI.updateStatus("💼 Work Session", false);
-
-        timeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> tick()));
-        timeline.setCycleCount(Timeline.INDEFINITE);
-
-        pomodoroViewUI.updateButtonState(false, false);
-        pomodoroViewUI.updateSessions(0);
-    }
+    // View reference
+    private PomodoroView view;
 
     // Setup methods
     public void setUserId(int userId) {
@@ -68,14 +35,23 @@ public class PomodoroController {
     }
 
     public void setSidebar(Sidebar sidebar) {
-        if (sessionManager != null) {
-            sessionManager.setSidebar(sidebar);
-        }
+        sessionManager.setSidebar(sidebar);
     }
 
     public void setPetsController(PetsController petsController) {
         this.petsController = petsController;
         updatePetDisplay();
+    }
+
+    public void setView(PomodoroView view) {
+        this.view = view;
+        initialize();
+    }
+
+    public void initialize() {
+        setupTimer();
+        setupPresets();
+        updateUI();
     }
 
     private void loadActiveSession() {
@@ -107,10 +83,13 @@ public class PomodoroController {
         timeLeft = Math.max(0, workTime - (int)elapsedSeconds);
 
         if (timeLeft > 0) {
-            running = false; // Start paused so user can choose to resume
-            pomodoroViewUI.updateStatus("💼 Work Session (Paused)", false);
-            pomodoroViewUI.updateButtonState(false, false);
-            pomodoroViewUI.updateTimerDisplay(formatTime(timeLeft), (double)(workTime - timeLeft)/workTime);
+            running = true;
+            if (view != null) {
+                view.updateStatus("💼 Work Session", false);
+                view.updateButtonState(true, false);
+                view.updateTimerDisplay(formatTime(timeLeft), (double)(workTime - timeLeft)/workTime);
+            }
+            timeline.play();
             System.out.println("Restored running session with " + timeLeft + " seconds remaining");
         } else {
             sessionManager.completeSession(currentSessionId);
@@ -125,9 +104,11 @@ public class PomodoroController {
         timeLeft = Math.max(0, workTime - (int)elapsedSeconds);
 
         running = false;
-        pomodoroViewUI.updateStatus("💼 Work Session (Paused)", false);
-        pomodoroViewUI.updateButtonState(false, false);
-        pomodoroViewUI.updateTimerDisplay(formatTime(timeLeft), (double)(workTime - timeLeft)/workTime);
+        if (view != null) {
+            view.updateStatus("💼 Work Session (Paused)", false);
+            view.updateButtonState(false, false);
+            view.updateTimerDisplay(formatTime(timeLeft), (double)(workTime - timeLeft)/workTime);
+        }
         System.out.println("Restored paused session with " + timeLeft + " seconds remaining");
     }
 
@@ -135,26 +116,50 @@ public class PomodoroController {
         isBreak = false;
         running = false;
         timeLeft = workTime;
-        pomodoroViewUI.updateStatus("💼 Work Session", false);
-        pomodoroViewUI.updateButtonState(false, false);
-        pomodoroViewUI.updateTimerDisplay(formatTime(timeLeft), 0);
-        pomodoroViewUI.setPetVisibility(false);
+        if (view != null) {
+            view.updateStatus("💼 Work Session", false);
+            view.updateButtonState(false, false);
+            view.updateTimerDisplay(formatTime(timeLeft), 0);
+            view.setPetVisibility(false);
+        }
+    }
+
+    private void setupTimer() {
+        timeLeft = workTime;
+        timeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> tick()));
+        timeline.setCycleCount(Timeline.INDEFINITE);
+    }
+
+    private void setupPresets() {
+        if (view != null) {
+            view.getPresetBox().getItems().addAll("Pomodoro (25/5)", "Short Focus (15/3)", "Deep Work (45/10)",
+                    "Study Session (50/10)", "Quick Task (10/2)");
+            view.getPresetBox().getSelectionModel().selectFirst();
+        }
+    }
+
+    private void updateUI() {
+        if (view != null) {
+            view.updateSessions(sessions);
+            view.updateHappiness(happiness);
+        }
     }
 
     // Timer logic
     private void tick() {
         if (timeLeft > 0) {
             timeLeft--;
-            pomodoroViewUI.updateTimerDisplay(formatTime(timeLeft), 1.0 - ((double) timeLeft / (isBreak ? breakTime : workTime)));
-
-            // Show pet during active work sessions
-            if (running && !isBreak) {
-                pomodoroViewUI.setPetVisibility(true);
+            double total = isBreak ? breakTime : workTime;
+            if (view != null) {
+                view.updateTimerDisplay(formatTime(timeLeft), (double)(total - timeLeft)/total);
+                view.setPetVisibility(running && !isBreak);
             }
         } else {
             timeline.stop();
             running = false;
-            pomodoroViewUI.setPetVisibility(false);
+            if (view != null) {
+                view.setPetVisibility(false);
+            }
 
             if (isBreak) {
                 startWorkSession();
@@ -166,13 +171,18 @@ public class PomodoroController {
         }
     }
 
-    private void toggleTimer() {
+    public void toggleTimer() {
         if (running) {
             // Pause timer
             timeline.stop();
             running = false;
-            pomodoroViewUI.updateButtonState(false, isBreak);
-            pomodoroViewUI.setPetVisibility(false);
+            // Update status based on whether it's work or break
+            String status = isBreak ? "☕ Break Time (Paused)" : "💼 Work Session (Paused)";
+            if (view != null) {
+                view.updateStatus(status, isBreak);
+                view.updateButtonState(false, isBreak);
+                view.setPetVisibility(false);
+            }
 
             // Track pause in database
             if (!isBreak && currentSessionId != -1) {
@@ -181,6 +191,13 @@ public class PomodoroController {
         } else {
             // Start/resume timer
             running = true;
+            // Update status based on whether it's work or break
+            String status = isBreak ? "☕ Break Time" : "💼 Work Session";
+            if (view != null) {
+                view.updateStatus(status, isBreak);
+                view.updateButtonState(true, isBreak);
+                view.setPetVisibility(!isBreak);
+            }
 
             // Always create session when starting work session
             if (!isBreak && currentSessionId == -1) {
@@ -191,22 +208,18 @@ public class PomodoroController {
             }
 
             timeline.play();
-            pomodoroViewUI.updateButtonState(true, isBreak);
-
-            // Show pet for work sessions
-            if (!isBreak) {
-                pomodoroViewUI.setPetVisibility(true);
-            }
         }
     }
 
-    private void resetTimer() {
+    public void resetTimer() {
         timeline.stop();
         running = false;
         timeLeft = isBreak ? breakTime : workTime;
-        pomodoroViewUI.updateTimerDisplay(formatTime(timeLeft), 0);
-        pomodoroViewUI.updateButtonState(false, isBreak);
-        pomodoroViewUI.setPetVisibility(false);
+        if (view != null) {
+            view.updateTimerDisplay(formatTime(timeLeft), 0);
+            view.updateButtonState(false, isBreak);
+            view.setPetVisibility(false);
+        }
 
         // Abort current session if exists
         if (currentSessionId != -1 && !isBreak) {
@@ -217,25 +230,29 @@ public class PomodoroController {
     private void startWorkSession() {
         isBreak = false;
         timeLeft = workTime;
-        pomodoroViewUI.updateStatus("💼 Work Session", false);
-        pomodoroViewUI.updateButtonState(false, false);
-        pomodoroViewUI.updateTimerDisplay(formatTime(timeLeft), 0);
-        pomodoroViewUI.setPetVisibility(true);
+        if (view != null) {
+            view.updateStatus("💼 Work Session", false);
+            view.updateButtonState(false, false);
+            view.updateTimerDisplay(formatTime(timeLeft), 0);
+            view.setPetVisibility(true);
+        }
     }
 
     private void startBreakSession() {
         isBreak = true;
         sessions++;
         happiness = Math.min(100, happiness + 10);
-        pomodoroViewUI.updateHappiness(happiness);
-        timeLeft = breakTime;
-        pomodoroViewUI.updateStatus("☕ Break Time", true);
-        pomodoroViewUI.updateButtonState(false, true);
-        pomodoroViewUI.updateSessions(sessions);
-        pomodoroViewUI.updateTimerDisplay(formatTime(timeLeft), 0);
-        pomodoroViewUI.setPetVisibility(false);
+        if (view != null) {
+            view.updateStatus("☕ Break Time", true);
+            view.updateButtonState(false, true);
+            view.updateTimerDisplay(formatTime(timeLeft), 0);
+            view.updateSessions(sessions);
+            view.updateHappiness(happiness);
+            view.setPetVisibility(false);
+            view.showHappinessBoost();
+        }
 
-        pomodoroViewUI.showHappinessBoost();
+        showHappinessBoost();
     }
 
     // Database integration methods
@@ -245,7 +262,7 @@ public class PomodoroController {
             return;
         }
 
-        String presetName = pomodoroViewUI.getPresetBox().getValue();
+        String presetName = view != null ? view.getPresetBox().getValue() : "Pomodoro (25/5)";
         System.out.println("Starting new session: " + presetName);
 
         currentSessionId = sessionManager.startSession(presetName, workTime/60, breakTime/60);
@@ -305,12 +322,19 @@ public class PomodoroController {
     }
 
     private void showCompletionNotification() {
+        // You can implement a notification system here
         System.out.println("Session completed! +100 XP awarded");
     }
 
+    private void showHappinessBoost() {
+        if (view != null) {
+            view.showHappinessBoost();
+        }
+    }
+
     // Preset and custom timer methods
-    private void presetSelected() {
-        String preset = pomodoroViewUI.getPresetBox().getValue();
+    public void presetSelected() {
+        String preset = view != null ? view.getPresetBox().getValue() : "Pomodoro (25/5)";
         switch (preset) {
             case "Pomodoro (25/5)" -> { workTime = 25*60; breakTime=5*60; }
             case "Short Focus (15/3)" -> { workTime = 15*60; breakTime=3*60; }
@@ -326,9 +350,11 @@ public class PomodoroController {
         resetTimer();
     }
 
-    private void applyCustomTimer() {
-        workTime = (int) pomodoroViewUI.getWorkSlider().getValue() * 60;
-        breakTime = (int) pomodoroViewUI.getBreakSlider().getValue() * 60;
+    public void applyCustomTimer() {
+        if (view != null) {
+            workTime = (int) view.getWorkSlider().getValue()*60;
+            breakTime = (int) view.getBreakSlider().getValue()*60;
+        }
 
         // Abort any active session when changing custom timer
         if (currentSessionId != -1) {
@@ -338,29 +364,52 @@ public class PomodoroController {
         toggleCustomSettings();
     }
 
-    private void toggleCustomSettings() {
+    public void toggleCustomSettings() {
         showCustomSettings = !showCustomSettings;
-        pomodoroViewUI.setCustomTimerVisibility(showCustomSettings);
-    }
-
-    private void updateUI() {
-        // Initial UI state updates
-        pomodoroViewUI.updateHappiness(happiness);
-        pomodoroViewUI.updateSessions(sessions);
+        if (view != null) {
+            view.setCustomTimerVisibility(showCustomSettings);
+        }
     }
 
     // Pet integration
     private void updatePetDisplay() {
-        if (petsController != null) {
+        if (petsController != null && view != null) {
             PetsController.PetInfo currentPet = petsController.getCurrentPetForSidebar();
-            pomodoroViewUI.updatePetDisplay(currentPet);
+            view.updatePetDisplay(currentPet);
         }
     }
 
-    // Helper method
+    // Helper methods
     private String formatTime(int seconds) {
         int min = seconds / 60;
         int sec = seconds % 60;
         return String.format("%02d:%02d", min, sec);
     }
+
+    //for pausing when screen closes
+    private static PomodoroController instance;
+
+    public PomodoroController() {
+        instance = this;
+    }
+
+    public static PomodoroController getInstance() {
+        return instance;
+    }
+
+    public void forcePauseOnExit() {
+        if (running && !isBreak && currentSessionId != -1) {
+            timeline.stop();
+            running = false;
+            sessionManager.pauseSession(currentSessionId);
+        }
+    }
+
+    // Getters for view to access data if needed
+    public int getWorkTime() { return workTime; }
+    public int getBreakTime() { return breakTime; }
+    public int getHappiness() { return happiness; }
+    public int getSessions() { return sessions; }
+    public boolean isRunning() { return running; }
+    public boolean isBreak() { return isBreak; }
 }

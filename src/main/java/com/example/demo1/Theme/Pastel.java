@@ -2,7 +2,7 @@
 package com.example.demo1.Theme;
 
 public class Pastel {
-    // Pastel color palette
+    // Pastel color palette - UPDATED WITH EXACT CODES FROM POMODOROVIEW
     public static final String PINK = "#FACEEA";
     public static final String BLUE = "#C1DAFF";
     public static final String LAVENDER = "#D7D8FF";
@@ -21,14 +21,12 @@ public class Pastel {
     public static final String FOREST = "#343A26";
     public static final String MIST = "#F7EFFF";
     public static final String MAUVE = "#D3A29D";
+    public static final String BURGUNDY = "#A36361";
 
     // New colors from Sidebar.java
     public static final String GOLD = "#FFD700";
     public static final String LOGOUT_RED = "#E57373";
     public static final String LOGOUT_BG = "#FFEBEE";
-
-    // New color from PomodoroView.java
-    public static final String BURGUNDY = "#A36361";
 
     // New colors from PetsView.java
     public static final String GRADIENT_PURPLE = "#C084FC";
@@ -51,5 +49,4 @@ public class Pastel {
     public static final String LIGHT_GREEN = "#86efac";
     public static final String LIGHT_RED = "#fca5a5";
     public static final String WHITE = "#FFFFFF";
-
 }

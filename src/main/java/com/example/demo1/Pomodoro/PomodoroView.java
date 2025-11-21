@@ -5,6 +5,8 @@ import com.example.demo1.Theme.Pastel;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.text.Font;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -12,6 +14,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.*;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Text;
+import javafx.util.Duration;
 
 public class PomodoroView {
     // UI Components
@@ -35,9 +38,14 @@ public class PomodoroView {
     private Label petHappinessPercentLabel;
     private VBox timerCard;
 
-    public PomodoroView() {
+    private PomodoroController controller;
+
+    public PomodoroView(PomodoroController controller) {
+        this.controller = controller;
         initializeComponents();
         setupStyles();
+        setupEventHandlers();
+        controller.setView(this);
     }
 
     public VBox getView() {
@@ -45,11 +53,10 @@ public class PomodoroView {
     }
 
     private void initializeComponents() {
-        // Create main container (AnchorPane equivalent)
+        // Create main container
         mainContainer = new VBox(15);
         mainContainer.setAlignment(Pos.TOP_CENTER);
         mainContainer.setPadding(new Insets(20));
-        mainContainer.setStyle("-fx-background-color: transparent;");
 
         // Header
         VBox headerBox = new VBox(3);
@@ -267,11 +274,6 @@ public class PomodoroView {
         statusLabel.setStyle("-fx-text-fill: " + Pastel.FOREST + "; -fx-font-size: 16px; -fx-font-weight: bold;");
         circularTimeText.setStyle("-fx-fill: " + Pastel.FOREST + "; -fx-font-size: 28px; -fx-font-weight: bold;");
 
-        // Set up preset options
-        presetBox.getItems().addAll("Pomodoro (25/5)", "Short Focus (15/3)", "Deep Work (45/10)",
-                "Study Session (50/10)", "Quick Task (10/2)");
-        presetBox.getSelectionModel().selectFirst();
-
         // Set initial button styles
         startPauseButton.setStyle(getPrimaryButtonStyle(false));
         resetButton.setStyle(getSecondaryButtonStyle());
@@ -295,6 +297,14 @@ public class PomodoroView {
 
         // Initial circle gradient
         updateCircleGradient(false);
+    }
+
+    private void setupEventHandlers() {
+        startPauseButton.setOnAction(e -> controller.toggleTimer());
+        resetButton.setOnAction(e -> controller.resetTimer());
+        presetBox.setOnAction(e -> controller.presetSelected());
+        getSettingsButton().setOnAction(e -> controller.toggleCustomSettings());
+        getApplyCustomButton().setOnAction(e -> controller.applyCustomTimer());
     }
 
     // UI Update methods
@@ -387,7 +397,17 @@ public class PomodoroView {
         petHappinessPercentLabel.setText("+10 ✨");
         petHappinessPercentLabel.setStyle("-fx-text-fill: " + Pastel.BURGUNDY + "; -fx-font-weight: bold; -fx-font-size: 14px;");
 
-        // Reset after animation would be handled by controller
+        Timeline boostTimeline = new Timeline(
+                new KeyFrame(Duration.seconds(0.1), e -> petHappinessPercentLabel.setScaleX(1.2)),
+                new KeyFrame(Duration.seconds(0.2), e -> petHappinessPercentLabel.setScaleY(1.2)),
+                new KeyFrame(Duration.seconds(1), e -> {
+                    petHappinessPercentLabel.setScaleX(1.0);
+                    petHappinessPercentLabel.setScaleY(1.0);
+                    petHappinessPercentLabel.setText(controller.getHappiness() + "%");
+                    petHappinessPercentLabel.setStyle("-fx-text-fill: " + Pastel.FOREST + "; -fx-font-size: 12px;");
+                })
+        );
+        boostTimeline.play();
     }
 
     public void resetHappinessDisplay() {
