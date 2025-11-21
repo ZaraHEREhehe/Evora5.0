@@ -372,11 +372,11 @@ public class MainController implements ThemeManager.ThemeChangeListener {
 
     private void showPomodoroTimer() {
         try {
-            // Create the PomodoroController and PomodoroView
+            // Create the PomodoroController and PomodoroView if they don't exist
             if (pomodoroController == null) {
                 pomodoroController = new PomodoroController();
                 PomodoroView pomodoroView = new PomodoroView(pomodoroController);
-                VBox pomodoroContent = pomodoroView.getView();
+                pomodoroContent = pomodoroView.getView(); // FIXED: Actually assign the content
 
                 // Apply current theme
                 Theme currentTheme = themeManager.getCurrentTheme();
@@ -394,10 +394,14 @@ public class MainController implements ThemeManager.ThemeChangeListener {
                 pomodoroContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
                 pomodoroContent.prefHeightProperty().bind(root.heightProperty());
             }
+
+            // FIXED: Actually set the content to center
             root.setCenter(pomodoroContent);
+
         } catch (Exception e) {
-            System.out.println("♻️ Reusing existing Pomodoro Timer (timer continues in background)");
-            showFallbackContent("Pomodoro Timer 🍅", "Error loading timer. Please check the FXML file.");
+            System.out.println("❌ Error loading Pomodoro Timer: " + e.getMessage());
+            e.printStackTrace();
+            showFallbackContent("Pomodoro Timer 🍅", "Error loading timer. Please check the console for details.");
         }
     }
 
