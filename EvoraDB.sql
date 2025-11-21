@@ -534,6 +534,31 @@ EXEC CheckAllBadgesForUser @user_id = 1;
 
 
 /****************************************************
+*** 			New Notes Table                   ***
+*****************************************************/
+
+-- Create DeletedStickyNotes table to preserve analytics data
+CREATE TABLE DeletedStickyNotes (
+    deleted_note_id INT IDENTITY(1,1) PRIMARY KEY,
+    original_note_id INT NOT NULL,
+    user_id INT NOT NULL,
+    created_at DATETIME,
+);
+
+
+-- Add trigger to automatically move deleted notes to the archive, but only the info we need
+CREATE OR ALTER TRIGGER trg_ArchiveDeletedNotes
+ON StickyNotes
+AFTER DELETE
+AS
+BEGIN
+    INSERT INTO DeletedStickyNotes (original_note_id, user_id, created_at)
+    SELECT 
+        note_id, user_id, created_at
+    FROM deleted;
+END;
+
+/****************************************************
 *** 			Useless Queries                   ***
 *****************************************************/
 
@@ -565,3 +590,7 @@ select * from PomodoroSessions
 update Users
 set current_pet_id = 1
 where user_id = 1
+
+
+select * from users
+select * from petmascot
