@@ -1,6 +1,7 @@
 // MainController.java
 package com.example.demo1;
 
+import com.example.demo1.Analytics.AnalyticsView;
 import com.example.demo1.Mood.MoodController;
 import com.example.demo1.Mood.MoodView;
 import com.example.demo1.Pets.PetsController;
@@ -180,7 +181,7 @@ public class MainController implements ThemeManager.ThemeChangeListener {
                 showPets();
                 break;
             case "stats":
-                System.out.println("Navigating to Analytics");
+                showAnalytics();
                 break;
             case "whitenoise":
                 showWhiteNoisePlayer();
@@ -392,6 +393,43 @@ public class MainController implements ThemeManager.ThemeChangeListener {
     public void cleanup() {
         if (themeManager != null) {
             themeManager.removeThemeChangeListener(this);
+        }
+    }
+    private void showAnalytics() {
+        try {
+            AnalyticsView analyticsView = new AnalyticsView(userId, userName);
+            Node analyticsContent = analyticsView.create();
+
+            // Create a scroll pane for the content
+            ScrollPane scrollPane = new ScrollPane(analyticsContent);
+            scrollPane.setFitToWidth(true);
+            scrollPane.setStyle("-fx-background: " + Pastel.BLUSH + "; -fx-border-color: " + Pastel.BLUSH + ";");
+            scrollPane.setPadding(new Insets(20));
+
+            // Make analytics content responsive
+            scrollPane.prefWidthProperty().bind(root.widthProperty().subtract(200));
+            scrollPane.prefHeightProperty().bind(root.heightProperty());
+
+            root.setCenter(scrollPane);
+
+        } catch (Exception e) {
+            System.out.println("❌ Error loading Analytics: " + e.getMessage());
+            e.printStackTrace();
+
+            // Fallback content
+            VBox fallbackContent = new VBox(20);
+            fallbackContent.setPadding(new Insets(40));
+            fallbackContent.setAlignment(Pos.CENTER);
+            fallbackContent.setStyle("-fx-background-color: " + Pastel.BLUSH + ";");
+
+            Label title = new Label("Analytics 📊");
+            title.setStyle("-fx-text-fill: " + Pastel.FOREST + "; -fx-font-size: 32px; -fx-font-weight: bold;");
+
+            Label subtitle = new Label("Error loading analytics. Please check the console for details.");
+            subtitle.setStyle("-fx-text-fill: " + Pastel.SAGE + "; -fx-font-size: 16px;");
+
+            fallbackContent.getChildren().addAll(title, subtitle);
+            root.setCenter(fallbackContent);
         }
     }
 }
