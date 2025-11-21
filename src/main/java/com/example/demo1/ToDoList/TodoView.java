@@ -43,10 +43,29 @@ public class TodoView {
     private VBox todoList;
     private StackPane overlayRoot;
     private static final DataFormat TODO_FORMAT = new DataFormat("application/x-todo-object");
+    String userName;
+
+    private Sidebar sidebar;
+
+    public void setSidebar(Sidebar sidebar) {
+        this.sidebar = sidebar;
+    }
 
     public TodoView(int userId) {
         this.controller = new TodoController(userId);
     }
+
+    // Keep the stage constructor for backward compatibility
+    public TodoView(Stage stage) {
+        this(); // Call the no-arg constructor
+        this.stage = stage;
+    }
+
+    public void setUsername(String userName)
+    {
+        this.userName = userName;
+    }
+
 
     public void show() {
         if (scene == null) {
@@ -62,7 +81,10 @@ public class TodoView {
                 // The Dashboard will handle the actual navigation
             });
 
-            Sidebar sidebar = new Sidebar(sidebarController, "Zara");
+         //   Sidebar sidebar = new Sidebar(sidebarController, userName, CURRENT_USER_ID);
+          //  root.setLeft(sidebar);
+
+            //sidebar set in main controller now
             root.setLeft(sidebar);
 
             scene = new Scene(root, 1400, 900);
@@ -205,6 +227,12 @@ public class TodoView {
             );
             controller.addTodo(controller.getCurrentUserId(), todo);
             controller.refreshTodos();
+
+            //increment exp based on priority of added task
+            int expToAdd = getAddTaskExperience(priorityBox.getValue().toLowerCase());
+            controller.incrementUserExperience(expToAdd, CURRENT_USER_ID);
+            sidebar.refreshExperienceFromDatabase(CURRENT_USER_ID);
+
             input.clear();
             datePicker.setValue(null);
             priorityBox.setValue("Medium");
@@ -449,9 +477,22 @@ public class TodoView {
         item.getChildren().addAll(top, badges, actions);
 
         check.setOnAction(e -> {
+            //for exp
+            boolean wasPreviouslyCompleted = todo.isCompleted();
+
+            //old
             todo.setCompleted(check.isSelected());
             controller.updateTodo(todo);
             controller.refreshTodos();
+            todos = controller.getTodos(CURRENT_USER_ID);
+
+            //for exp
+            if (check.isSelected() && !wasPreviouslyCompleted) {   // Award experience ONLY when task changes from not completed to completed
+                int expToAdd = getCompleteTaskExperience(todo.getPriority());
+                controller.incrementUserExperience(expToAdd, CURRENT_USER_ID);
+                sidebar.refreshExperienceFromDatabase(CURRENT_USER_ID);
+            }
+
             refreshTodoList();
             if (check.isSelected()) {
                 showConfetti();
@@ -585,5 +626,46 @@ public class TodoView {
 
     public ScrollPane getContent() {
         return buildMainContent();
+    }
+
+    //helpers for exp calculation
+    private int getAddTaskExperience(String priority) {
+        return switch (priority.toLowerCase()) {
+            case "high" -> 30;
+            case "medium" -> 20;
+            case "low" -> 10;
+            default -> 15;
+        };
+    }
+
+    private int getCompleteTaskExperience(String priority) {
+        return switch (priority.toLowerCase()) {
+            case "high" -> 200;
+            case "medium" -> 100;
+            case "low" -> 50;
+            default -> 75;
+        };
+    }
+
+    static class Todo implements Serializable {
+        private static final long serialVersionUID = 1L;
+
+        private final String id, text, priority, dueDate;
+        private boolean completed;
+
+        Todo(String id, String text, boolean completed, String priority, String dueDate) {
+            this.id = id;
+            this.text = text;
+            this.completed = completed;
+            this.priority = priority;
+            this.dueDate = dueDate;
+        }
+
+        public String getId() { return id; }
+        public String getText() { return text; }
+        public boolean isCompleted() { return completed; }
+        public void setCompleted(boolean completed) { this.completed = completed; }
+        public String getPriority() { return priority; }
+        public String getDueDate() { return dueDate; }
     }
 }

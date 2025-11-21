@@ -38,6 +38,10 @@ public class MainController implements ThemeManager.ThemeChangeListener {
     private ThemeManager themeManager;
     private String currentActiveView = "dashboard";
 
+    // KEEP POMODORO CONTROLLER ALIVE ACROSS TAB SWITCHES
+    private PomodoroController pomodoroController;
+    private Pane pomodoroContent; // Also keep the UI pane
+
     public MainController(Stage stage, String userName, int userId) {
         this.stage = stage;
         this.userName = userName;
@@ -55,13 +59,16 @@ public class MainController implements ThemeManager.ThemeChangeListener {
         // Sidebar
         sidebarController = new SidebarController();
         sidebarController.setOnTabChange(this::handleNavigation);
-        sidebar = new Sidebar(sidebarController, userName);
+        sidebar = new Sidebar(sidebarController, userName, userId);
         root.setLeft(sidebar);
 
         // Set initial pet in sidebar
         PetsController petsController = new PetsController(userId);
         PetsController.PetInfo initialPet = petsController.getCurrentPetForSidebar();
         sidebar.updateMascot(initialPet.getName(), initialPet.getSpecies(), initialPet.getGifFilename());
+
+        //refresh experience immediately after mascot setup
+        refreshSidebarExperience();
 
         showDashboard();
 
@@ -97,7 +104,21 @@ public class MainController implements ThemeManager.ThemeChangeListener {
             stage.setHeight(screenHeight);
         });
 
+
+        // IMPORTANT: Pause Pomodoro when app is closed
+        stage.setOnCloseRequest(event -> {
+            PomodoroController controller = PomodoroController.getInstance();
+            if (controller != null) {
+                controller.forcePauseOnExit();
+            }
+        });
+
         stage.show();
+    }
+
+    //refresh sidebar experience
+    public void refreshSidebarExperience() {
+        sidebar.refreshExperienceFromDatabase(userId);
     }
 
     @Override
@@ -158,6 +179,8 @@ public class MainController implements ThemeManager.ThemeChangeListener {
 
     private void handleNavigation(String tab) {
         this.currentActiveView = tab;
+        refreshSidebarExperience(); //refresh whenever user navigates
+
         switch (tab) {
             case "dashboard":
                 showDashboard();
@@ -197,6 +220,7 @@ public class MainController implements ThemeManager.ThemeChangeListener {
     private void showDashboard() {
         Dashboard dashboard = new Dashboard();
         dashboard.setSidebarController(sidebarController);
+        dashboard.setSidebarController(sidebarController);
 
         // Apply current theme to dashboard
         Theme currentTheme = themeManager.getCurrentTheme();
@@ -228,14 +252,10 @@ public class MainController implements ThemeManager.ThemeChangeListener {
 
     private void showPets() {
         PetsController petsController = new PetsController(userId);
-
-        // Set up the listener to update sidebar when pet changes
         petsController.setPetChangeListener(() -> {
-            // When pet changes, update the sidebar mascot
             PetsController.PetInfo currentPet = petsController.getCurrentPetForSidebar();
             sidebar.updateMascot(currentPet.getName(), currentPet.getSpecies(), currentPet.getGifFilename());
         });
-
         PetsView petsView = new PetsView(petsController);
 
         // Apply theme to pets view if it supports it
@@ -243,7 +263,6 @@ public class MainController implements ThemeManager.ThemeChangeListener {
 
         root.setCenter(petsView);
 
-        // Also update sidebar with current pet when first loading pets tab
         PetsController.PetInfo currentPet = petsController.getCurrentPetForSidebar();
         sidebar.updateMascot(currentPet.getName(), currentPet.getSpecies(), currentPet.getGifFilename());
     }
@@ -251,6 +270,9 @@ public class MainController implements ThemeManager.ThemeChangeListener {
     private void showTodoList() {
         TodoView todoView = new TodoView(userId);
         ScrollPane todoContent = todoView.getContent();
+
+        todoView.setUsername(userName);
+        todoView.setSidebar(sidebar);
 
         // Apply theme to todo content
         applyThemeToNode(todoContent, themeManager.getCurrentTheme());
@@ -347,28 +369,36 @@ public class MainController implements ThemeManager.ThemeChangeListener {
     }
 
     private void showPomodoroTimer() {
+        try {
         // Create the PomodoroController and PomodoroView
-        PomodoroController pomodoroController = new PomodoroController();
-        PomodoroView pomodoroView = new PomodoroView(pomodoroController);
-        VBox pomodoroContent = pomodoroView.getView();
+        if (pomodoroController == null)
+        {
+            pomodoroController = new PomodoroController();
+            PomodoroView pomodoroView = new PomodoroView(pomodoroController);
+            VBox pomodoroContent = pomodoroView.getView();
 
-        // Apply current theme
-        Theme currentTheme = themeManager.getCurrentTheme();
-        pomodoroContent.setStyle("-fx-background-color: " + currentTheme.getBackgroundColor() + ";");
+            // Apply current theme
+            Theme currentTheme = themeManager.getCurrentTheme();
+            pomodoroContent.setStyle("-fx-background-color: " + currentTheme.getBackgroundColor() + ";");
 
-        // Set up the controller with dependencies
-        pomodoroController.setUserId(userId);
-        pomodoroController.setSidebar(sidebar);
+            // Set up the controller with dependencies
+            pomodoroController.setUserId(userId);
+            pomodoroController.setSidebar(sidebar);
 
-        // Create pets controller and set it on the pomodoro controller
-        PetsController petsController = new PetsController(userId);
-        pomodoroController.setPetsController(petsController);
+            // Create pets controller and set it on the pomodoro controller
+            PetsController petsController = new PetsController(userId);
+            pomodoroController.setPetsController(petsController);
 
-        // Make pomodoro content responsive
-        pomodoroContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
-        pomodoroContent.prefHeightProperty().bind(root.heightProperty());
-
-        root.setCenter(pomodoroContent);
+            // Make pomodoro content responsive
+            pomodoroContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
+            pomodoroContent.prefHeightProperty().bind(root.heightProperty());
+          }
+            root.setCenter(pomodoroContent);
+        }
+        catch (Exception e){
+            System.out.println("♻️ Reusing existing Pomodoro Timer (timer continues in background)");
+            showFallbackContent("Pomodoro Timer 🍅", "Error loading timer. Please check the FXML file.");
+        }
     }
 
     private void applyThemeToNode(Node node, Theme theme) {
@@ -413,23 +443,27 @@ public class MainController implements ThemeManager.ThemeChangeListener {
             root.setCenter(scrollPane);
 
         } catch (Exception e) {
-            System.out.println("❌ Error loading Analytics: " + e.getMessage());
+            System.out.println("❌ Error loading Pomodoro FXML: " + e.getMessage());
             e.printStackTrace();
-
-            // Fallback content
-            VBox fallbackContent = new VBox(20);
-            fallbackContent.setPadding(new Insets(40));
-            fallbackContent.setAlignment(Pos.CENTER);
-            fallbackContent.setStyle("-fx-background-color: " + Pastel.BLUSH + ";");
-
-            Label title = new Label("Analytics 📊");
-            title.setStyle("-fx-text-fill: " + Pastel.FOREST + "; -fx-font-size: 32px; -fx-font-weight: bold;");
-
-            Label subtitle = new Label("Error loading analytics. Please check the console for details.");
-            subtitle.setStyle("-fx-text-fill: " + Pastel.SAGE + "; -fx-font-size: 16px;");
-
-            fallbackContent.getChildren().addAll(title, subtitle);
-            root.setCenter(fallbackContent);
+            showFallbackContent("Pomodoro Timer 🍅", "Error loading timer. Please check the FXML file.");
         }
+    }
+
+    private void showFallbackContent(String title, String message) {
+        VBox fallbackContent = new VBox(20);
+        fallbackContent.setPadding(new Insets(40));
+        fallbackContent.setAlignment(Pos.CENTER);
+        fallbackContent.setStyle("-fx-background-color: " + PASTEL_BLUSH + ";");
+        fallbackContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
+        fallbackContent.prefHeightProperty().bind(root.heightProperty());
+
+            Label timerTitle = new Label("Pomodoro Timer 🍅");
+            timerTitle.setStyle("-fx-text-fill: " + PASTEL_FOREST + "; -fx-font-size: 32px; -fx-font-weight: bold; -fx-font-family: 'Segoe UI';");
+
+            Label timerSubtitle = new Label("Error loading timer. Please check the FXML file.");
+            timerSubtitle.setStyle("-fx-text-fill: " + PASTEL_SAGE + "; -fx-font-size: 16px; -fx-font-family: 'Segoe UI';");
+
+            fallbackContent.getChildren().addAll(timerTitle, timerSubtitle);
+            root.setCenter(fallbackContent);
     }
 }

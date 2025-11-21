@@ -23,14 +23,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * JavaFX Sidebar component with dynamic theme support
+ * JavaFX Sidebar component with beautiful pastel theme
  */
 public class Sidebar extends VBox {
 
     private final SidebarController controller;
     private final Map<String, Button> navButtons = new HashMap<>();
-    private VBox mascotContainer;
-    private VBox experienceContainer;
+    private VBox mascotContainer; // Store reference to update it
+    private VBox experienceContainer; // Store reference to update experience
     private Label expLabel;
     private Label title;
     private Label userLabel;
@@ -49,8 +49,9 @@ public class Sidebar extends VBox {
         setupSidebar();
         createHeader(userName);
         createNavButtons();
-        createExperienceSection();
         createMascotSection();
+        // Initialize with current experience from database
+        refreshExperienceFromDatabase(userId);
 
         // Apply initial theme
         applyTheme(themeManager.getCurrentTheme());
@@ -59,6 +60,49 @@ public class Sidebar extends VBox {
     // Remove the old updateTheme method and replace with:
     public void updateTheme(Theme newTheme) {
         applyTheme(newTheme);
+    }
+
+    // Add this method to update the mascot display with integrated experience
+    public void updateMascot(String petName, String species, String gifFilename) {
+        if (mascotContainer != null) {
+            mascotContainer.getChildren().clear();
+
+            // Create main content container
+            VBox contentBox = new VBox(8);
+            contentBox.setAlignment(Pos.CENTER);
+            contentBox.setPadding(new Insets(10));
+
+            try {
+                // Try to load the pet GIF
+                ImageView petImage = new ImageView(new Image(getPetGifPath(gifFilename), 60, 60, true, true));
+                contentBox.getChildren().add(petImage);
+            } catch (Exception e) {
+                // Fallback to species emoji
+                Label emojiLabel = new Label(getSpeciesEmoji(species));
+                emojiLabel.setFont(Font.font(36));
+                contentBox.getChildren().add(emojiLabel);
+            }
+
+            // Pet name only (no species)
+            Label mascotText = new Label(petName);
+            mascotText.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
+            mascotText.setTextFill(Color.web(PASTEL_FOREST));
+            mascotText.setAlignment(Pos.CENTER);
+            mascotText.setWrapText(true);
+            mascotText.setMaxWidth(150);
+
+            // Experience display integrated below pet name
+            HBox expBox = new HBox(5);
+            expBox.setAlignment(Pos.CENTER);
+
+            Label starIcon = new Label("⭐");
+            starIcon.setFont(Font.font(12));
+
+            expBox.getChildren().addAll(starIcon, expLabel);
+
+            contentBox.getChildren().addAll(mascotText, expBox);
+            mascotContainer.getChildren().add(contentBox);
+        }
     }
 
     private void applyTheme(Theme theme) {
@@ -198,55 +242,30 @@ public class Sidebar extends VBox {
         }
     }
 
-    // Add this method to create the experience display
-    private void createExperienceSection() {
-        experienceContainer = new VBox(5);
-        experienceContainer.setAlignment(Pos.CENTER);
-        experienceContainer.setPadding(new Insets(12, 15, 12, 15));
-
-        // Experience icon and text
-        HBox expBox = new HBox(8);
-        expBox.setAlignment(Pos.CENTER);
-
-        Label starIcon = new Label("⭐");
-        starIcon.setFont(Font.font(14));
-
-        expLabel = new Label("800 XP");
-        expLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-
-        // Sparkle emoji for cuteness
-        Label sparkle = new Label("✨");
-        sparkle.setFont(Font.font(12));
-
-        expBox.getChildren().addAll(starIcon, expLabel, sparkle);
-        experienceContainer.getChildren().add(expBox);
-        this.getChildren().add(experienceContainer);
-    }
-
     // Simple method to update experience - just call this whenever exp changes
     public void updateExperience(int newExp) {
-        expLabel.setText(newExp + " XP");
+        if (expLabel != null) {
+            expLabel.setText(newExp + " XP");
 
-        // Cute little animation
-        experienceContainer.setScaleX(1.05);
-        experienceContainer.setScaleY(1.05);
+            // Cute little animation
+            expLabel.setScaleX(1.1);
+            expLabel.setScaleY(1.1);
+            expLabel.setTextFill(Color.web(PASTEL_GOLD));
 
-        javafx.animation.ScaleTransition scaleTransition =
-                new javafx.animation.ScaleTransition(javafx.util.Duration.millis(200), experienceContainer);
-        scaleTransition.setToX(1.0);
-        scaleTransition.setToY(1.0);
-        scaleTransition.play();
+            javafx.animation.ScaleTransition scaleTransition =
+                    new javafx.animation.ScaleTransition(javafx.util.Duration.millis(200), expLabel);
+            scaleTransition.setToX(1.0);
+            scaleTransition.setToY(1.0);
+            scaleTransition.play();
 
-        // Add sparkle effect temporarily
-        Theme currentTheme = themeManager.getCurrentTheme();
-        experienceContainer.setEffect(new DropShadow(10, Color.web(currentTheme.getWarningColor())));
-
-        javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(500));
-        pause.setOnFinished(e -> {
-            experienceContainer.setEffect(new DropShadow(5, Color.web(currentTheme.getWarningColor(), 0.2)));
-        });
-        pause.play();
+            javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(500));
+            pause.setOnFinished(e -> {
+                expLabel.setTextFill(Color.web(PASTEL_SAGE));
+            });
+            pause.play();
+        }
     }
+
 
     public void refreshExperienceFromDatabase(int userId) {
         int currentExp = getCurrentUserExperience(userId);
@@ -270,36 +289,6 @@ public class Sidebar extends VBox {
             e.printStackTrace();
         }
         return 0;
-    }
-
-    // Add this method to update the mascot display
-    public void updateMascot(String petName, String species, String gifFilename) {
-        if (mascotContainer != null) {
-            mascotContainer.getChildren().clear();
-
-            try {
-                // Try to load the pet GIF
-                ImageView petImage = new ImageView(new Image(getPetGifPath(gifFilename), 60, 60, true, true));
-                mascotContainer.getChildren().add(petImage);
-            } catch (Exception e) {
-                // Fallback to species emoji
-                Label emojiLabel = new Label(getSpeciesEmoji(species));
-                emojiLabel.setFont(Font.font(36));
-                mascotContainer.getChildren().add(emojiLabel);
-            }
-
-            Label mascotText = new Label(petName + " the " + species);
-            mascotText.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-            mascotText.setAlignment(Pos.CENTER);
-            mascotText.setWrapText(true);
-            mascotText.setMaxWidth(150);
-
-            mascotContainer.getChildren().add(mascotText);
-
-            // Apply current theme to the new text
-            Theme currentTheme = themeManager.getCurrentTheme();
-            mascotText.setTextFill(Color.web(currentTheme.getTextPrimary()));
-        }
     }
 
     // Helper method to get GIF path
@@ -437,6 +426,23 @@ public class Sidebar extends VBox {
             }
         }
     }
+
+    private String getOriginalColor(String buttonId) {
+        switch (buttonId) {
+            case "dashboard": return PASTEL_PINK;
+            case "todos": return PASTEL_LAVENDER;
+            case "timer": return PASTEL_BLUE;
+            case "notes": return PASTEL_PURPLE;
+            case "pet": return PASTEL_LILAC;
+            case "stats": return PASTEL_ROSE;
+            case "calendar": return PASTEL_SKY;
+            case "mood": return PASTEL_MINT;
+            case "whitenoise": return PASTEL_PEACH;
+            case "settings": return PASTEL_LEMON;
+            default: return PASTEL_PINK;
+        }
+    }
+
     private void createMascotSection() {
         VBox mascotBox = new VBox(15);
         mascotBox.setAlignment(Pos.CENTER);
@@ -446,6 +452,17 @@ public class Sidebar extends VBox {
         mascotContainer = new VBox(8);
         mascotContainer.setAlignment(Pos.CENTER);
         mascotContainer.setPadding(new Insets(15));
+        mascotContainer.setBackground(new Background(new BackgroundFill(
+                Color.web(PASTEL_IVORY),
+                new CornerRadii(15),
+                Insets.EMPTY
+        )));
+        mascotContainer.setBorder(new Border(new BorderStroke(
+                Color.web(PASTEL_PINK, 0.3),
+                BorderStrokeStyle.SOLID,
+                new CornerRadii(15),
+                new BorderWidths(2)
+        )));
 
         // Default mascot display (will be updated when pet changes)
         Label defaultMascot = new Label("🦊");
@@ -453,9 +470,19 @@ public class Sidebar extends VBox {
 
         Label defaultText = new Label("Your Companion");
         defaultText.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-        defaultText.setAlignment(Pos.CENTER);
+        defaultText.setTextFill(Color.web(Pastel.FOREST));
 
-        mascotContainer.getChildren().addAll(defaultMascot, defaultText);
+        // Temporary experience display until mascot is updated
+        HBox tempExpBox = new HBox(5);
+        tempExpBox.setAlignment(Pos.CENTER);
+        Label tempStar = new Label("⭐");
+        tempStar.setFont(Font.font(12));
+        expLabel = new Label("Loading...");
+        expLabel.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 12));
+        expLabel.setTextFill(Color.web(PASTEL_SAGE));
+        tempExpBox.getChildren().addAll(tempStar, expLabel);
+
+        mascotContainer.getChildren().addAll(defaultMascot, defaultText, tempExpBox);
 
         // Logout button
         logoutBtn = new Button("🚪 Log Out");

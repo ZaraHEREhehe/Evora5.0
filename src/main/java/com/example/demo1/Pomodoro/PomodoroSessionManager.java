@@ -13,6 +13,7 @@ public class PomodoroSessionManager {
     public PomodoroSessionManager(int userId) {
         this.userId = userId;
     }
+
     public void setSidebar(Sidebar sidebar) {
         this.sidebar = sidebar;
     }
@@ -67,7 +68,7 @@ public class PomodoroSessionManager {
         return null;
     }
 
-    // Calculate elapsed seconds
+    // Calculate elapsed seconds - FIXED for async running
     public long getElapsedSeconds(int sessionId) {
         String sql = "SELECT start_time, last_pause_time, status FROM PomodoroSessions WHERE session_id = ?";
 
@@ -87,7 +88,7 @@ public class PomodoroSessionManager {
                     return Duration.between(startTime, pauseTime).getSeconds();
                 }
 
-                // For running sessions, calculate up to now
+                // For running sessions, calculate up to now (this is the key change)
                 return Duration.between(startTime, now).getSeconds();
             }
         } catch (SQLException e) {
@@ -128,6 +129,8 @@ public class PomodoroSessionManager {
             awardExperience(100);
             if (sidebar != null)
                 sidebar.refreshExperienceFromDatabase(userId);
+
+            System.out.println("Session " + sessionId + " completed asynchronously");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -140,6 +143,7 @@ public class PomodoroSessionManager {
 
             stmt.setInt(1, sessionId);
             stmt.executeUpdate();
+            System.out.println("Session " + sessionId + " aborted");
         } catch (SQLException e) {
             e.printStackTrace();
         }

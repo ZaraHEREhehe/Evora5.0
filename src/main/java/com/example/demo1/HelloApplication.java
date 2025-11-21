@@ -1,19 +1,21 @@
 package com.example.demo1;
 
+import com.example.demo1.Theme.ThemeManager;
 import com.example.demo1.Login.LoginView;
 import javafx.application.Application;
 import javafx.stage.Stage;
+
+import java.io.IOException;
 
 public class HelloApplication extends Application {
 
     private static Stage primaryStage;
 
     @Override
-    public void start(Stage stage) {
+    public void start(Stage stage) throws IOException {
         primaryStage = stage;
         showLoginScreen();
     }
-
     private void showLoginScreen() {
         try {
             LoginView loginViewApp = new LoginView();
@@ -23,7 +25,7 @@ public class HelloApplication extends Application {
         }
     }
 
-    // FIXED: Properly transition to dashboard
+    // Updated method to accept username - Reusing same stage
     public static void showDashboard(String username, int userId) {
         try {
             System.out.println("🚀 Transitioning to dashboard for: " + username + " (ID: " + userId + ")");
@@ -37,6 +39,7 @@ public class HelloApplication extends Application {
         } catch (Exception e) {
             System.out.println("❌ Error in showDashboard: " + e.getMessage());
             e.printStackTrace();
+            System.out.println("❌ Error loading dashboard: " + e.getMessage());
         }
     }
 

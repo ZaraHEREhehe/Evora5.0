@@ -1,4 +1,4 @@
-// src/main/java/com/example/demo1/ToDoList/TodoController.java
+// src/main/java/com/example/demo1/ToDoList/Database.java
 package com.example.demo1.ToDoList;
 
 import com.example.demo1.Database.DatabaseConnection;
@@ -22,7 +22,7 @@ public class TodoController {
     private void connectToDatabase() {
         try {
             conn = DatabaseConnection.getConnection();
-            System.out.println("Connected to EvoraDB from TodoController!");
+            System.out.println("Connected to EvoraDB!");
         } catch (SQLException e) {
             System.out.println("DB Connection failed: " + e.getMessage());
             e.printStackTrace();
@@ -122,6 +122,23 @@ public class TodoController {
 
     public void setTodos(List<Todo> todos) {
         this.todos = todos;
+    }
+
+    public void incrementUserExperience(int experienceToAdd) {
+        String sql = "UPDATE Users SET experience = experience + ? WHERE user_id = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, experienceToAdd);
+            ps.setInt(2, CURRENT_USER_ID);
+
+            int affectedRows = ps.executeUpdate();
+            if (affectedRows > 0) {
+                System.out.println("Added " + experienceToAdd + " experience to user " + CURRENT_USER_ID);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error updating user experience: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     public int getCurrentUserId() {
