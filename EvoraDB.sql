@@ -652,3 +652,49 @@ BEGIN
     FROM deleted d
     WHERE d.is_completed = 1;
 END;
+
+
+
+
+
+
+-- Drop the existing completion log table and triggers
+DROP TABLE IF EXISTS TaskCompletionLog;
+
+-- Create a table to permanently log ALL deleted tasks for analytics
+CREATE TABLE TaskDeletionLog (
+    log_id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id INT NOT NULL,
+    task_description NVARCHAR(500) NOT NULL,
+    priority NVARCHAR(10) NOT NULL,
+    is_completed BIT NOT NULL,
+    completed_at DATETIME NULL,
+    created_at DATETIME NOT NULL,
+    deleted_at DATETIME DEFAULT GETDATE(),
+    original_task_id INT NULL,
+    FOREIGN KEY (user_id) REFERENCES Users(user_id)
+);
+
+-- Add indexes for better performance on analytics queries
+CREATE INDEX IX_TaskDeletionLog_UserDate ON TaskDeletionLog(user_id, deleted_at);
+CREATE INDEX IX_TaskDeletionLog_UserCompleted ON TaskDeletionLog(user_id, is_completed, deleted_at);
+
+-- Single trigger to log ALL task deletions (both completed and incomplete)
+CREATE OR ALTER TRIGGER trg_LogTaskDeletion
+ON ToDoTasks
+AFTER DELETE
+AS
+BEGIN
+    INSERT INTO TaskDeletionLog (user_id, task_description, priority, is_completed, completed_at, created_at, original_task_id)
+    SELECT 
+        d.user_id,
+        d.description,
+        d.priority,
+        d.is_completed,
+        d.completed_at,
+        d.created_at,
+        d.task_id
+    FROM deleted d;
+END;
+
+
