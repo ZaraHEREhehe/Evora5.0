@@ -558,45 +558,11 @@ BEGIN
     FROM deleted;
 END;
 
+
+
 /****************************************************
-*** 			Useless Queries                   ***
+*** 		  Analytics Walay Queries             ***
 *****************************************************/
-
-
-
-select * from StickyNotes
-select * from ThemeColors
-select * from Themes
-
-Select note_id, user_id, content, color_name, position_x, position_y, created_at
-From StickyNotes s
-Inner Join ThemeColors ts on s.color_id = ts.color_id
-
-select * from users
-select * from Badges
-select * from UserBadges
-select * from PetMascot
-
-
-select * from PomodoroSessions
-select * from Users
-sp_help PomodoroSessions
-sp_help Users
-
-
-
-select * from PomodoroSessions
-
-update Users
-set current_pet_id = 1
-where user_id = 1
-
-
-select * from users
-select * from petmascot
-
-
-
 
 --------------------------------------------------------------------------------------
 -- Create a table to permanently log completed tasks even after deletion
@@ -654,9 +620,9 @@ BEGIN
 END;
 
 
-
-
-
+/****************************************************
+*** 		  New Analytics Queries               ***
+*****************************************************/
 
 -- Drop the existing completion log table and triggers
 DROP TABLE IF EXISTS TaskCompletionLog;
@@ -698,3 +664,40 @@ BEGIN
 END;
 
 
+
+/****************************************************
+*** 			Useless Queries                   ***
+*****************************************************/
+
+
+
+select * from StickyNotes
+select * from ThemeColors
+select * from Themes
+
+Select note_id, user_id, content, color_name, position_x, position_y, created_at
+From StickyNotes s
+Inner Join ThemeColors ts on s.color_id = ts.color_id
+
+select * from users
+select * from Badges
+select * from UserBadges
+select * from PetMascot
+
+
+select * from PomodoroSessions
+select * from Users
+sp_help PomodoroSessions
+sp_help Users
+
+
+
+select * from PomodoroSessions
+
+update Users
+set current_pet_id = 1
+where user_id = 1
+
+
+select * from users
+select * from petmascot
