@@ -2,8 +2,11 @@ package com.example.demo1.Sidebar;
 
 import com.example.demo1.Dashboard;
 import com.example.demo1.Calendar.CalendarView;
+import com.example.demo1.Login.LoginView;
 import com.example.demo1.ToDoList.TodoView;
 import javafx.stage.Stage;
+
+import java.awt.event.WindowEvent;
 import java.util.function.Consumer;
 
 public class SidebarController {
@@ -46,4 +49,24 @@ public class SidebarController {
         // For now, it's a placeholder for future enhancement
         return "dashboard";
     }
+
+
+    // Add this method to your Sidebar class
+    public void navigateToLogin() {
+        try {
+            // Get the current stage
+            Stage stage = (Stage) this.getStage();
+
+            // Use your existing LoginView to show the login screen
+            LoginView loginView = new LoginView();
+            loginView.start(stage);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Error loading login page: " + e.getMessage());
+        }
+    }
+
+
+
 } // ← This is the class closing brace

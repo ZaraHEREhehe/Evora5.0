@@ -1,5 +1,6 @@
 package com.example.demo1.Sidebar;
 
+import com.example.demo1.Login.LoginView;
 import com.example.demo1.Theme.Theme;
 import com.example.demo1.Theme.ThemeManager;
 import javafx.geometry.Insets;
@@ -16,6 +17,7 @@ import com.example.demo1.Database.DatabaseConnection;
 import java.sql.*;
 
 import javafx.scene.image.ImageView;
+import javafx.stage.Stage;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -435,7 +437,6 @@ public class Sidebar extends VBox {
             }
         }
     }
-
     private void createMascotSection() {
         VBox mascotBox = new VBox(15);
         mascotBox.setAlignment(Pos.CENTER);
@@ -477,7 +478,22 @@ public class Sidebar extends VBox {
 
         logoutBtn.setOnAction(e -> {
             System.out.println("Logging out...");
-            // Add logout logic here
+
+            // ADD THIS CODE TO NAVIGATE TO LOGIN PAGE
+            try {
+                // Get the current stage from any node in the scene
+                Stage stage = (Stage) logoutBtn.getScene().getWindow();
+
+                // Use your existing LoginView to show the login screen
+                LoginView loginView = new LoginView();
+                loginView.start(stage);
+
+                System.out.println("✅ Successfully logged out and returned to login screen");
+
+            } catch (Exception ex) {
+                System.err.println("❌ Error during logout: " + ex.getMessage());
+                ex.printStackTrace();
+            }
         });
 
         mascotBox.getChildren().addAll(mascotContainer, logoutBtn);
