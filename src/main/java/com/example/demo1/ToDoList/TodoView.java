@@ -7,6 +7,7 @@ import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.geometry.*;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.effect.DropShadow;
@@ -114,9 +115,15 @@ public class TodoView {
             isFirstShow = false;
         } else {
             ScrollPane newContent = buildMainContent();
+            // ✅ Ensure overlayRoot exists even when reusing scene
+            if (overlayRoot == null) {
+                overlayRoot = new StackPane();
+                overlayRoot.setAlignment(Pos.TOP_CENTER);
+                root.setCenter(overlayRoot);
+            }
             overlayRoot.getChildren().setAll(newContent);
         }
-
+        debugSceneStructure();
         stage.show();
     }
 
@@ -565,19 +572,84 @@ public class TodoView {
         enableDragAndDrop(todoList);
     }
 
+    // Call this method when the TodoView is added to a parent container
+    public void initializeAsComponent() {
+        // This ensures todoList is created and can be used to find the scene
+        if (todoList == null) {
+            buildMainContent();
+        }
+    }
+
+    // ✅ FIXED: showConfetti method that works without show() being called
+// ✅ FIXED: showConfetti method that creates overlayRoot dynamically
     private void showConfetti() {
-        if (overlayRoot == null || scene == null) return;
+        // Try multiple approaches to find a scene and create overlay
+        Scene currentScene = null;
+        StackPane currentOverlayRoot = null;
+
+        // Approach 1: Try to get scene from todoList
+        if (todoList != null && todoList.getScene() != null) {
+            currentScene = todoList.getScene();
+            // Find or create overlayRoot in the scene structure
+            if (currentScene.getRoot() instanceof BorderPane) {
+                BorderPane rootPane = (BorderPane) currentScene.getRoot();
+
+                // Look for existing StackPane in center
+                if (rootPane.getCenter() instanceof StackPane) {
+                    currentOverlayRoot = (StackPane) rootPane.getCenter();
+                } else {
+                    // Create a new StackPane overlay and set it as center
+                    currentOverlayRoot = new StackPane();
+                    currentOverlayRoot.setAlignment(Pos.TOP_CENTER);
+
+                    // Store the original center content
+                    Node originalCenter = rootPane.getCenter();
+                    currentOverlayRoot.getChildren().add(originalCenter);
+                    rootPane.setCenter(currentOverlayRoot);
+                }
+            }
+        }
+        // Approach 2: Try to get scene from sidebar
+        else if (sidebar != null && sidebar.getScene() != null) {
+            currentScene = sidebar.getScene();
+            // Find or create overlayRoot in the scene structure
+            if (currentScene.getRoot() instanceof BorderPane) {
+                BorderPane rootPane = (BorderPane) currentScene.getRoot();
+
+                // Look for existing StackPane in center
+                if (rootPane.getCenter() instanceof StackPane) {
+                    currentOverlayRoot = (StackPane) rootPane.getCenter();
+                } else {
+                    // Create a new StackPane overlay and set it as center
+                    currentOverlayRoot = new StackPane();
+                    currentOverlayRoot.setAlignment(Pos.TOP_CENTER);
+
+                    // Store the original center content
+                    Node originalCenter = rootPane.getCenter();
+                    currentOverlayRoot.getChildren().add(originalCenter);
+                    rootPane.setCenter(currentOverlayRoot);
+                }
+            }
+        }
+
+        if (currentScene == null || currentOverlayRoot == null) {
+            System.out.println("❌ Cannot show confetti - no scene found or could not create overlay");
+            System.out.println("   scene: " + currentScene);
+            System.out.println("   overlayRoot: " + currentOverlayRoot);
+            return;
+        }
+
         Pane confettiPane = new Pane();
         confettiPane.setMouseTransparent(true);
         confettiPane.setPickOnBounds(false);
-        overlayRoot.getChildren().add(confettiPane);
+        currentOverlayRoot.getChildren().add(confettiPane);
 
         Random r = new Random();
         for (int i = 0; i < 80; i++) {
             Circle c = new Circle(4 + r.nextDouble() * 3);
             String[] colors = {"#f59e0b", "#10b981", "#3b82f6", "#8b5cf6", "#ec4899"};
             c.setFill(Color.web(colors[r.nextInt(colors.length)]));
-            c.setCenterX(r.nextDouble() * scene.getWidth());
+            c.setCenterX(r.nextDouble() * currentScene.getWidth());
             c.setCenterY(-20);
             confettiPane.getChildren().add(c);
 
@@ -587,7 +659,7 @@ public class TodoView {
                             new KeyValue(c.opacityProperty(), 1.0)
                     ),
                     new KeyFrame(Duration.seconds(1.8 + r.nextDouble() * 0.5),
-                            new KeyValue(c.centerYProperty(), scene.getHeight() + 20),
+                            new KeyValue(c.centerYProperty(), currentScene.getHeight() + 20),
                             new KeyValue(c.opacityProperty(), 0.0)
                     )
             );
@@ -595,12 +667,17 @@ public class TodoView {
             fall.play();
         }
 
+        // ✅ FIX: Make final reference for use in lambda
+        final StackPane finalOverlayRoot = currentOverlayRoot;
+        final Pane finalConfettiPane = confettiPane;
+
         Timeline cleanup = new Timeline(new KeyFrame(Duration.seconds(2.5), e -> {
-            overlayRoot.getChildren().remove(confettiPane);
+            finalOverlayRoot.getChildren().remove(finalConfettiPane);
         }));
         cleanup.play();
-    }
 
+        System.out.println("✅ Confetti shown successfully!");
+    }
     private void playChime() {
         try {
             String soundPath = "/sounds/chime_16bit.wav";
@@ -652,5 +729,24 @@ public class TodoView {
             case "low" -> 50;
             default -> 75;
         };
+    }
+
+    private void debugSceneStructure() {
+        System.out.println("=== DEBUG SCENE STRUCTURE ===");
+        System.out.println("stage: " + stage);
+        System.out.println("scene: " + scene);
+        System.out.println("root: " + root);
+        System.out.println("overlayRoot: " + overlayRoot);
+        System.out.println("todoList: " + todoList);
+
+        if (scene != null) {
+            System.out.println("scene.root: " + scene.getRoot());
+            if (scene.getRoot() instanceof BorderPane) {
+                BorderPane bp = (BorderPane) scene.getRoot();
+                System.out.println("center: " + bp.getCenter());
+                System.out.println("left: " + bp.getLeft());
+            }
+        }
+        System.out.println("=== END DEBUG ===");
     }
 }

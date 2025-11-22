@@ -270,6 +270,10 @@ public class MainController implements ThemeManager.ThemeChangeListener {
     // In MainController.java - update the showTodoList method
     private void showTodoList() {
         TodoView todoView = new TodoView(userId, sidebar);
+
+        // ✅ ADD THIS: Initialize the TodoView as a component
+        todoView.initializeAsComponent();
+
         ScrollPane todoContent = todoView.getContent();
 
         todoView.setUsername(userName);
