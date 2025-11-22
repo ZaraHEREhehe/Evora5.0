@@ -367,22 +367,52 @@ public class TodoView {
                             if (draggedItem != null) {
                                 List<TodoController.Todo> currentTodos = controller.getTodos();
 
-                                // Remove from old position
-                                list.getChildren().remove(draggedItem);
-                                currentTodos.remove(draggedTodo);
+                                // ✅ FIXED: Remove from BOTH lists using the original source index
+                                list.getChildren().remove(sourceIndex.intValue());
+                                currentTodos.remove(sourceIndex.intValue());
 
-                                // Calculate adjusted target index
-                                int adjustedTargetIndex = sourceIndex < targetIndex ? targetIndex : targetIndex;
+                                // ✅ FIXED: Calculate correct insertion index
+                                int insertionIndex;
+                                if (sourceIndex < targetIndex) {
+                                    // Moving DOWN: target index decreased by 1 because we removed an item before it
+                                    insertionIndex = targetIndex - 1;
+                                } else {
+                                    // Moving UP: target index remains the same
+                                    insertionIndex = targetIndex;
+                                }
 
-                                // Add to new position
-                                list.getChildren().add(adjustedTargetIndex, draggedItem);
-                                currentTodos.add(adjustedTargetIndex, draggedTodo);
+                                // Add to new position in BOTH lists
+                                list.getChildren().add(insertionIndex, draggedItem);
+                                currentTodos.add(insertionIndex, draggedTodo);
+
+                                // ✅ FIX: Restore completed task styling after drag
+                                if (draggedTodo.isCompleted()) {
+                                    draggedItem.setOpacity(0.6);
+                                    // Find and update the text label to add strikethrough
+                                    for (Node child : draggedItem.getChildren()) {
+                                        if (child instanceof HBox topRow) {
+                                            for (Node topChild : topRow.getChildren()) {
+                                                if (topChild instanceof Label textLabel) {
+                                                    // Ensure strikethrough is applied
+                                                    if (!textLabel.getStyle().contains("-fx-strikethrough: true")) {
+                                                        textLabel.setStyle(textLabel.getStyle() + "-fx-strikethrough: true;");
+                                                    }
+                                                    break;
+                                                }
+                                            }
+                                            break;
+                                        }
+                                    }
+                                } else {
+                                    // Ensure non-completed tasks are fully opaque
+                                    draggedItem.setOpacity(1.0);
+                                }
 
                                 // Update database with new order
                                 controller.updateTaskOrder(currentUserId, currentTodos);
                                 success = true;
 
-                                System.out.println("Moved task from position " + sourceIndex + " to " + adjustedTargetIndex);
+                                System.out.println("Moved task from position " + sourceIndex + " to " + insertionIndex + " (target was " + targetIndex + ")");
                             }
                         }
                     }
@@ -414,7 +444,8 @@ public class TodoView {
                     // Clear dragged properties
                     list.getProperties().remove("draggedItem");
                     list.getProperties().remove("draggedIndex");
-
+                    // ✅ FIX: Refresh the entire list to restore proper styling
+                    refreshTodoList();
                     event.consume();
                 });
             }
@@ -580,7 +611,6 @@ public class TodoView {
         }
     }
 
-    // ✅ FIXED: showConfetti method that works without show() being called
 // ✅ FIXED: showConfetti method that creates overlayRoot dynamically
     private void showConfetti() {
         // Try multiple approaches to find a scene and create overlay
@@ -678,6 +708,7 @@ public class TodoView {
 
         System.out.println("✅ Confetti shown successfully!");
     }
+
     private void playChime() {
         try {
             String soundPath = "/sounds/chime_16bit.wav";
