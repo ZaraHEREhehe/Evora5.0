@@ -141,7 +141,8 @@ public class AnalyticsController {
 
         } catch (SQLException e) {
             e.printStackTrace();
-            return getMockAchievements();
+            // Return empty list instead of mock data
+            return new ArrayList<>();
         }
 
         return achievements;
@@ -173,19 +174,6 @@ public class AnalyticsController {
             case "streak_days": return "#FBBF24";
             default: return "#FBBF24";
         }
-    }
-
-    private List<Achievement> getMockAchievements() {
-        List<Achievement> mockAchievements = new ArrayList<>();
-        mockAchievements.add(new Achievement("First Steps", "Complete your first task", "🌟", 0, 1, false, "#F472B6"));
-        mockAchievements.add(new Achievement("Focus Master", "Complete 5 pomodoro sessions", "⚡", 0, 5, false, "#60A5FA"));
-        mockAchievements.add(new Achievement("Note Taker", "Create 10 sticky notes", "📝", 0, 10, false, "#34D399"));
-        mockAchievements.add(new Achievement("Mood Tracker", "Log 20 mood entries", "😊", 0, 20, false, "#A78BFA"));
-        mockAchievements.add(new Achievement("Task Champion", "Complete 50 tasks", "👑", 0, 50, false, "#FBBF24"));
-        mockAchievements.add(new Achievement("Productivity Guru", "Complete 25 pomodoro sessions", "🏆", 0, 25, false, "#A78BFA"));
-        mockAchievements.add(new Achievement("Consistent Logger", "Log 50 mood entries", "🔥", 0, 50, false, "#FF6B6B"));
-        mockAchievements.add(new Achievement("Note Archivist", "Create 25 notes", "📚", 0, 25, false, "#4ECDC4"));
-        return mockAchievements;
     }
 
     public void setTimeRange(String timeRange) {
@@ -227,24 +215,22 @@ public class AnalyticsController {
         } catch (SQLException e) {
             System.err.println("Error loading statistics: " + e.getMessage());
             e.printStackTrace();
-            loadMockStatistics();
+            // Don't load mock data - just leave values at 0
         }
     }
 
     private void loadTaskStatistics(Connection conn) throws SQLException {
-        String dateFilter = getDateFilterForTasks();
-
-        // Get completed tasks count (current + historical) for current time range
+        // Get completed tasks count for current time range
         String completedSql = """
             SELECT COUNT(*) as completed_count
             FROM (
                 SELECT task_id FROM ToDoTasks 
                 WHERE user_id = ? AND is_completed = 1 
-                AND created_at """ + dateFilter + """
+                AND created_at """ + getDateFilterForTasks() + """
                 UNION ALL
                 SELECT log_id FROM TaskDeletionLog 
                 WHERE user_id = ? AND is_completed = 1
-                AND deleted_at """ + dateFilter + """
+                AND deleted_at """ + getDateFilterForTasks() + """
             ) combined_tasks
             """;
 
@@ -257,15 +243,20 @@ public class AnalyticsController {
             }
         }
 
-        // Total tasks count (only current, non-deleted tasks) for current time range
+        // Total tasks count for current time range
         totalTasks.set(getTotalTasksCount(conn));
     }
 
     private int getTotalTasksCount(Connection conn) throws SQLException {
-        String dateFilter = getDateFilterForToDoTasks();
-        String sql = "SELECT COUNT(*) as total FROM ToDoTasks WHERE user_id = ? " + dateFilter;
+        String sql = "SELECT ("
+                + "    SELECT COUNT(*) FROM ToDoTasks WHERE user_id = ? " + getDateFilterForToDoTasks()
+                + "    ) + ("
+                + "    SELECT COUNT(*) FROM TaskDeletionLog WHERE user_id = ? " + getDateFilterForToDoTasks()
+                + ") as total";
+
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, userId);
+            stmt.setInt(2, userId);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 return rs.getInt("total");
@@ -315,7 +306,7 @@ public class AnalyticsController {
     }
 
     private void loadStreakStatistics(Connection conn) throws SQLException {
-        // Calculate streaks from all activity data
+        // Calculate streaks from all activity data within current time range
         String activitySql = """
             SELECT DISTINCT activity_date 
             FROM (
@@ -323,26 +314,31 @@ public class AnalyticsController {
                 SELECT CAST(created_at as DATE) as activity_date 
                 FROM ToDoTasks 
                 WHERE user_id = ? AND is_completed = 1
+                """ + getDateFilterForToDoTasks() + """
                 UNION
                 -- Historical completed tasks from deletion log
                 SELECT CAST(deleted_at as DATE) as activity_date 
                 FROM TaskDeletionLog 
                 WHERE user_id = ? AND is_completed = 1
+                """ + getDateFilterForToDoTasks() + """
                 UNION
                 -- Pomodoro sessions
                 SELECT CAST(start_time as DATE) as activity_date 
                 FROM PomodoroSessions 
                 WHERE user_id = ? AND status = 'Completed'
+                """ + getDateFilterForPomodoro() + """
                 UNION
                 -- Mood entries
                 SELECT CAST(entry_date as DATE) as activity_date 
                 FROM MoodLogger 
                 WHERE user_id = ?
+                """ + getDateFilterForMood() + """
                 UNION
                 -- Sticky notes
                 SELECT CAST(created_at as DATE) as activity_date 
                 FROM StickyNotes 
                 WHERE user_id = ?
+                """ + getDateFilterForToDoTasks() + """
             ) activities
             WHERE activity_date IS NOT NULL
             ORDER BY activity_date DESC
@@ -576,18 +572,22 @@ public class AnalyticsController {
                 }
             }
 
+            // Only add data points where we have actual mood data
             for (String period : dailyTasks.keySet()) {
-                weeklyData.add(new WeeklyData(
-                        period,
-                        dailyTasks.get(period),
-                        dailyPomodoros.get(period),
-                        (int) Math.round(dailyMoods.getOrDefault(period, 4.0))
-                ));
+                // Check if we have mood data for this period
+                if (dailyMoods.containsKey(period) && dailyMoods.get(period) > 0) {
+                    weeklyData.add(new WeeklyData(
+                            period,
+                            dailyTasks.get(period),
+                            dailyPomodoros.get(period),
+                            (int) Math.round(dailyMoods.get(period))
+                    ));
+                }
             }
 
         } catch (SQLException e) {
             System.err.println("Error generating weekly data: " + e.getMessage());
-            generateMockWeeklyData();
+            // Don't generate any data - leave weeklyData empty
         }
     }
 
@@ -771,7 +771,7 @@ public class AnalyticsController {
                     String period = "Week " + week;
                     tasks.put(period, 0);
                     pomodoros.put(period, 0);
-                    moods.put(period, 4.0);
+                    // Don't pre-populate moods - leave empty
                 }
                 break;
             case "year":
@@ -780,7 +780,7 @@ public class AnalyticsController {
                 for (String month : months) {
                     tasks.put(month, 0);
                     pomodoros.put(month, 0);
-                    moods.put(month, 4.0);
+                    // Don't pre-populate moods - leave empty
                 }
                 break;
             case "week":
@@ -789,30 +789,9 @@ public class AnalyticsController {
                 for (String day : days) {
                     tasks.put(day, 0);
                     pomodoros.put(day, 0);
-                    moods.put(day, 4.0);
+                    // Don't pre-populate moods - leave empty
                 }
                 break;
-        }
-    }
-
-    private void generateMockWeeklyData() {
-        weeklyData.clear();
-        // Return empty data for new users
-        if ("month".equals(currentTimeRange)) {
-            for (int week = 1; week <= 5; week++) {
-                weeklyData.add(new WeeklyData("Week " + week, 0, 0, 4));
-            }
-        } else if ("year".equals(currentTimeRange)) {
-            String[] months = {"January", "February", "March", "April", "May", "June",
-                    "July", "August", "September", "October", "November", "December"};
-            for (String month : months) {
-                weeklyData.add(new WeeklyData(month, 0, 0, 4));
-            }
-        } else {
-            String[] days = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
-            for (String day : days) {
-                weeklyData.add(new WeeklyData(day, 0, 0, 4));
-            }
         }
     }
 
@@ -852,7 +831,7 @@ public class AnalyticsController {
             System.err.println("Error generating mood distribution: " + e.getMessage());
         }
 
-        // Empty distribution for new users
+        // If no data, add empty distribution
         moodDistribution.addAll(
                 Arrays.asList(
                         new MoodDistribution("Excellent", 0, "#FF9FB5"),
@@ -866,19 +845,6 @@ public class AnalyticsController {
     private void generateAchievements() {
         achievements.clear();
         achievements.addAll(getRealAchievements());
-    }
-
-    private void loadMockStatistics() {
-        // Reset all values to 0 for new users
-        tasksCompleted.set(0);
-        totalTasks.set(0);
-        pomodoroSessions.set(0);
-        focusMinutes.set(0);
-        moodEntries.set(0);
-        averageMood.set(0.0);
-        currentStreak.set(0);
-        longestStreak.set(0);
-        productivityScore.set(0);
     }
 
     // Getter methods
