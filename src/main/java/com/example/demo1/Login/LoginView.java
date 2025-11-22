@@ -65,6 +65,8 @@ public class LoginView extends Application {
         mainContent.getChildren().addAll(videoSection, loginSection, signupSection);
         root.setCenter(mainContent);
 
+        setupEnterKeySupport();
+
         return root;
     }
 
@@ -80,6 +82,63 @@ public class LoginView extends Application {
 
         videoContainer.getChildren().add(mediaView);
         return videoContainer;
+    }
+
+    private void setupEnterKeySupport() {
+        // Add Enter key support for login form
+        if (emailField != null) {
+            emailField.setOnKeyPressed(event -> {
+                if (event.getCode() == javafx.scene.input.KeyCode.ENTER) {
+                    controller.handleLogin(emailField.getText(), passwordField.getText());
+                }
+            });
+        }
+
+        if (passwordField != null) {
+            passwordField.setOnKeyPressed(event -> {
+                if (event.getCode() == javafx.scene.input.KeyCode.ENTER) {
+                    controller.handleLogin(emailField.getText(), passwordField.getText());
+                }
+            });
+        }
+
+        // Add Enter key support for signup form
+        if (signupUsernameField != null) {
+            signupUsernameField.setOnKeyPressed(event -> {
+                if (event.getCode() == javafx.scene.input.KeyCode.ENTER) {
+                    moveToNextField(signupUsernameField, signupEmailField);
+                }
+            });
+        }
+
+        if (signupEmailField != null) {
+            signupEmailField.setOnKeyPressed(event -> {
+                if (event.getCode() == javafx.scene.input.KeyCode.ENTER) {
+                    moveToNextField(signupEmailField, signupPasswordField);
+                }
+            });
+        }
+
+        if (signupPasswordField != null) {
+            signupPasswordField.setOnKeyPressed(event -> {
+                if (event.getCode() == javafx.scene.input.KeyCode.ENTER) {
+                    moveToNextField(signupPasswordField, signupConfirmPasswordField);
+                }
+            });
+        }
+
+        if (signupConfirmPasswordField != null) {
+            signupConfirmPasswordField.setOnKeyPressed(event -> {
+                if (event.getCode() == javafx.scene.input.KeyCode.ENTER) {
+                    controller.handleSignup(
+                            signupUsernameField.getText(),
+                            signupEmailField.getText(),
+                            signupPasswordField.getText(),
+                            signupConfirmPasswordField.getText()
+                    );
+                }
+            });
+        }
     }
 
     private MediaView setupVideoFast() {
@@ -254,6 +313,10 @@ public class LoginView extends Application {
         );
 
         return form;
+    }
+
+    private void moveToNextField(Control currentField, Control nextField) {
+        nextField.requestFocus();
     }
 
     private VBox createFormField(String labelText, String promptText, boolean isPassword) {

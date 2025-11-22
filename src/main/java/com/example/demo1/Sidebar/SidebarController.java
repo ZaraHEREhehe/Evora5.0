@@ -67,6 +67,4 @@ public class SidebarController {
         }
     }
 
-
-
 } // ← This is the class closing brace

@@ -64,7 +64,14 @@ public class Sidebar extends VBox {
         applyTheme(newTheme);
     }
 
-    // Add this method to update the mascot display with integrated experience
+    //method to update username when it changes
+    public void refreshUsername(String newUsername) {
+        if (userLabel != null) {
+            userLabel.setText("Hello, " + newUsername + "! 💫");
+        }
+    }
+
+    // method to update the mascot display with integrated experience
     public void updateMascot(String petName, String species, String gifFilename) {
         if (mascotContainer != null) {
             mascotContainer.getChildren().clear();
