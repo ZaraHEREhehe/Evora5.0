@@ -444,13 +444,14 @@ public class Settings {
 
         alert.showAndWait();
     }
+
     private VBox createAboutSection() {
         VBox aboutCard = createCard("🌸 About Évora", 800);
         VBox content = new VBox(15);
         content.setPadding(new Insets(20));
         content.setAlignment(Pos.CENTER);
 
-         Label flower = new Label("🌸");
+        Label flower = new Label("🌸");
         flower.setFont(Font.font(48));
         flower.setStyle(getDynamicTextStyle());
 
@@ -460,7 +461,138 @@ public class Settings {
         title.setAlignment(Pos.CENTER);
         title.setWrapText(true);
 
-        // Pets Section
+        // Introduction Section
+        VBox introSection = new VBox(10);
+        introSection.setAlignment(Pos.CENTER);
+        introSection.setPadding(new Insets(20));
+        introSection.setStyle("-fx-background-color: " + themeManager.getCurrentTheme().getCardColor() + "; -fx-background-radius: 15;");
+
+        Label introTitle = new Label("✨ Welcome to Your Magical Productivity Journey!");
+        introTitle.setFont(Font.font("Segoe UI", FontWeight.BOLD, 18));
+        introTitle.setStyle(getDynamicTextStyle());
+
+        Label introText = new Label("Évora transforms productivity into an enchanting adventure! " +
+                "Complete tasks, track your progress, and grow alongside your adorable pet companion. " +
+                "Every action you take helps you level up and unlock new magical features!");
+        introText.setFont(Font.font("Segoe UI", 14));
+        introText.setStyle(getDynamicTextStyle());
+        introText.setWrapText(true);
+        introText.setAlignment(Pos.CENTER);
+
+        introSection.getChildren().addAll(introTitle, introText);
+
+        // Modules Section - Comprehensive Overview
+        VBox modulesSection = new VBox(20);
+        modulesSection.setAlignment(Pos.CENTER);
+        modulesSection.setPadding(new Insets(20));
+        modulesSection.setStyle("-fx-background-color: " + themeManager.getCurrentTheme().getCardColor() + "; -fx-background-radius: 15;");
+
+        Label modulesTitle = new Label("🎯 Explore Évora's Magical Modules");
+        modulesTitle.setFont(Font.font("Segoe UI", FontWeight.BOLD, 18));
+        modulesTitle.setStyle(getDynamicTextStyle());
+
+        // To-Do List Module
+        VBox todoModule = createModuleCard(
+                "📝 To-Do List & Task Management",
+                "• Create tasks with priorities (Low, Medium, High)\n" +
+                        "• Set due dates and organize your workload\n" +
+                        "• Drag and drop to reorder tasks effortlessly\n" +
+                        "• Tasks automatically appear on your calendar\n" +
+                        "• Earn XP: Adding tasks (10-30 XP by priority)\n" +
+                        "• Complete tasks for big rewards (50-200 XP by priority)",
+                Pastel.BLUE
+        );
+
+        // Pomodoro Timer Module
+        VBox pomodoroModule = createModuleCard(
+                "🍅 Pomodoro Timer",
+                "• Stay focused with the 25/5 work-break technique\n" +
+                        "• Customizable work and break durations\n" +
+                        "• Multiple preset options for different workflows\n" +
+                        "• Your pet companion works alongside you\n" +
+                        "• Track completed sessions with tomato counters\n" +
+                        "• Build consistent work habits with visual progress",
+                Pastel.PINK
+        );
+
+        // Mood Tracking Module
+        VBox moodModule = createModuleCard(
+                "😊 Mood Tracking & Wellness",
+                "• Log your daily emotions and feelings\n" +
+                        "• Add personal notes to each mood entry\n" +
+                        "• Visualize your emotional patterns over time\n" +
+                        "• Track stress levels and mental wellbeing\n" +
+                        "• Earn XP for consistent mood logging\n" +
+                        "• Use as a personal journal for self-reflection",
+                Pastel.LAVENDER
+        );
+
+        // Sticky Notes Module
+        VBox notesModule = createModuleCard(
+                "📌 Digital Sticky Notes",
+                "• Create colorful sticky notes for quick thoughts\n" +
+                "• Drag and drop notes anywhere on your board\n" +
+                "• Customize colors to organize by category\n" +
+                        "• Perfect for brainstorming and quick reminders\n" +
+                        "• Use however you want - no rules or structure!\n" +
+                        "• Earn XP for every note you create",
+                Pastel.GOLD
+        );
+
+        // Pet Companion Module
+        VBox petModule = createModuleCard(
+                "🐾 Pet Companion System",
+                "• Adopt and care for your magical pet companion\n" +
+                        "• Unlock new pets as you level up (Cat, Bunny, Owl, Dragon)\n" +
+                        "• Customize your pet's name and appearance\n" +
+                        "• Earn badges for consistent app usage\n" +
+                        "• Your pet's happiness grows with your productivity\n" +
+                        "• Watch your companion evolve as you progress",
+                Pastel.MINT
+        );
+
+        // Calendar Module
+        VBox calendarModule = createModuleCard(
+                "📅 Smart Calendar Integration",
+                "• Visual monthly calendar with all your tasks\n" +
+                        "• See due dates and pending tasks at a glance\n" +
+                        "• Color-coded events based on priority\n" +
+                        "• Seamless integration with your to-do list\n" +
+                        "• Never miss a deadline with clear visual cues\n" +
+                        "• Plan your week with comprehensive overview",
+                Pastel.PEACH
+        );
+
+        // White Noise Module
+        VBox whiteNoiseModule = createModuleCard(
+                "🎵 White Noise & Focus Sounds",
+                "• Curated collection of focus-enhancing sounds\n" +
+                        "• Layer multiple sounds for custom combinations\n" +
+                        "• Mix rain, waves, fireplace, and more\n" +
+                        "• Create your perfect study or work environment\n" +
+                        "• Adjust volumes for each sound individually\n" +
+                        "• Background sounds to boost concentration",
+                Pastel.SAGE
+        );
+
+        // Experience & Leveling System
+        VBox levelingModule = createModuleCard(
+                "⭐ Experience & Progression System",
+                "• Earn XP for every productive action\n" +
+                        "• Level up to unlock new features and pets\n" +
+                        "• Track your progress with visual experience bars\n" +
+                        "• Complete daily streaks for bonus rewards\n" +
+                        "• Unlock achievements and special badges\n" +
+                        "• Watch your productivity journey unfold!",
+                Pastel.PURPLE
+        );
+
+        modulesSection.getChildren().addAll(
+                modulesTitle, todoModule, pomodoroModule, moodModule,
+                notesModule, petModule, calendarModule, whiteNoiseModule, levelingModule
+        );
+
+        // Pets Showcase Section
         VBox petsSection = new VBox(15);
         petsSection.setAlignment(Pos.CENTER);
         petsSection.setPadding(new Insets(20));
@@ -474,64 +606,37 @@ public class Settings {
         petsContainer.setAlignment(Pos.CENTER);
 
         String[] petGifs = {"cat.gif", "bunny.gif", "owl.gif", "dragon.gif"};
-        String[] petNames = {"Luna", "Cocoa", "Hoot", "Sage"};
+        String[] petNames = {"Luna the Cat", "Cocoa the Bunny", "Hoot the Owl", "Sage the Dragon"};
+        String[] petDescriptions = {
+                "Playful and curious companion",
+                "Energetic and joyful friend",
+                "Wise and focused buddy",
+                "Magical and powerful partner"
+        };
 
         for (int i = 0; i < petGifs.length; i++) {
-            VBox petDisplay = createPetDisplay(petGifs[i], petNames[i]);
+            VBox petDisplay = createPetDisplay(petGifs[i], petNames[i], petDescriptions[i]);
             petsContainer.getChildren().add(petDisplay);
         }
 
         petsSection.getChildren().addAll(petsTitle, petsContainer);
 
-        // Features Section
-        VBox featuresSection = new VBox(15);
-        featuresSection.setAlignment(Pos.CENTER_LEFT);
-        featuresSection.setPadding(new Insets(20));
-        featuresSection.setStyle("-fx-background-color: " + themeManager.getCurrentTheme().getCardColor() + "; -fx-background-radius: 15;");
-        featuresSection.setMaxWidth(600);
-
-        Label featuresTitle = new Label("🎯 How Évora Works Its Magic:");
-        featuresTitle.setFont(Font.font("Segoe UI", FontWeight.BOLD, 18));
-        featuresTitle.setStyle(getDynamicTextStyle());
-
-        VBox featuresList = new VBox(8);
-        featuresList.setAlignment(Pos.CENTER_LEFT);
-
-        String[] features = {
-                "🍅 Complete Pomodoro sessions → Earn cute pets & experience!",
-                "📝 Add sticky notes & to-dos → Level up your productivity!",
-                "😊 Log your daily mood → Gain XP and grow with your pet!",
-                "🎵 Use white noise → Focus better and earn rewards!",
-                "📅 Track your calendar → Stay organized and productive!",
-                "⭐ Level up → Unlock new pets and special abilities!"
-        };
-
-        for (String feature : features) {
-            Label featureLabel = new Label(feature);
-            featureLabel.setFont(Font.font("Segoe UI", 13));
-            featureLabel.setStyle(getDynamicTextStyle());
-            featureLabel.setWrapText(true);
-            featuresList.getChildren().add(featureLabel);
-        }
-
-        featuresSection.getChildren().addAll(featuresTitle, featuresList);
-
-        // Final Message - Gradient Effect Section
-        VBox gradientMessageBox = new VBox(10);
-        gradientMessageBox.setAlignment(Pos.CENTER);
-        gradientMessageBox.setPadding(new Insets(25));
-        gradientMessageBox.setMaxWidth(600);
+        // Final Inspiration Section
+        VBox inspirationSection = new VBox(15);
+        inspirationSection.setAlignment(Pos.CENTER);
+        inspirationSection.setPadding(new Insets(25));
+        inspirationSection.setMaxWidth(600);
 
         // Create beautiful gradient based on theme
         if (isGalaxyTheme()) {
-            gradientMessageBox.setStyle("-fx-background-color: linear-gradient(to right, " +
+            inspirationSection.setStyle("-fx-background-color: linear-gradient(to right, " +
                     getGalaxyColor("NEBULA_PURPLE") + ", " + getGalaxyColor("COSMIC_PINK") + ", " + getGalaxyColor("STAR_BLUE") + "); " +
                     "-fx-background-radius: 20; " +
                     "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 15, 0, 0, 5); " +
                     "-fx-border-color: " + getGalaxyColor("SUPERNOVA_YELLOW") + "; " +
                     "-fx-border-width: 2; -fx-border-radius: 20;");
         } else {
-            gradientMessageBox.setStyle("-fx-background-color: linear-gradient(to right, " +
+            inspirationSection.setStyle("-fx-background-color: linear-gradient(to right, " +
                     Pastel.PINK + ", " + Pastel.LAVENDER + ", " + Pastel.BLUE + "); " +
                     "-fx-background-radius: 20; " +
                     "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 15, 0, 0, 5); " +
@@ -539,25 +644,81 @@ public class Settings {
                     "-fx-border-width: 2; -fx-border-radius: 20;");
         }
 
-        Label finalMessage = new Label("Évora turns productivity into a magical adventure! " +
-                "With every task completed and every mood logged, you're not just being productive - " +
-                "you're growing with your adorable companion! 💫");
-        finalMessage.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-        // FIXED: Use dynamic text color instead of hardcoded white
-        finalMessage.setStyle(getDynamicTextStyle() + " -fx-font-style: italic; " +
-                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 5, 0, 1, 1);");
+        Label finalTitle = new Label("Your Magical Productivity Adventure Awaits! ✨");
+        finalTitle.setFont(Font.font("Segoe UI", FontWeight.BOLD, 16));
+        finalTitle.setStyle(getDynamicTextStyle() + " -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 5, 0, 1, 1);");
+
+        Label finalMessage = new Label("Évora is more than just a productivity app - it's your personal journey towards " +
+                "better habits, consistent progress, and joyful accomplishment. With every task completed, every mood logged, " +
+                "and every session focused, you're not just being productive - you're growing, learning, and creating a magical " +
+                "partnership with your companion. Let's make productivity enchanting together! 💫");
+        finalMessage.setFont(Font.font("Segoe UI", 13));
+        finalMessage.setStyle(getDynamicTextStyle() + " -fx-font-style: italic;");
         finalMessage.setWrapText(true);
         finalMessage.setAlignment(Pos.CENTER);
 
-        Label sparkle = new Label("✨");
-        sparkle.setFont(Font.font(24));
-        sparkle.setStyle(getDynamicTextStyle());
+        Label sparkles = new Label("🌟 ✨ 🌟 ✨ 🌟");
+        sparkles.setFont(Font.font(20));
+        sparkles.setStyle(getDynamicTextStyle());
 
-        gradientMessageBox.getChildren().addAll(finalMessage, sparkle);
+        inspirationSection.getChildren().addAll(finalTitle, finalMessage, sparkles);
 
-        content.getChildren().addAll(flower, title, petsSection, featuresSection, gradientMessageBox);
+        content.getChildren().addAll(flower, title, introSection, modulesSection, petsSection, inspirationSection);
         aboutCard.getChildren().add(content);
         return aboutCard;
+    }
+
+    private VBox createModuleCard(String title, String description, String color) {
+        VBox moduleCard = new VBox(10);
+        moduleCard.setAlignment(Pos.TOP_LEFT);
+        moduleCard.setPadding(new Insets(15));
+        moduleCard.setStyle("-fx-background-color: " + color + "20; -fx-background-radius: 12; " +
+                "-fx-border-color: " + color + "; -fx-border-width: 2; -fx-border-radius: 12;");
+
+        Label titleLabel = new Label(title);
+        titleLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 16));
+        titleLabel.setStyle(getDynamicTextStyle());
+
+        Label descLabel = new Label(description);
+        descLabel.setFont(Font.font("Segoe UI", 12));
+        descLabel.setStyle(getDynamicTextStyle());
+        descLabel.setWrapText(true);
+
+        moduleCard.getChildren().addAll(titleLabel, descLabel);
+        return moduleCard;
+    }
+
+    private VBox createPetDisplay(String gifFilename, String petName, String description) {
+        VBox petDisplay = new VBox(8);
+        petDisplay.setAlignment(Pos.CENTER);
+        petDisplay.setPadding(new Insets(15));
+        petDisplay.setStyle("-fx-background-color: " + themeManager.getCurrentTheme().getCardColor() + "80; -fx-background-radius: 15;");
+
+        try {
+            ImageView petImage = new ImageView(new Image(getClass().getResource("/pet_gifs/" + gifFilename).toExternalForm()));
+            petImage.setFitWidth(80);
+            petImage.setFitHeight(80);
+            petImage.setPreserveRatio(true);
+            petImage.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 3);");
+            petDisplay.getChildren().add(petImage);
+        } catch (Exception e) {
+            Label emojiLabel = new Label(getEmojiForPet(petName));
+            emojiLabel.setFont(Font.font(36));
+            petDisplay.getChildren().add(emojiLabel);
+        }
+
+        Label nameLabel = new Label(petName);
+        nameLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
+        nameLabel.setStyle(getDynamicTextStyle());
+
+        Label descLabel = new Label(description);
+        descLabel.setFont(Font.font("Segoe UI", 11));
+        descLabel.setStyle(getDynamicTextStyle());
+        descLabel.setWrapText(true);
+        descLabel.setAlignment(Pos.CENTER);
+
+        petDisplay.getChildren().addAll(nameLabel, descLabel);
+        return petDisplay;
     }
 
     private VBox createPetDisplay(String gifFilename, String petName) {
