@@ -38,6 +38,10 @@ public class Sidebar extends VBox {
     private Region separator;
     private Button logoutBtn;
     private ThemeManager themeManager;
+    //store current pet info
+    private String currentPetName;
+    private String currentPetSpecies;
+    private String currentPetGifFilename;
 
     // In your Sidebar class, add this to the constructor:
     public Sidebar(SidebarController controller, String userName, int userId) {
@@ -49,7 +53,7 @@ public class Sidebar extends VBox {
 
         setupSidebar();
         createHeader(userName);
-       // createMascotSection();
+        //createMascotSection();
         createNavButtons();
         createMascotSection();
         // Initialize with current experience from database
@@ -73,6 +77,11 @@ public class Sidebar extends VBox {
 
     // method to update the mascot display with integrated experience
     public void updateMascot(String petName, String species, String gifFilename) {
+        // Store the current pet info so we can refresh it later
+        this.currentPetName = petName;
+        this.currentPetSpecies = species;
+        this.currentPetGifFilename = gifFilename;
+
         if (mascotContainer != null) {
             mascotContainer.getChildren().clear();
 
@@ -92,10 +101,10 @@ public class Sidebar extends VBox {
                 contentBox.getChildren().add(emojiLabel);
             }
 
-            // Pet name only (no species)
+            // Pet name only (no species) - USE THEME COLOR
             Label mascotText = new Label(petName);
             mascotText.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-            mascotText.setTextFill(Color.web(Pastel.FOREST));
+            mascotText.setTextFill(Color.web(themeManager.getCurrentTheme().getTextPrimary()));
             mascotText.setAlignment(Pos.CENTER);
             mascotText.setWrapText(true);
             mascotText.setMaxWidth(150);
@@ -106,6 +115,12 @@ public class Sidebar extends VBox {
 
             Label starIcon = new Label("⭐");
             starIcon.setFont(Font.font(12));
+            starIcon.setStyle("-fx-text-fill: " + Pastel.GOLD + ";");
+
+            // Update expLabel color to use theme
+            if (expLabel != null) {
+                expLabel.setTextFill(Color.web(themeManager.getCurrentTheme().getTextPrimary()));
+            }
 
             expBox.getChildren().addAll(starIcon, expLabel);
 
@@ -171,6 +186,7 @@ public class Sidebar extends VBox {
         }
 
         // Update mascot section
+        // Update mascot section
         if (mascotContainer != null) {
             mascotContainer.setBackground(new Background(new BackgroundFill(
                     Color.web(theme.getCardColor()),
@@ -184,20 +200,31 @@ public class Sidebar extends VBox {
                     new BorderWidths(2)
             )));
 
-            // Update mascot text color if it exists
-            mascotContainer.getChildren().stream()
-                    .filter(node -> node instanceof Label)
-                    .map(node -> (Label) node)
-                    .forEach(label -> {
-                        if (!label.getText().matches(".*[🐱🐰🦉🐉🦊⭐✨].*")) { // Not emoji labels
-                            label.setTextFill(Color.web(theme.getTextPrimary()));
-                        }
-                    });
+            // RE-APPLY THE CURRENT PET WITH UPDATED THEME COLORS
+            if (currentPetName != null && currentPetSpecies != null && currentPetGifFilename != null) {
+                updateMascot(currentPetName, currentPetSpecies, currentPetGifFilename);
+            } else {
+                // Fallback: update existing labels if no pet info is stored
+                mascotContainer.getChildren().stream()
+                        .filter(node -> node instanceof Label)
+                        .map(node -> (Label) node)
+                        .forEach(label -> {
+                            // Update all text labels (not emoji icons)
+                            if (!label.getText().matches(".*[🐱🐰🦉🐉🦊⭐✨].*")) {
+                                label.setTextFill(Color.web(theme.getTextPrimary()));
+                            }
+                        });
+            }
+
+            // Specifically update the expLabel if it exists
+            if (expLabel != null) {
+                expLabel.setTextFill(Color.web(theme.getTextPrimary()));
+            }
         }
 
         // Update logout button
         if (logoutBtn != null) {
-            logoutBtn.setTextFill(Color.web(theme.getErrorColor()));
+            logoutBtn.setTextFill(Color.web(theme.getTextSecondary()));
             logoutBtn.setBackground(new Background(new BackgroundFill(
                     Color.web(theme.getCardColor()),
                     new CornerRadii(12),
@@ -262,6 +289,7 @@ public class Sidebar extends VBox {
             // Cute little animation
             expLabel.setScaleX(1.1);
             expLabel.setScaleY(1.1);
+
             expLabel.setTextFill(Color.web(Pastel.GOLD));
 
             javafx.animation.ScaleTransition scaleTransition =
@@ -272,7 +300,8 @@ public class Sidebar extends VBox {
 
             javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(500));
             pause.setOnFinished(e -> {
-                expLabel.setTextFill(Color.web(Pastel.SAGE));
+                // Return to theme's text color
+                expLabel.setTextFill(Color.web(themeManager.getCurrentTheme().getTextPrimary()));
             });
             pause.play();
         }
@@ -356,6 +385,7 @@ public class Sidebar extends VBox {
         navBox.setFillWidth(true);
 
         String[][] items = {
+                {"settings", "⚙ Settings", ""},
                 {"dashboard", "🏠 Dashboard", ""},
                 {"todos", "📝 To-Do List", ""},
                 {"timer", "⏰ Pomodoro Timer", ""},
@@ -365,7 +395,7 @@ public class Sidebar extends VBox {
                 {"calendar", "📅 Calendar", ""},
                 {"mood", "😊 Mood Tracker", ""},
                 {"whitenoise", "🎵 White Noise", ""},
-                {"settings", "⚙ Settings", ""}
+              //  {"settings", "⚙ Settings", ""}
         };
 
         for (String[] item : items) {
@@ -464,13 +494,16 @@ public class Sidebar extends VBox {
         mascotContainer = new VBox(8);
         mascotContainer.setAlignment(Pos.CENTER);
         mascotContainer.setPadding(new Insets(15));
+
+        // Use theme colors instead of hardcoded Pastel colors
+        Theme currentTheme = themeManager.getCurrentTheme();
         mascotContainer.setBackground(new Background(new BackgroundFill(
-                Color.web(Pastel.IVORY),
+                Color.web(currentTheme.getCardColor()),
                 new CornerRadii(15),
                 Insets.EMPTY
         )));
         mascotContainer.setBorder(new Border(new BorderStroke(
-                Color.web(Pastel.PINK, 0.3),
+                Color.web(currentTheme.getPrimaryColor(), 0.3),
                 BorderStrokeStyle.SOLID,
                 new CornerRadii(15),
                 new BorderWidths(2)
@@ -482,7 +515,7 @@ public class Sidebar extends VBox {
 
         Label defaultText = new Label("Your Companion");
         defaultText.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-        defaultText.setTextFill(Color.web(Pastel.FOREST));
+        defaultText.setTextFill(Color.web(currentTheme.getTextPrimary())); // FIXED: Use theme color
 
         // Temporary experience display until mascot is updated
         HBox tempExpBox = new HBox(5);
@@ -491,7 +524,7 @@ public class Sidebar extends VBox {
         tempStar.setFont(Font.font(12));
         expLabel = new Label("Loading...");
         expLabel.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 12));
-        expLabel.setTextFill(Color.web(Pastel.SAGE));
+        expLabel.setTextFill(Color.web(currentTheme.getTextPrimary())); // FIXED: Use theme color
         tempExpBox.getChildren().addAll(tempStar, expLabel);
 
         mascotContainer.getChildren().addAll(defaultMascot, defaultText, tempExpBox);
@@ -505,7 +538,6 @@ public class Sidebar extends VBox {
         logoutBtn.setOnMouseEntered(e -> {
             logoutBtn.setScaleX(1.03);
             logoutBtn.setScaleY(1.03);
-            Theme currentTheme = themeManager.getCurrentTheme();
             logoutBtn.setEffect(new DropShadow(8, Color.web(currentTheme.getErrorColor())));
         });
 
