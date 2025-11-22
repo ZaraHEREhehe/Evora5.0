@@ -2,6 +2,8 @@
 package com.example.demo1.WhiteNoise;
 
 import com.example.demo1.Theme.Pastel;
+import com.example.demo1.Theme.ThemeManager;
+import com.example.demo1.Theme.Theme;
 import com.example.demo1.Sidebar.Sidebar;
 import com.example.demo1.Sidebar.SidebarController;
 import javafx.animation.ScaleTransition;
@@ -27,6 +29,7 @@ public class WhiteNoiseView {
     private static WhiteNoiseView instance;
     private final WhiteNoiseController controller;
     int userId;
+    private ThemeManager themeManager;
 
     private record Sound(String id, String name, String emoji, String gradient, String borderColor) {
     }
@@ -51,6 +54,7 @@ public class WhiteNoiseView {
     // Private constructor for singleton
     private WhiteNoiseView() {
         this.controller = WhiteNoiseController.getInstance();
+        this.themeManager = ThemeManager.getInstance();
     }
 
     public Node getContent() {
@@ -67,7 +71,10 @@ public class WhiteNoiseView {
 
     public void createAndShow(Stage stage, SidebarController sidebarController, String userName) {
         BorderPane root = new BorderPane();
-        root.setStyle("-fx-background-color: " + Pastel.BLUSH + ";");
+
+        // FIXED: Use theme background color
+        Theme currentTheme = themeManager.getCurrentTheme();
+        root.setStyle("-fx-background-color: " + currentTheme.getBackgroundColor() + ";");
 
         Sidebar sidebar = new Sidebar(sidebarController, userName, userId);
         root.setLeft(sidebar);
@@ -90,7 +97,11 @@ public class WhiteNoiseView {
     public Node create() {
         VBox mainContent = new VBox(20);
         mainContent.setPadding(new Insets(20));
-        mainContent.setStyle("-fx-background-color: " + Pastel.BLUSH + ";");
+
+        // FIXED: Use theme background color
+        Theme currentTheme = themeManager.getCurrentTheme();
+        mainContent.setStyle("-fx-background-color: " + currentTheme.getBackgroundColor() + ";");
+
         mainContent.setAlignment(Pos.TOP_CENTER);
 
         VBox header = createHeader();
@@ -111,17 +122,21 @@ public class WhiteNoiseView {
     }
 
     private VBox createHeader() {
+        // FIXED: Use theme text color for heading
+        Theme currentTheme = themeManager.getCurrentTheme();
+
         Label title = new Label("White Noise Player 🎵");
-        title.setStyle("-fx-font-size: 32; -fx-font-weight: bold; -fx-text-fill: " + Pastel.FOREST + ";");
+        title.setStyle("-fx-font-size: 32; -fx-font-weight: bold; -fx-text-fill: " + currentTheme.getTextColor() + ";");
 
         Label subtitle = new Label("Create your perfect ambient soundscape");
-        subtitle.setStyle("-fx-font-size: 16; -fx-text-fill: " + Pastel.SAGE + ";");
+        subtitle.setStyle("-fx-font-size: 16; -fx-text-fill: " + currentTheme.getTextColor() + "AA;"); // FIXED: Use theme color with reduced opacity
 
         VBox header = new VBox(8, title, subtitle);
         header.setAlignment(Pos.CENTER);
 
         return header;
     }
+    // ALL OTHER METHODS REMAIN EXACTLY THE SAME - NO CHANGES BELOW THIS POINT
 
     private VBox createMasterControls() {
         VBox masterCard = createCard("🎛 Master Controls", 600);

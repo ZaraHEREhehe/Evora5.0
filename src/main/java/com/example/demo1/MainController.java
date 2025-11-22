@@ -442,7 +442,10 @@ public class MainController implements ThemeManager.ThemeChangeListener {
             // Create a scroll pane for the content
             ScrollPane scrollPane = new ScrollPane(analyticsContent);
             scrollPane.setFitToWidth(true);
-            scrollPane.setStyle("-fx-background: " + Pastel.BLUSH + "; -fx-border-color: " + Pastel.BLUSH + ";");
+
+            // FIXED: Use theme background color instead of hardcoded Pastel.BLUSH
+            Theme currentTheme = themeManager.getCurrentTheme();
+            scrollPane.setStyle("-fx-background: " + currentTheme.getBackgroundColor() + "; -fx-border-color: " + currentTheme.getBackgroundColor() + ";");
             scrollPane.setPadding(new Insets(20));
 
             // Make analytics content responsive
@@ -452,9 +455,9 @@ public class MainController implements ThemeManager.ThemeChangeListener {
             root.setCenter(scrollPane);
 
         } catch (Exception e) {
-            System.out.println("❌ Error loading Pomodoro FXML: " + e.getMessage());
+            System.out.println("❌ Error loading Analytics: " + e.getMessage());
             e.printStackTrace();
-            showFallbackContent("Pomodoro Timer 🍅", "Error loading timer. Please check the FXML file.");
+            showFallbackContent("Analytics 📊", "Error loading analytics. Please check the console for details.");
         }
     }
 

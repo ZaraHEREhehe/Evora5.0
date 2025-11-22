@@ -6,7 +6,7 @@ import java.util.List;
 
 public class ThemeManager {
     private static ThemeManager instance;
-    private Theme currentTheme;
+    private static Theme currentTheme;
     private List<ThemeChangeListener> listeners = new ArrayList<>();
 
     public interface ThemeChangeListener {
@@ -42,7 +42,7 @@ public class ThemeManager {
         notifyThemeChanged();
     }
 
-    public Theme getCurrentTheme() {
+    public static Theme getCurrentTheme() {
         return currentTheme;
     }
 

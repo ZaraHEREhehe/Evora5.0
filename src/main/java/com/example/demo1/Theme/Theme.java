@@ -2,6 +2,7 @@
 package com.example.demo1.Theme;
 
 public interface Theme {
+    // Basic colors
     String getPrimaryColor();
     String getSecondaryColor();
     String getAccentColor();
@@ -15,7 +16,7 @@ public interface Theme {
     String getWarningColor();
     String getErrorColor();
 
-    // Dashboard specific colors
+    // Component-specific colors
     String getStatCardColor1();
     String getStatCardColor2();
     String getStatCardColor3();
@@ -23,4 +24,35 @@ public interface Theme {
     String getFocusBoxColor();
     String getAnalyticsBoxColor();
     String getMiniCardColor();
+
+    // Analytics-specific colors
+    String getBgPrimary();
+    String getBgCard();
+    String getBgNav();
+    String getTextDark();
+    String getBorderPrimary();
+    String getAccentPurple();
+    String getAccentPink();
+    String getAccentGreen();
+    String getAccentBlue();
+    String getAccentYellow();
+    String getAccentOrange();
+
+    // Gradient colors for analytics
+    String getGradientTaskStart();
+    String getGradientTaskEnd();
+    String getGradientFocusStart();
+    String getGradientFocusEnd();
+    String getGradientStreakStart();
+    String getGradientStreakEnd();
+    String getGradientProductivityStart();
+    String getGradientProductivityEnd();
+    String getGradientMoodStart();
+    String getGradientMoodEnd();
+
+    // Chart-specific colors
+    String getChartBackground();
+    String getChartGrid();
+    String getChartText();
+    String getTextColor();
 }

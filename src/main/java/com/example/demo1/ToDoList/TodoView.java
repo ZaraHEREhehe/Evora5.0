@@ -2,6 +2,8 @@
 package com.example.demo1.ToDoList;
 
 import com.example.demo1.Sidebar.Sidebar;
+import com.example.demo1.Theme.ThemeManager;
+import com.example.demo1.Theme.Theme;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
@@ -46,21 +48,25 @@ public class TodoView {
     private int currentUserId;
     private Sidebar sidebar;
     private String userName;
+    private ThemeManager themeManager;
 
     public TodoView(int userId) {
         this.currentUserId = userId;
         this.controller = new TodoController(userId);
+        this.themeManager = ThemeManager.getInstance();
     }
 
     public TodoView(int userId, Sidebar sidebar) {
         this.currentUserId = userId;
         this.sidebar = sidebar;
         this.controller = new TodoController(userId);
+        this.themeManager = ThemeManager.getInstance();
     }
 
     // Keep the stage constructor for backward compatibility
     public TodoView(Stage stage) {
         this.stage = stage;
+        this.themeManager = ThemeManager.getInstance();
     }
 
     public void setUserId(int userId) {
@@ -81,7 +87,9 @@ public class TodoView {
     public void show() {
         if (scene == null) {
             root = new BorderPane();
-            root.setStyle("-fx-background-color: #fdf7ff;");
+            // FIXED: Use theme background color
+            Theme currentTheme = themeManager.getCurrentTheme();
+            root.setStyle("-fx-background-color: " + currentTheme.getBackgroundColor() + ";");
 
             // Use the sidebar that was set (likely from MainController)
             if (sidebar != null) {
@@ -139,12 +147,18 @@ public class TodoView {
         double scale = getScale();
         main.setStyle(String.format("-fx-font-size: %.2fpx;", 16 * scale));
 
+        // FIXED: Use theme background color for main container
+        Theme currentTheme = themeManager.getCurrentTheme();
+        main.setStyle(main.getStyle() + "-fx-background-color: " + currentTheme.getBackgroundColor() + ";");
+
+        // FIXED: Use theme text color for title
         Label title = new Label("To-Do List");
-        title.setStyle("-fx-font-weight: 700; -fx-text-fill: #5c5470;");
+        title.setStyle("-fx-font-weight: 700; -fx-text-fill: " + currentTheme.getTextColor() + ";");
         title.setFont(Font.font("Poppins", 36 * scale));
 
+        // FIXED: Use theme text color for subtitle (with reduced opacity for secondary text)
         Label subtitle = new Label("Organize your tasks and get things done!");
-        subtitle.setStyle("-fx-text-fill: #9189a5;");
+        subtitle.setStyle("-fx-text-fill: " + currentTheme.getTextColor() + "AA;"); // AA = ~67% opacity
         subtitle.setFont(Font.font("Poppins", 16 * scale));
 
         VBox header = new VBox(10, title, subtitle);

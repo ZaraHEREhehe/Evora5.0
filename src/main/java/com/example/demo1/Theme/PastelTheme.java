@@ -22,4 +22,35 @@ public class PastelTheme implements Theme {
     @Override public String getFocusBoxColor() { return Pastel.IVORY; }
     @Override public String getAnalyticsBoxColor() { return Pastel.IVORY; }
     @Override public String getMiniCardColor() { return Pastel.DUSTY_PINK; }
+
+    // Analytics-specific colors
+    @Override public String getBgPrimary() { return Pastel.MIST; }
+    @Override public String getBgCard() { return Pastel.WHITE; }
+    @Override public String getBgNav() { return Pastel.SKY; }
+    @Override public String getTextDark() { return Pastel.FOREST; }
+    @Override public String getBorderPrimary() { return Pastel.LIGHT_PURPLE; }
+    @Override public String getAccentPurple() { return Pastel.GRADIENT_PURPLE; }
+    @Override public String getAccentPink() { return Pastel.GRADIENT_PINK; }
+    @Override public String getAccentGreen() { return Pastel.SUCCESS_GREEN; }
+    @Override public String getAccentBlue() { return Pastel.BLUE; }
+    @Override public String getAccentYellow() { return Pastel.LEMON; }
+    @Override public String getAccentOrange() { return Pastel.PEACH; }
+
+    // Gradient colors for analytics cards
+    @Override public String getGradientTaskStart() { return Pastel.LILAC; }
+    @Override public String getGradientTaskEnd() { return Pastel.ROSE; }
+    @Override public String getGradientFocusStart() { return Pastel.SKY; }
+    @Override public String getGradientFocusEnd() { return Pastel.BLUE; }
+    @Override public String getGradientStreakStart() { return Pastel.LAVENDER; }
+    @Override public String getGradientStreakEnd() { return Pastel.LILAC; }
+    @Override public String getGradientProductivityStart() { return Pastel.MINT; }
+    @Override public String getGradientProductivityEnd() { return Pastel.LIGHT_GREEN; }
+    @Override public String getGradientMoodStart() { return Pastel.LILAC; }
+    @Override public String getGradientMoodEnd() { return Pastel.ROSE; }
+
+    // Chart-specific colors
+    @Override public String getChartBackground() { return Pastel.WHITE; }
+    @Override public String getChartGrid() { return Pastel.GRAY_200; }
+    @Override public String getChartText() { return Pastel.FOREST; }
+    @Override public String getTextColor() {return "#000000";}
 }

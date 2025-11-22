@@ -12,6 +12,8 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.MouseEvent;
 import java.util.List;
 import java.util.Map;
+import com.example.demo1.Theme.ThemeManager;
+import com.example.demo1.Theme.Theme;
 
 public class AnalyticsView {
     private final AnalyticsController controller;
@@ -24,61 +26,88 @@ public class AnalyticsView {
     private Tooltip chartTooltip;
     private ToggleGroup timeGroup;
     private ToggleButton weekButton, monthButton, yearButton;
+    private Theme currentTheme;
 
     // Color theme mapping for easy customization
-    private final Map<String, String> colors = Map.ofEntries(
-            // Background colors
-            Map.entry("bg_primary", "#fdf7ff"),
-            Map.entry("bg_card", "#FFFFFF"),
-            Map.entry("bg_nav", "#E6F2FF"),
-
-            // Text colors
-            Map.entry("text_primary", "#5c5470"),
-            Map.entry("text_secondary", "#756f86"),
-            Map.entry("text_dark", "#2A2D3A"),
-
-            // Border and accent colors
-            Map.entry("border_primary", "#D8B4FE"),
-            Map.entry("accent_purple", "#A78BFA"),
-            Map.entry("accent_pink", "#F472B6"),
-            Map.entry("accent_green", "#34D399"),
-            Map.entry("accent_blue", "#60A5FA"),
-            Map.entry("accent_yellow", "#FBBF24"),
-            Map.entry("accent_orange", "#FB923C"),
-
-            // Gradient colors for cards
-            Map.entry("gradient_task_start", "#F3E8FF"),
-            Map.entry("gradient_task_end", "#FCE7F3"),
-            Map.entry("gradient_focus_start", "#E0F2FE"),
-            Map.entry("gradient_focus_end", "#BAE6FD"),
-            Map.entry("gradient_streak_start", "#F0E8FF"),
-            Map.entry("gradient_streak_end", "#E8D6FF"),
-            Map.entry("gradient_productivity_start", "#E8F5E8"),
-            Map.entry("gradient_productivity_end", "#D4F0D4"),
-            Map.entry("gradient_mood_start", "#F3E8FF"),
-            Map.entry("gradient_mood_end", "#FCE7F3")
-    );
+    private Map<String, String> colors;
 
     // Chart colors array
-    private final Color[] chartColors = {
-            Color.web(colors.get("accent_purple")),
-            Color.web(colors.get("accent_pink")),
-            Color.web(colors.get("accent_green")),
-            Color.web(colors.get("accent_blue")),
-            Color.web(colors.get("accent_yellow")),
-            Color.web(colors.get("accent_orange"))
-    };
+    private Color[] chartColors;
+
+    // FIXED COLORS FOR ALL CHART TEXT - ALWAYS BLACK FOR VISIBILITY
+    private final Color CHART_TEXT_COLOR = Color.BLACK;
+    private final Color CHART_GRID_COLOR = Color.web("#E5E7EB");
+    private final Color CHART_AXIS_COLOR = Color.web("#374151");
+    private final String CHART_HEADING_STYLE = "-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: black;";
+    private final String CHART_SUBHEADING_STYLE = "-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: black;";
 
     public AnalyticsView(int userId, String userName) {
         this.controller = new AnalyticsController(userId, userName);
         this.chartTooltip = new Tooltip();
-        this.chartTooltip.setStyle("-fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: " + colors.get("text_primary") + "; -fx-border-color: " + colors.get("border_primary") + "; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-radius: 5;");
+        this.currentTheme = ThemeManager.getCurrentTheme();
+        initializeColors();
+        setupChartTooltip();
+    }
+
+    private void initializeColors() {
+        // Initialize colors from current theme
+        colors = Map.ofEntries(
+                // Background colors
+                Map.entry("bg_primary", currentTheme.getBgPrimary()),
+                Map.entry("bg_card", currentTheme.getBgCard()),
+                Map.entry("bg_nav", currentTheme.getBgNav()),
+
+                // Text colors
+                Map.entry("text_primary", currentTheme.getTextPrimary()),
+                Map.entry("text_secondary", currentTheme.getTextSecondary()),
+                Map.entry("text_dark", currentTheme.getTextDark()),
+
+                // Border and accent colors
+                Map.entry("border_primary", currentTheme.getBorderPrimary()),
+                Map.entry("accent_purple", currentTheme.getAccentPurple()),
+                Map.entry("accent_pink", currentTheme.getAccentPink()),
+                Map.entry("accent_green", currentTheme.getAccentGreen()),
+                Map.entry("accent_blue", currentTheme.getAccentBlue()),
+                Map.entry("accent_yellow", currentTheme.getAccentYellow()),
+                Map.entry("accent_orange", currentTheme.getAccentOrange()),
+
+                // Gradient colors for cards
+                Map.entry("gradient_task_start", currentTheme.getGradientTaskStart()),
+                Map.entry("gradient_task_end", currentTheme.getGradientTaskEnd()),
+                Map.entry("gradient_focus_start", currentTheme.getGradientFocusStart()),
+                Map.entry("gradient_focus_end", currentTheme.getGradientFocusEnd()),
+                Map.entry("gradient_streak_start", currentTheme.getGradientStreakStart()),
+                Map.entry("gradient_streak_end", currentTheme.getGradientStreakEnd()),
+                Map.entry("gradient_productivity_start", currentTheme.getGradientProductivityStart()),
+                Map.entry("gradient_productivity_end", currentTheme.getGradientProductivityEnd()),
+                Map.entry("gradient_mood_start", currentTheme.getGradientMoodStart()),
+                Map.entry("gradient_mood_end", currentTheme.getGradientMoodEnd())
+        );
+
+        // Initialize chart colors from theme
+        chartColors = new Color[]{
+                Color.web(colors.get("accent_purple")),
+                Color.web(colors.get("accent_pink")),
+                Color.web(colors.get("accent_green")),
+                Color.web(colors.get("accent_blue")),
+                Color.web(colors.get("accent_yellow")),
+                Color.web(colors.get("accent_orange"))
+        };
+    }
+
+    private void setupChartTooltip() {
+        // FIXED: Tooltip always has black text for visibility
+        this.chartTooltip.setStyle("-fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: black; -fx-border-color: " + colors.get("border_primary") + "; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-radius: 5;");
     }
 
     public Node create() {
         mainContent = new VBox(20);
         mainContent.setPadding(new Insets(20));
-        mainContent.setStyle("-fx-background-color: " + colors.get("bg_primary") + ";");
+        // FIXED: Make main content wider to spread background color
+        mainContent.setStyle("-fx-background-color: " + colors.get("bg_primary") + "; -fx-min-width: 1200px; -fx-pref-width: 1200px;");
+
+        // Make VBox expand to fill all available space within its container
+        VBox.setVgrow(mainContent, Priority.ALWAYS);
 
         // Header
         VBox header = createHeader();
@@ -104,6 +133,19 @@ public class AnalyticsView {
         mainContent.getChildren().addAll(header, navBar, timeRangeSelector, tabPane);
 
         return mainContent;
+    }
+
+    // Method to refresh colors when theme changes
+    public void refreshTheme() {
+        this.currentTheme = ThemeManager.getCurrentTheme();
+        initializeColors();
+        setupChartTooltip();
+
+        // Refresh the entire view
+        if (mainContent != null) {
+            mainContent.setStyle("-fx-background-color: " + colors.get("bg_primary") + ";");
+            refreshTabContent();
+        }
     }
 
     private HBox createCustomNavBar() {
@@ -236,18 +278,18 @@ public class AnalyticsView {
 
         if (selected) {
             button.setSelected(true);
-            button.setStyle(button.getStyle() + " -fx-background-color: linear-gradient(to right, #C084FC, " + colors.get("accent_pink") + "); -fx-text-fill: white;");
+            button.setStyle(button.getStyle() + " -fx-background-color: linear-gradient(to right, " + colors.get("accent_purple") + ", " + colors.get("accent_pink") + "); -fx-text-fill: white;");
         } else {
-            button.setStyle(button.getStyle() + " -fx-background-color: transparent; -fx-border-color: #C084FC; -fx-text-fill: " + colors.get("text_primary") + ";");
+            button.setStyle(button.getStyle() + " -fx-background-color: transparent; -fx-border-color: " + colors.get("accent_purple") + "; -fx-text-fill: " + colors.get("text_primary") + ";");
         }
 
         button.selectedProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal) {
-                button.setStyle("-fx-background-radius: 15; -fx-padding: 8 16; -fx-font-size: 12; -fx-min-width: 80; -fx-background-color: linear-gradient(to right, #C084FC, " + colors.get("accent_pink") + "); -fx-text-fill: white;");
+                button.setStyle("-fx-background-radius: 15; -fx-padding: 8 16; -fx-font-size: 12; -fx-min-width: 80; -fx-background-color: linear-gradient(to right, " + colors.get("accent_purple") + ", " + colors.get("accent_pink") + "); -fx-text-fill: white;");
                 controller.setTimeRange(button.getText().toLowerCase());
                 refreshTabContent();
             } else {
-                button.setStyle("-fx-background-radius: 15; -fx-padding: 8 16; -fx-font-size: 12; -fx-min-width: 80; -fx-background-color: transparent; -fx-border-color: #C084FC; -fx-text-fill: " + colors.get("text_primary") + ";");
+                button.setStyle("-fx-background-radius: 15; -fx-padding: 8 16; -fx-font-size: 12; -fx-min-width: 80; -fx-background-color: transparent; -fx-border-color: " + colors.get("accent_purple") + "; -fx-text-fill: " + colors.get("text_primary") + ";");
             }
         });
 
@@ -444,7 +486,7 @@ public class AnalyticsView {
     private VBox createActivityChart() {
         VBox chartContainer = new VBox(15);
         chartContainer.setPadding(new Insets(25));
-        chartContainer.setStyle("-fx-background-color: " + colors.get("bg_card") + ";" +
+        chartContainer.setStyle("-fx-background-color: " + currentTheme.getChartBackground() + ";" +
                 "-fx-background-radius: 25;" +
                 "-fx-border-color: " + colors.get("border_primary") + ";" +
                 "-fx-border-width: 2;" +
@@ -453,8 +495,9 @@ public class AnalyticsView {
         chartContainer.setMaxWidth(1000);
         chartContainer.setAlignment(Pos.CENTER);
 
+        // FIXED: Chart title ALWAYS uses black text, never theme color
         Label title = new Label("Weekly Activity");
-        title.setStyle("-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: " + colors.get("text_primary") + ";");
+        title.setStyle(CHART_HEADING_STYLE);
 
         activityChartCanvas = new Canvas(900, 400); // Larger canvas
         drawActivityChart(activityChartCanvas);
@@ -484,7 +527,8 @@ public class AnalyticsView {
     }
 
     private void drawActivityGrid(GraphicsContext gc, double padding, double chartWidth, double chartHeight, List<AnalyticsController.WeeklyData> data) {
-        gc.setStroke(Color.web("#E5E7EB"));
+        // FIXED: Grid lines use fixed colors
+        gc.setStroke(CHART_GRID_COLOR);
         gc.setLineWidth(1);
 
         // Horizontal grid lines
@@ -497,8 +541,8 @@ public class AnalyticsView {
             double y = padding + chartHeight - (chartHeight / 5) * i;
             gc.strokeLine(padding, y, padding + chartWidth, y);
 
-            // Y-axis labels
-            gc.setFill(Color.web("#6B7280"));
+            // Y-axis labels - ALWAYS USE FIXED BLACK TEXT FOR VISIBILITY
+            gc.setFill(CHART_TEXT_COLOR);
             gc.setFont(Font.font("System", 12));
             int value = (int) ((i / 5.0) * maxValue);
             gc.fillText(String.valueOf(value), padding - 25, y + 5);
@@ -517,7 +561,7 @@ public class AnalyticsView {
         int maxValue = Math.max(maxTasks, maxPomodoros);
         maxValue = Math.max(maxValue, 10);
 
-        // Draw tasks line
+        // Draw tasks line - USES THEME COLOR
         gc.setStroke(chartColors[1]); // Pink
         gc.setLineWidth(3);
 
@@ -531,7 +575,7 @@ public class AnalyticsView {
             gc.strokeLine(x1, y1, x2, y2);
         }
 
-        // Draw pomodoros line
+        // Draw pomodoros line - USES THEME COLOR
         gc.setStroke(chartColors[3]); // Blue
         gc.setLineWidth(3);
 
@@ -552,45 +596,44 @@ public class AnalyticsView {
         int maxValue = Math.max(maxTasks, maxPomodoros);
         maxValue = Math.max(maxValue, 10);
 
-        // Draw tasks data points (without value labels)
+        // Draw tasks data points (without value labels) - USES THEME COLOR
         gc.setFill(chartColors[1]);
         for (int i = 0; i < data.size(); i++) {
             double x = padding + (chartWidth / (data.size() - 1)) * i;
             double y = padding + chartHeight - ((data.get(i).getTasks() / (double) maxValue) * chartHeight);
 
             gc.fillOval(x - 6, y - 6, 12, 12);
-            gc.setStroke(Color.web("#7C3AED"));
+            gc.setStroke(Color.web(colors.get("accent_purple")));
             gc.setLineWidth(2);
             gc.strokeOval(x - 6, y - 6, 12, 12);
         }
 
-        // Draw pomodoro data points (without value labels)
+        // Draw pomodoro data points (without value labels) - USES THEME COLOR
         gc.setFill(chartColors[3]);
         for (int i = 0; i < data.size(); i++) {
             double x = padding + (chartWidth / (data.size() - 1)) * i;
             double y = padding + chartHeight - ((data.get(i).getPomodoros() / (double) maxValue) * chartHeight);
 
             gc.fillRect(x - 5, y - 5, 10, 10);
-            gc.setStroke(Color.web("#2563EB"));
+            gc.setStroke(Color.web(colors.get("accent_blue")));
             gc.setLineWidth(2);
             gc.strokeRect(x - 5, y - 5, 10, 10);
         }
 
-        // Day labels with shortened names to prevent overlap
+        // Day labels with shortened names to prevent overlap - ALWAYS USE FIXED BLACK TEXT
         gc.setFont(Font.font("System", 12));
         for (int i = 0; i < data.size(); i++) {
             double x = padding + (chartWidth / (data.size() - 1)) * i;
-            gc.setFill(Color.web("#6B7280"));
+            gc.setFill(CHART_TEXT_COLOR);
 
             // Use shortened day names
             String dayLabel = getShortenedDayName(data.get(i).getDay());
             gc.fillText(dayLabel, x - 10, padding + chartHeight + 25);
         }
 
-        // Add legend with proper spacing
-        gc.setFill(chartColors[1]);
+        // Add legend with proper spacing - ALWAYS USE FIXED BLACK TEXT
+        gc.setFill(CHART_TEXT_COLOR);
         gc.fillText("Tasks Completed", padding + 10, padding - 20);
-        gc.setFill(chartColors[3]);
         gc.fillText("Focus Sessions", padding + 150, padding - 20);
     }
 
@@ -679,7 +722,7 @@ public class AnalyticsView {
     private VBox createTaskCompletionChart() {
         VBox chartContainer = new VBox(15);
         chartContainer.setPadding(new Insets(25));
-        chartContainer.setStyle("-fx-background-color: " + colors.get("bg_card") + ";" +
+        chartContainer.setStyle("-fx-background-color: " + currentTheme.getChartBackground() + ";" +
                 "-fx-background-radius: 25;" +
                 "-fx-border-color: " + colors.get("border_primary") + ";" +
                 "-fx-border-width: 2;" +
@@ -688,8 +731,9 @@ public class AnalyticsView {
         chartContainer.setPrefWidth(550); // Wider container
         chartContainer.setAlignment(Pos.CENTER);
 
+        // FIXED: Chart title ALWAYS uses black text, never theme color
         Label chartTitle = new Label("Daily Task Completion");
-        chartTitle.setStyle("-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: " + colors.get("text_primary") + ";");
+        chartTitle.setStyle(CHART_SUBHEADING_STYLE);
 
         taskChartCanvas = new Canvas(500, 300); // Larger canvas
         drawBarChart(taskChartCanvas, "tasks");
@@ -702,7 +746,7 @@ public class AnalyticsView {
     private VBox createFocusSessionChart() {
         VBox chartContainer = new VBox(15);
         chartContainer.setPadding(new Insets(25));
-        chartContainer.setStyle("-fx-background-color: " + colors.get("bg_card") + ";" +
+        chartContainer.setStyle("-fx-background-color: " + currentTheme.getChartBackground() + ";" +
                 "-fx-background-radius: 25;" +
                 "-fx-border-color: " + colors.get("border_primary") + ";" +
                 "-fx-border-width: 2;" +
@@ -711,8 +755,9 @@ public class AnalyticsView {
         chartContainer.setPrefWidth(550); // Wider container
         chartContainer.setAlignment(Pos.CENTER);
 
+        // FIXED: Chart title ALWAYS uses black text, never theme color
         Label chartTitle = new Label("Focus Session Intensity");
-        chartTitle.setStyle("-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: " + colors.get("text_primary") + ";");
+        chartTitle.setStyle(CHART_SUBHEADING_STYLE);
 
         focusChartCanvas = new Canvas(500, 300); // Larger canvas
         drawBarChart(focusChartCanvas, "pomodoros");
@@ -740,7 +785,7 @@ public class AnalyticsView {
         int maxValue = data.stream().mapToInt(d -> dataType.equals("tasks") ? d.getTasks() : d.getPomodoros()).max().orElse(10);
         maxValue = Math.max(maxValue, 10);
 
-        // Draw bars with proper spacing (without value labels on bars)
+        // Draw bars with proper spacing (without value labels on bars) - USES THEME COLORS
         for (int i = 0; i < data.size(); i++) {
             double value = dataType.equals("tasks") ? data.get(i).getTasks() : data.get(i).getPomodoros();
             double barHeight = (value / maxValue) * chartHeight;
@@ -751,8 +796,8 @@ public class AnalyticsView {
             gc.setFill(barColor);
             gc.fillRect(x, y, barWidth, barHeight);
 
-            // Add shortened day label with proper spacing
-            gc.setFill(Color.web("#6B7280"));
+            // Add shortened day label with proper spacing - ALWAYS USE FIXED BLACK TEXT
+            gc.setFill(CHART_TEXT_COLOR);
             gc.setFont(Font.font("System", 12));
 
             // Use shortened day names to prevent overlap
@@ -760,8 +805,8 @@ public class AnalyticsView {
             gc.fillText(dayLabel, x + barWidth/2 - 10, padding + chartHeight + 25);
         }
 
-        // Y-axis labels
-        gc.setFill(Color.web("#6B7280"));
+        // Y-axis labels - ALWAYS USE FIXED BLACK TEXT
+        gc.setFill(CHART_TEXT_COLOR);
         gc.setFont(Font.font("System", 12));
         for (int i = 0; i <= 5; i++) {
             double y = padding + chartHeight - (chartHeight / 5) * i;
@@ -889,7 +934,7 @@ public class AnalyticsView {
     private VBox createMoodDistributionChart() {
         VBox chartContainer = new VBox(15);
         chartContainer.setPadding(new Insets(25));
-        chartContainer.setStyle("-fx-background-color: " + colors.get("bg_card") + ";" +
+        chartContainer.setStyle("-fx-background-color: " + currentTheme.getChartBackground() + ";" +
                 "-fx-background-radius: 25;" +
                 "-fx-border-color: " + colors.get("border_primary") + ";" +
                 "-fx-border-width: 2;" +
@@ -898,8 +943,9 @@ public class AnalyticsView {
         chartContainer.setPrefWidth(550);
         chartContainer.setAlignment(Pos.CENTER);
 
+        // FIXED: Chart title ALWAYS uses black text, never theme color
         Label title = new Label("Mood Distribution");
-        title.setStyle("-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: " + colors.get("text_primary") + ";");
+        title.setStyle(CHART_SUBHEADING_STYLE);
 
         Canvas canvas = new Canvas(500, 350);
         drawMoodDistributionChart(canvas);
@@ -994,7 +1040,7 @@ public class AnalyticsView {
     private VBox createMoodTrendChart() {
         VBox chartContainer = new VBox(15);
         chartContainer.setPadding(new Insets(25));
-        chartContainer.setStyle("-fx-background-color: " + colors.get("bg_card") + ";" +
+        chartContainer.setStyle("-fx-background-color: " + currentTheme.getChartBackground() + ";" +
                 "-fx-background-radius: 25;" +
                 "-fx-border-color: " + colors.get("border_primary") + ";" +
                 "-fx-border-width: 2;" +
@@ -1003,8 +1049,9 @@ public class AnalyticsView {
         chartContainer.setPrefWidth(550);
         chartContainer.setAlignment(Pos.CENTER);
 
+        // FIXED: Chart title ALWAYS uses black text, never theme color
         Label title = new Label("Weekly Mood Trend");
-        title.setStyle("-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: " + colors.get("text_primary") + ";");
+        title.setStyle(CHART_SUBHEADING_STYLE);
 
         moodTrendCanvas = new Canvas(500, 350);
         drawMoodTrendChart(moodTrendCanvas);
@@ -1028,7 +1075,7 @@ public class AnalyticsView {
         double chartWidth = canvas.getWidth() - 2 * padding;
         double chartHeight = canvas.getHeight() - 2 * padding;
 
-        // Draw mood line
+        // Draw mood line - USES THEME COLOR
         gc.setStroke(chartColors[0]); // Purple
         gc.setLineWidth(3);
 
@@ -1042,19 +1089,19 @@ public class AnalyticsView {
             gc.strokeLine(x1, y1, x2, y2);
         }
 
-        // Draw data points (without value labels)
+        // Draw data points (without value labels) - USES THEME COLOR
         for (int i = 0; i < data.size(); i++) {
             double x = padding + (chartWidth / (data.size() - 1)) * i;
             double y = padding + chartHeight - ((data.get(i).getMood() - 1) / 4.0) * chartHeight;
 
             gc.setFill(chartColors[0]);
             gc.fillOval(x - 6, y - 6, 12, 12);
-            gc.setStroke(Color.web("#7C3AED"));
+            gc.setStroke(Color.web(colors.get("accent_purple")));
             gc.setLineWidth(2);
             gc.strokeOval(x - 6, y - 6, 12, 12);
 
-            // Day label with shortened names
-            gc.setFill(Color.web("#6B7280"));
+            // Day label with shortened names - ALWAYS USE FIXED BLACK TEXT
+            gc.setFill(CHART_TEXT_COLOR);
             gc.setFont(Font.font("System", 12));
 
             // Use shortened day names
@@ -1062,12 +1109,12 @@ public class AnalyticsView {
             gc.fillText(dayLabel, x - 10, padding + chartHeight + 25);
         }
 
-        // Y-axis labels
+        // Y-axis labels - ALWAYS USE FIXED BLACK TEXT
         String[] moodLevels = {"5 - 😄", "4 - 😊", "3 - 😐", "2 - 😟", "1 - 😢"};
         gc.setFont(Font.font("System", 12));
         for (int i = 0; i < 5; i++) {
             double y = padding + (chartHeight / 4) * i;
-            gc.setFill(Color.web("#6B7280"));
+            gc.setFill(CHART_TEXT_COLOR);
             gc.fillText(moodLevels[i], 10, y + 5);
         }
     }
@@ -1096,8 +1143,8 @@ public class AnalyticsView {
     private VBox createLevelCard() {
         VBox card = new VBox(15);
         card.setPadding(new Insets(25));
-        card.setStyle("-fx-background-color: linear-gradient(to bottom right, #E2D6FF, #F0D2F7); " +
-                "-fx-background-radius: 20; -fx-border-color: #C084FC; -fx-border-width: 2; " +
+        card.setStyle("-fx-background-color: linear-gradient(to bottom right, " + colors.get("gradient_streak_start") + ", " + colors.get("gradient_streak_end") + "); " +
+                "-fx-background-radius: 20; -fx-border-color: " + colors.get("accent_purple") + "; -fx-border-width: 2; " +
                 "-fx-border-radius: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.5, 0, 6);");
         card.setMaxWidth(800);
         card.setAlignment(Pos.CENTER);
@@ -1209,6 +1256,7 @@ public class AnalyticsView {
         card.setPrefSize(350, 180); // Much wider cards
         card.setMinWidth(350);
 
+        // KEEP ORIGINAL BADGE COLORS - DON'T CHANGE FOR THEMES
         String cardStyle = "-fx-background-color: linear-gradient(to bottom right, #ffffff, #f8f8f8); " +
                 "-fx-background-radius: 15; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 3);";
 
@@ -1225,6 +1273,7 @@ public class AnalyticsView {
 
         VBox iconContainer = new VBox();
         iconContainer.setAlignment(Pos.CENTER);
+        // KEEP ORIGINAL BADGE COLORS - DON'T CHANGE FOR THEMES
         iconContainer.setStyle("-fx-background-color: " + (achievement.isUnlocked() ?
                 "linear-gradient(to bottom right, #FFD54F, #FFC107)" : achievement.getColor()) +
                 "; -fx-background-radius: 10; -fx-padding: 10;");
@@ -1241,11 +1290,13 @@ public class AnalyticsView {
         HBox titleRow = new HBox(15);
         titleRow.setAlignment(Pos.CENTER_LEFT);
 
+        // KEEP ORIGINAL BADGE TEXT COLORS - DON'T CHANGE FOR THEMES
         Label titleLabel = new Label(achievement.getTitle());
         titleLabel.setStyle("-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #6d7d8d; -fx-wrap-text: true;");
         titleLabel.setMaxWidth(200);
 
         if (achievement.isUnlocked()) {
+            // KEEP ORIGINAL BADGE COLORS - DON'T CHANGE FOR THEMES
             Label badge = new Label("Unlocked");
             badge.setStyle("-fx-background-color: linear-gradient(to right, #FFEB3B, #FFD740); -fx-text-fill: #FF6F00; -fx-font-size: 11; " +
                     "-fx-padding: 4 10; -fx-background-radius: 10;");
@@ -1254,6 +1305,7 @@ public class AnalyticsView {
             titleRow.getChildren().add(titleLabel);
         }
 
+        // KEEP ORIGINAL BADGE TEXT COLORS - DON'T CHANGE FOR THEMES
         Label descriptionLabel = new Label(achievement.getDescription());
         descriptionLabel.setStyle("-fx-font-size: 13; -fx-text-fill: #8d9dad; -fx-wrap-text: true;");
         descriptionLabel.setMaxWidth(260);
@@ -1263,6 +1315,7 @@ public class AnalyticsView {
         progressLabels.setAlignment(Pos.CENTER);
         HBox.setHgrow(progressLabels, Priority.ALWAYS);
 
+        // KEEP ORIGINAL BADGE TEXT COLORS - DON'T CHANGE FOR THEMES
         Label progressText = new Label("Progress");
         progressText.setStyle("-fx-font-size: 12; -fx-text-fill: #8d9dad;");
 
@@ -1276,6 +1329,7 @@ public class AnalyticsView {
         ProgressBar progressBar = new ProgressBar();
         progressBar.setProgress(achievement.getProgress() / (double) achievement.getMaxProgress());
         progressBar.setPrefWidth(260);
+        // KEEP ORIGINAL BADGE COLORS - DON'T CHANGE FOR THEMES
         progressBar.setStyle("-fx-accent: " + achievement.getColor() + "; -fx-background-color: #e0e0e0;");
 
         progressContainer.getChildren().addAll(progressLabels, progressBar);
@@ -1288,7 +1342,8 @@ public class AnalyticsView {
     }
 
     private void drawPlaceholderChart(GraphicsContext gc, double width, double height) {
-        gc.setFill(Color.web("#6B7280"));
+        // FIXED: Placeholder text always uses black for visibility
+        gc.setFill(CHART_TEXT_COLOR);
         gc.setFont(Font.font("System", FontWeight.NORMAL, 16));
         gc.fillText("No data available yet. Keep using the app!", width/2 - 120, height/2);
     }
