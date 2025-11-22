@@ -188,11 +188,15 @@ public class TodoView {
     private VBox createAddCard() {
         VBox card = new VBox(16);
         card.setPadding(new Insets(24));
-        card.setBackground(new Background(new BackgroundFill(Color.web("#ffffff", 0.7), new CornerRadii(30), Insets.EMPTY)));
-        card.setEffect(new DropShadow(20, Color.gray(0, 0.15)));
+        Theme currentTheme = ThemeManager.getCurrentTheme();
+        card.setBackground(new Background(new BackgroundFill(
+                Color.web(currentTheme.getStatCardColor3(), 0.7),
+                new CornerRadii(30),
+                Insets.EMPTY
+        )));        card.setEffect(new DropShadow(20, Color.gray(0, 0.15)));
 
         Label title = new Label("Add New Task");
-        title.setStyle("-fx-font-weight: 600; -fx-text-fill: #1f2937;");
+        title.setStyle("-fx-font-weight: 600; -fx-text-fill: "+ currentTheme.getTextColor() + "AA;" );
         title.setFont(Font.font("Poppins", 18 * getScale()));
 
         TextField input = new TextField();
@@ -225,8 +229,13 @@ public class TodoView {
         addBtn.setStyle("-fx-background-radius: 20; -fx-background-color: linear-gradient(to right, #e9d5ff, #fbcfe8); -fx-padding: 12;");
         addBtn.setPrefSize(48, 48);
 
-        HBox row = new HBox(12, new Label("Due Date"), datePicker, new Label("Priority"), priorityBox, addBtn);
-        row.setAlignment(Pos.CENTER_LEFT);
+        Label dueDateLabel = new Label("Due Date");
+        dueDateLabel.setStyle("-fx-font-weight: 600; -fx-text-fill: " + currentTheme.getTextColor() + "AA;");
+
+        Label priorityLabel = new Label("Priority");
+        priorityLabel.setStyle("-fx-font-weight: 600; -fx-text-fill: " + currentTheme.getTextColor() + "AA;");
+
+        HBox row = new HBox(12, dueDateLabel, datePicker, priorityLabel, priorityBox, addBtn);        row.setAlignment(Pos.CENTER_LEFT);
 
         input.setOnKeyPressed(e -> {
             if (e.getCode().toString().equals("ENTER")) addTodo(input, datePicker, priorityBox);
