@@ -1,6 +1,7 @@
 package com.example.demo1;
 
 import com.example.demo1.Theme.*;
+import com.example.demo1.Sidebar.Sidebar;
 import com.example.demo1.Database.DatabaseConnection;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -17,11 +18,17 @@ public class Settings {
 
     private ThemeManager themeManager;
     private int userId;
+    private Sidebar sidebar;
 
     public Settings(int userId) {
         this.themeManager = ThemeManager.getInstance();
         this.userId = userId;
     }
+
+    public void setSidebar(Sidebar sidebar) {
+        this.sidebar = sidebar;
+    }
+
 
     public VBox getContent() {
         VBox mainLayout = new VBox(20);
@@ -312,8 +319,6 @@ public class Settings {
         }
     }
 
-    // ... (keep the rest of your methods the same: updatePassword, updateUsername, verifyCurrentPassword, etc.)
-
     private void updatePassword(String currentPass, String newPass, String confirmPass) {
         if (currentPass.isEmpty() || newPass.isEmpty() || confirmPass.isEmpty()) {
             showAlert("Error", "Please fill in all password fields.");
@@ -355,6 +360,7 @@ public class Settings {
 
         if (updateUsernameInDatabase(newUsername)) {
             showAlert("Success", "Username updated successfully! ✨");
+            sidebar.refreshUsername(newUsername); //refresh username in sidebar
         } else {
             showAlert("Error", "Failed to update username. Please try again.");
         }

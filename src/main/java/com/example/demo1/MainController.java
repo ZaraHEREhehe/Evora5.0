@@ -332,6 +332,7 @@ public class MainController implements ThemeManager.ThemeChangeListener {
     private void showSettings() {
         Settings settings = new Settings(userId);
         VBox settingsContent = settings.getContent();
+        settings.setSidebar(sidebar); //pass sidebar reference to refresh user upon update
 
         ScrollPane scrollPane = new ScrollPane(settingsContent);
         scrollPane.setFitToWidth(true);
