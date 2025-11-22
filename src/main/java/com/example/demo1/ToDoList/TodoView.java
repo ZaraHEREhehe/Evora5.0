@@ -2,6 +2,7 @@
 package com.example.demo1.ToDoList;
 
 import com.example.demo1.Sidebar.Sidebar;
+import com.example.demo1.Theme.GalaxyTheme;
 import com.example.demo1.Theme.ThemeManager;
 import com.example.demo1.Theme.Theme;
 import javafx.animation.KeyFrame;
@@ -35,6 +36,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Random;
+import com.example.demo1.Theme.Theme;
 
 public class TodoView {
 
@@ -87,9 +89,11 @@ public class TodoView {
     public void show() {
         if (scene == null) {
             root = new BorderPane();
-            // FIXED: Use theme background color
             Theme currentTheme = themeManager.getCurrentTheme();
-            root.setStyle("-fx-background-color: " + currentTheme.getBackgroundColor() + ";");
+            String bgColor = currentTheme.getBackgroundColor();
+
+            // Set background color for ALL parent containers
+            root.setStyle("-fx-background-color: " + bgColor + ";");
 
             // Use the sidebar that was set (likely from MainController)
             if (sidebar != null) {
@@ -97,6 +101,9 @@ public class TodoView {
             }
 
             scene = new Scene(root, 1400, 900);
+            // Set scene background color too
+            scene.setFill(Color.web(bgColor));
+
             stage.setMinWidth(1000);
             stage.setMinHeight(600);
             stage.setScene(scene);
@@ -107,6 +114,7 @@ public class TodoView {
 
             overlayRoot = new StackPane();
             overlayRoot.setAlignment(Pos.TOP_CENTER);
+            overlayRoot.setStyle("-fx-background-color: " + bgColor + ";");
 
             overlayRoot.getChildren().add(buildMainContent());
             root.setCenter(overlayRoot);
@@ -123,15 +131,15 @@ public class TodoView {
             isFirstShow = false;
         } else {
             ScrollPane newContent = buildMainContent();
-            // ✅ Ensure overlayRoot exists even when reusing scene
             if (overlayRoot == null) {
                 overlayRoot = new StackPane();
                 overlayRoot.setAlignment(Pos.TOP_CENTER);
+                Theme currentTheme = themeManager.getCurrentTheme();
+                overlayRoot.setStyle("-fx-background-color: " + currentTheme.getBackgroundColor() + ";");
                 root.setCenter(overlayRoot);
             }
             overlayRoot.getChildren().setAll(newContent);
         }
-        debugSceneStructure();
         stage.show();
     }
 
@@ -145,20 +153,18 @@ public class TodoView {
         main.setAlignment(Pos.TOP_CENTER);
 
         double scale = getScale();
-        main.setStyle(String.format("-fx-font-size: %.2fpx;", 16 * scale));
-
-        // FIXED: Use theme background color for main container
         Theme currentTheme = themeManager.getCurrentTheme();
-        main.setStyle(main.getStyle() + "-fx-background-color: " + currentTheme.getBackgroundColor() + ";");
+        String bgColor = currentTheme.getBackgroundColor();
 
-        // FIXED: Use theme text color for title
+        // Set background color for main container
+        main.setStyle(String.format("-fx-font-size: %.2fpx; -fx-background-color: %s;", 16 * scale, bgColor));
+
         Label title = new Label("To-Do List");
         title.setStyle("-fx-font-weight: 700; -fx-text-fill: " + currentTheme.getTextColor() + ";");
         title.setFont(Font.font("Poppins", 36 * scale));
 
-        // FIXED: Use theme text color for subtitle (with reduced opacity for secondary text)
         Label subtitle = new Label("Organize your tasks and get things done!");
-        subtitle.setStyle("-fx-text-fill: " + currentTheme.getTextColor() + "AA;"); // AA = ~67% opacity
+        subtitle.setStyle("-fx-text-fill: " + currentTheme.getTextColor() + "AA;");
         subtitle.setFont(Font.font("Poppins", 16 * scale));
 
         VBox header = new VBox(10, title, subtitle);
@@ -169,12 +175,13 @@ public class TodoView {
 
         VBox content = new VBox(24, addCard, todoList);
         content.setAlignment(Pos.TOP_CENTER);
+        content.setStyle("-fx-background-color: " + bgColor + ";");
 
         main.getChildren().addAll(header, content);
 
         ScrollPane scroll = new ScrollPane(main);
         scroll.setFitToWidth(true);
-        scroll.setStyle("-fx-background-color: transparent;");
+        scroll.setStyle("-fx-background-color: " + bgColor + "; -fx-background: " + bgColor + ";");
         scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
 
         return scroll;
@@ -193,7 +200,8 @@ public class TodoView {
                 Color.web(currentTheme.getStatCardColor3(), 0.7),
                 new CornerRadii(30),
                 Insets.EMPTY
-        )));        card.setEffect(new DropShadow(20, Color.gray(0, 0.15)));
+        )));
+        card.setEffect(new DropShadow(20, Color.gray(0, 0.15)));
 
         Label title = new Label("Add New Task");
         title.setStyle("-fx-font-weight: 600; -fx-text-fill: "+ currentTheme.getTextColor() + "AA;" );
@@ -235,7 +243,8 @@ public class TodoView {
         Label priorityLabel = new Label("Priority");
         priorityLabel.setStyle("-fx-font-weight: 600; -fx-text-fill: " + currentTheme.getTextColor() + "AA;");
 
-        HBox row = new HBox(12, dueDateLabel, datePicker, priorityLabel, priorityBox, addBtn);        row.setAlignment(Pos.CENTER_LEFT);
+        HBox row = new HBox(12, dueDateLabel, datePicker, priorityLabel, priorityBox, addBtn);
+        row.setAlignment(Pos.CENTER_LEFT);
 
         input.setOnKeyPressed(e -> {
             if (e.getCode().toString().equals("ENTER")) addTodo(input, datePicker, priorityBox);
@@ -258,11 +267,9 @@ public class TodoView {
             controller.addTodo(currentUserId, todo);
             controller.refreshTodos();
 
-            // Increment exp based on priority of added task
             int expToAdd = getAddTaskExperience(priorityBox.getValue().toLowerCase());
             controller.incrementUserExperience(expToAdd, currentUserId);
 
-            // Refresh sidebar experience if sidebar is available
             if (sidebar != null) {
                 sidebar.refreshExperienceFromDatabase(currentUserId);
             }
@@ -278,11 +285,18 @@ public class TodoView {
         VBox list = new VBox(12);
         list.setAlignment(Pos.TOP_CENTER);
 
+        Theme currentTheme = themeManager.getCurrentTheme();
+        list.setStyle("-fx-background-color: " + currentTheme.getBackgroundColor() + ";");
+
         List<TodoController.Todo> todos = controller.getTodos();
         if (todos.isEmpty()) {
             VBox empty = new VBox(16);
             empty.setPadding(new Insets(32));
-            empty.setBackground(new Background(new BackgroundFill(Color.web("#ffffff", 0.7), new CornerRadii(30), Insets.EMPTY)));
+            empty.setBackground(new Background(new BackgroundFill(
+                    Color.web(currentTheme.getBackgroundColor()),
+                    new CornerRadii(30),
+                    Insets.EMPTY
+            )));
             empty.setEffect(new DropShadow(20, Color.gray(0, 0.15)));
             Label msg = new Label("No tasks yet! Add one above to get started");
             msg.setStyle("-fx-text-fill: #6b7280;");
@@ -302,7 +316,6 @@ public class TodoView {
     private void enableDragAndDrop(VBox list) {
         list.getChildren().forEach(node -> {
             if (node instanceof VBox item) {
-                // Remove existing handlers to avoid duplicates
                 item.setOnDragDetected(null);
                 item.setOnDragOver(null);
                 item.setOnDragExited(null);
@@ -341,7 +354,6 @@ public class TodoView {
                         wiggle.play();
                         item.getProperties().put("wiggle", wiggle);
 
-                        // Store the dragged item and index
                         list.getProperties().put("draggedItem", item);
                         list.getProperties().put("draggedIndex", index);
 
@@ -353,21 +365,18 @@ public class TodoView {
                     if (event.getGestureSource() != item && event.getDragboard().hasContent(TodoController.TODO_FORMAT)) {
                         event.acceptTransferModes(TransferMode.MOVE);
 
-                        // Store original style if not already stored
                         String originalStyle = (String) item.getProperties().get("originalStyle");
                         if (originalStyle == null) {
                             originalStyle = item.getStyle();
                             item.getProperties().put("originalStyle", originalStyle);
                         }
 
-                        // Highlight drop target
                         item.setStyle(originalStyle + "-fx-border-color: #a78bfa; -fx-border-width: 2; -fx-border-radius: 26;");
                     }
                     event.consume();
                 });
 
                 item.setOnDragExited(event -> {
-                    // Restore original style when drag exits
                     String originalStyle = (String) item.getProperties().get("originalStyle");
                     if (originalStyle != null) {
                         item.setStyle(originalStyle);
@@ -390,33 +399,25 @@ public class TodoView {
                             if (draggedItem != null) {
                                 List<TodoController.Todo> currentTodos = controller.getTodos();
 
-                                // ✅ FIXED: Remove from BOTH lists using the original source index
                                 list.getChildren().remove(sourceIndex.intValue());
                                 currentTodos.remove(sourceIndex.intValue());
 
-                                // ✅ FIXED: Calculate correct insertion index
                                 int insertionIndex;
                                 if (sourceIndex < targetIndex) {
-                                    // Moving DOWN: target index decreased by 1 because we removed an item before it
                                     insertionIndex = targetIndex - 1;
                                 } else {
-                                    // Moving UP: target index remains the same
                                     insertionIndex = targetIndex;
                                 }
 
-                                // Add to new position in BOTH lists
                                 list.getChildren().add(insertionIndex, draggedItem);
                                 currentTodos.add(insertionIndex, draggedTodo);
 
-                                // ✅ FIX: Restore completed task styling after drag
                                 if (draggedTodo.isCompleted()) {
                                     draggedItem.setOpacity(0.6);
-                                    // Find and update the text label to add strikethrough
                                     for (Node child : draggedItem.getChildren()) {
                                         if (child instanceof HBox topRow) {
                                             for (Node topChild : topRow.getChildren()) {
                                                 if (topChild instanceof Label textLabel) {
-                                                    // Ensure strikethrough is applied
                                                     if (!textLabel.getStyle().contains("-fx-strikethrough: true")) {
                                                         textLabel.setStyle(textLabel.getStyle() + "-fx-strikethrough: true;");
                                                     }
@@ -427,15 +428,11 @@ public class TodoView {
                                         }
                                     }
                                 } else {
-                                    // Ensure non-completed tasks are fully opaque
                                     draggedItem.setOpacity(1.0);
                                 }
 
-                                // Update database with new order
                                 controller.updateTaskOrder(currentUserId, currentTodos);
                                 success = true;
-
-                                System.out.println("Moved task from position " + sourceIndex + " to " + insertionIndex + " (target was " + targetIndex + ")");
                             }
                         }
                     }
@@ -445,29 +442,24 @@ public class TodoView {
                 });
 
                 item.setOnDragDone(event -> {
-                    // Clean up visual effects
                     item.setOpacity(1.0);
                     item.setEffect(null);
                     item.setRotate(0);
 
-                    // Stop wiggle animation
                     Timeline wiggle = (Timeline) item.getProperties().get("wiggle");
                     if (wiggle != null) {
                         wiggle.stop();
                         item.getProperties().remove("wiggle");
                     }
 
-                    // Restore original style
                     String originalStyle = (String) item.getProperties().get("originalStyle");
                     if (originalStyle != null) {
                         item.setStyle(originalStyle);
                         item.getProperties().remove("originalStyle");
                     }
 
-                    // Clear dragged properties
                     list.getProperties().remove("draggedItem");
                     list.getProperties().remove("draggedIndex");
-                    // ✅ FIX: Refresh the entire list to restore proper styling
                     refreshTodoList();
                     event.consume();
                 });
@@ -542,20 +534,16 @@ public class TodoView {
         item.getChildren().addAll(top, badges, actions);
 
         check.setOnAction(e -> {
-            // For exp
             boolean wasPreviouslyCompleted = todo.isCompleted();
 
-            // Old
             todo.setCompleted(check.isSelected());
             controller.updateTodo(todo);
             controller.refreshTodos();
 
-            // For exp
-            if (check.isSelected() && !wasPreviouslyCompleted) {   // Award experience ONLY when task changes from not completed to completed
+            if (check.isSelected() && !wasPreviouslyCompleted) {
                 int expToAdd = getCompleteTaskExperience(todo.getPriority());
                 controller.incrementUserExperience(expToAdd, currentUserId);
 
-                // Refresh sidebar experience if sidebar is available
                 if (sidebar != null) {
                     sidebar.refreshExperienceFromDatabase(currentUserId);
                 }
@@ -605,11 +593,20 @@ public class TodoView {
     private void refreshTodoList() {
         controller.refreshTodos();
         todoList.getChildren().clear();
+        Theme currentTheme = themeManager.getCurrentTheme();
+
+        // Ensure background color is maintained
+        todoList.setStyle("-fx-background-color: " + currentTheme.getBackgroundColor() + ";");
+
         List<TodoController.Todo> todos = controller.getTodos();
         if (todos.isEmpty()) {
             VBox empty = new VBox(16);
             empty.setPadding(new Insets(32));
-            empty.setBackground(new Background(new BackgroundFill(Color.web("#ffffff", 0.7), new CornerRadii(30), Insets.EMPTY)));
+            empty.setBackground(new Background(new BackgroundFill(
+                    Color.web(currentTheme.getBackgroundColor()),
+                    new CornerRadii(30),
+                    Insets.EMPTY
+            )));
             empty.setEffect(new DropShadow(20, Color.gray(0, 0.15)));
             Label msg = new Label("No tasks yet! Add one above to get started");
             msg.setStyle("-fx-text-fill: #6b7280;");
@@ -622,62 +619,43 @@ public class TodoView {
             }
         }
 
-        // Re-enable drag and drop after refresh
         enableDragAndDrop(todoList);
     }
 
-    // Call this method when the TodoView is added to a parent container
     public void initializeAsComponent() {
-        // This ensures todoList is created and can be used to find the scene
         if (todoList == null) {
             buildMainContent();
         }
     }
 
-// ✅ FIXED: showConfetti method that creates overlayRoot dynamically
     private void showConfetti() {
-        // Try multiple approaches to find a scene and create overlay
         Scene currentScene = null;
         StackPane currentOverlayRoot = null;
 
-        // Approach 1: Try to get scene from todoList
         if (todoList != null && todoList.getScene() != null) {
             currentScene = todoList.getScene();
-            // Find or create overlayRoot in the scene structure
             if (currentScene.getRoot() instanceof BorderPane) {
                 BorderPane rootPane = (BorderPane) currentScene.getRoot();
-
-                // Look for existing StackPane in center
                 if (rootPane.getCenter() instanceof StackPane) {
                     currentOverlayRoot = (StackPane) rootPane.getCenter();
                 } else {
-                    // Create a new StackPane overlay and set it as center
                     currentOverlayRoot = new StackPane();
                     currentOverlayRoot.setAlignment(Pos.TOP_CENTER);
-
-                    // Store the original center content
                     Node originalCenter = rootPane.getCenter();
                     currentOverlayRoot.getChildren().add(originalCenter);
                     rootPane.setCenter(currentOverlayRoot);
                 }
             }
         }
-        // Approach 2: Try to get scene from sidebar
         else if (sidebar != null && sidebar.getScene() != null) {
             currentScene = sidebar.getScene();
-            // Find or create overlayRoot in the scene structure
             if (currentScene.getRoot() instanceof BorderPane) {
                 BorderPane rootPane = (BorderPane) currentScene.getRoot();
-
-                // Look for existing StackPane in center
                 if (rootPane.getCenter() instanceof StackPane) {
                     currentOverlayRoot = (StackPane) rootPane.getCenter();
                 } else {
-                    // Create a new StackPane overlay and set it as center
                     currentOverlayRoot = new StackPane();
                     currentOverlayRoot.setAlignment(Pos.TOP_CENTER);
-
-                    // Store the original center content
                     Node originalCenter = rootPane.getCenter();
                     currentOverlayRoot.getChildren().add(originalCenter);
                     rootPane.setCenter(currentOverlayRoot);
@@ -686,9 +664,6 @@ public class TodoView {
         }
 
         if (currentScene == null || currentOverlayRoot == null) {
-            System.out.println("❌ Cannot show confetti - no scene found or could not create overlay");
-            System.out.println("   scene: " + currentScene);
-            System.out.println("   overlayRoot: " + currentOverlayRoot);
             return;
         }
 
@@ -720,7 +695,6 @@ public class TodoView {
             fall.play();
         }
 
-        // ✅ FIX: Make final reference for use in lambda
         final StackPane finalOverlayRoot = currentOverlayRoot;
         final Pane finalConfettiPane = confettiPane;
 
@@ -728,8 +702,6 @@ public class TodoView {
             finalOverlayRoot.getChildren().remove(finalConfettiPane);
         }));
         cleanup.play();
-
-        System.out.println("✅ Confetti shown successfully!");
     }
 
     private void playChime() {
@@ -737,7 +709,6 @@ public class TodoView {
             String soundPath = "/sounds/chime_16bit.wav";
             InputStream inputStream = getClass().getResourceAsStream(soundPath);
             if (inputStream == null) {
-                System.out.println("Sound file not found: " + soundPath);
                 return;
             }
 
@@ -766,7 +737,6 @@ public class TodoView {
         return buildMainContent();
     }
 
-    // Helpers for exp calculation
     private int getAddTaskExperience(String priority) {
         return switch (priority.toLowerCase()) {
             case "high" -> 30;
@@ -783,24 +753,5 @@ public class TodoView {
             case "low" -> 50;
             default -> 75;
         };
-    }
-
-    private void debugSceneStructure() {
-        System.out.println("=== DEBUG SCENE STRUCTURE ===");
-        System.out.println("stage: " + stage);
-        System.out.println("scene: " + scene);
-        System.out.println("root: " + root);
-        System.out.println("overlayRoot: " + overlayRoot);
-        System.out.println("todoList: " + todoList);
-
-        if (scene != null) {
-            System.out.println("scene.root: " + scene.getRoot());
-            if (scene.getRoot() instanceof BorderPane) {
-                BorderPane bp = (BorderPane) scene.getRoot();
-                System.out.println("center: " + bp.getCenter());
-                System.out.println("left: " + bp.getLeft());
-            }
-        }
-        System.out.println("=== END DEBUG ===");
     }
 }
