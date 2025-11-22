@@ -626,6 +626,7 @@ END;
 
 -- Drop the existing completion log table and triggers
 DROP TABLE IF EXISTS TaskCompletionLog;
+
 -- Drop all triggers that reference the deleted table
 DROP TRIGGER trg_LogCompletedTask;
 DROP TRIGGER trg_LogDeletedCompletedTask;
@@ -669,6 +670,28 @@ END;
 
 
 /****************************************************
+*** 		  Preferences Table                   ***
+*****************************************************/
+
+-- Drop the existing preferences table
+DROP TABLE IF EXISTS preferences;
+
+-- Create new simplified preferences table with only theme
+CREATE TABLE preferences (
+    pref_id INT IDENTITY(1,1) PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    theme VARCHAR(50) DEFAULT 'pastel',
+    FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+);
+
+-- Insert default preferences for existing users
+INSERT INTO preferences (user_id, theme) 
+SELECT user_id, 'pastel' FROM Users 
+WHERE user_id NOT IN (SELECT user_id FROM preferences);
+
+
+
+/****************************************************
 *** 			Useless Queries                   ***
 *****************************************************/
 
@@ -704,3 +727,7 @@ where user_id = 1
 
 select * from users
 select * from petmascot
+
+
+select * from Preferences
+select * from Users
