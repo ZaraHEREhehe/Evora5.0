@@ -385,7 +385,6 @@ public class Sidebar extends VBox {
         navBox.setFillWidth(true);
 
         String[][] items = {
-                {"settings", "⚙ Settings", ""},
                 {"dashboard", "🏠 Dashboard", ""},
                 {"todos", "📝 To-Do List", ""},
                 {"timer", "⏰ Pomodoro Timer", ""},
@@ -395,7 +394,7 @@ public class Sidebar extends VBox {
                 {"calendar", "📅 Calendar", ""},
                 {"mood", "😊 Mood Tracker", ""},
                 {"whitenoise", "🎵 White Noise", ""},
-              //  {"settings", "⚙ Settings", ""}
+                {"settings", "⚙ Settings", ""}
         };
 
         for (String[] item : items) {
