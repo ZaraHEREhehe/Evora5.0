@@ -40,7 +40,7 @@ public class MainController implements ThemeManager.ThemeChangeListener {
 
     // KEEP POMODORO CONTROLLER ALIVE ACROSS TAB SWITCHES
     private PomodoroController pomodoroController;
-    private Pane pomodoroContent; // Also keep the UI pane
+    private ScrollPane pomodoroContent; // Also keep the UI pane
 
     public MainController(Stage stage, String userName, int userId) {
         this.stage = stage;
@@ -381,11 +381,19 @@ public class MainController implements ThemeManager.ThemeChangeListener {
             if (pomodoroController == null) {
                 pomodoroController = new PomodoroController();
                 PomodoroView pomodoroView = new PomodoroView(pomodoroController);
-                pomodoroContent = pomodoroView.getView(); // FIXED: Actually assign the content
+
+                // Get the VBox and wrap it in ScrollPane
+                VBox pomodoroVBox = pomodoroView.getView();
+                ScrollPane pomodoroScrollPane = new ScrollPane(pomodoroVBox);
+                pomodoroScrollPane.setFitToWidth(true);
+                pomodoroScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+                pomodoroScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+
+                pomodoroContent = pomodoroScrollPane;
 
                 // Apply current theme
                 Theme currentTheme = themeManager.getCurrentTheme();
-                pomodoroContent.setStyle("-fx-background-color: " + currentTheme.getBackgroundColor() + ";");
+                pomodoroScrollPane.setStyle("-fx-background-color: " + currentTheme.getBackgroundColor() + ";");
 
                 // Set up the controller with dependencies
                 pomodoroController.setUserId(userId);
@@ -396,11 +404,15 @@ public class MainController implements ThemeManager.ThemeChangeListener {
                 pomodoroController.setPetsController(petsController);
 
                 // Make pomodoro content responsive
-                pomodoroContent.prefWidthProperty().bind(root.widthProperty().subtract(200));
-                pomodoroContent.prefHeightProperty().bind(root.heightProperty());
+                pomodoroScrollPane.prefWidthProperty().bind(root.widthProperty().subtract(200));
+                pomodoroScrollPane.prefHeightProperty().bind(root.heightProperty());
+
+                // Allow content to grow for scrolling
+                pomodoroVBox.setMinHeight(Region.USE_PREF_SIZE);
+                pomodoroScrollPane.setMinHeight(0);
             }
 
-            // FIXED: Actually set the content to center
+            // Set the content to center
             root.setCenter(pomodoroContent);
 
         } catch (Exception e) {

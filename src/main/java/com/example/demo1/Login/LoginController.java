@@ -108,31 +108,64 @@ public class LoginController {
     }
 
     // USER REGISTRATION - returns registered id
-    // USER REGISTRATION - returns registered id
     private int registerUser(String username, String email, String password) throws SQLException {
         // First check if email already exists
         if (emailExists(email)) {
             return -1;
         }
 
-        //use the correct syntax for returning generated keys
-        String sql = "INSERT INTO Users (username, email, password, created_at, experience, level) OUTPUT INSERTED.user_id VALUES (?, ?, ?, GETDATE(), 0, 1)";
+        Connection conn = null;
+        try {
+            conn = DatabaseConnection.getConnection();
+            conn.setAutoCommit(false); // Start transaction
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            // Insert user
+            String userSql = "INSERT INTO Users (username, email, password, created_at, experience, level, current_pet_id) OUTPUT INSERTED.user_id VALUES (?, ?, ?, GETDATE(), 0, 1, 1)";
 
-            stmt.setString(1, username);
-            stmt.setString(2, email);
-            stmt.setString(3, password);
+            int newUserId = -1;
 
-            try (ResultSet generatedKeys = stmt.executeQuery()) {
-                if (generatedKeys.next()) {
-                    int newUserId = generatedKeys.getInt(1);
-                    System.out.println("🆕 New user created with ID: " + newUserId);
-                    return newUserId;
+            try (PreparedStatement userStmt = conn.prepareStatement(userSql, Statement.RETURN_GENERATED_KEYS)) {
+                userStmt.setString(1, username);
+                userStmt.setString(2, email);
+                userStmt.setString(3, password);
+
+                try (ResultSet generatedKeys = userStmt.executeQuery()) {
+                    if (generatedKeys.next()) {
+                        newUserId = generatedKeys.getInt(1);
+                        System.out.println("🆕 New user created with ID: " + newUserId);
+                    } else {
+                        conn.rollback();
+                        return -1;
+                    }
                 }
             }
-            return -1; // Return -1 if insertion failed
+
+            // INSERT DEFAULT PET INTO PETMASCOT
+            if (newUserId != -1) {
+                String petSql = "INSERT INTO PetMascot (user_id, pet_type_id, pet_name, is_equipped) VALUES (?, 1, 'Luna', 1)";
+                try (PreparedStatement petStmt = conn.prepareStatement(petSql)) {
+                    petStmt.setInt(1, newUserId);
+                    int rowsAffected = petStmt.executeUpdate();
+                    System.out.println("🐾 Default pet added to PetMascot for user " + newUserId + ", rows affected: " + rowsAffected);
+                }
+
+                conn.commit(); // Commit both operations
+                return newUserId;
+            } else {
+                conn.rollback();
+                return -1;
+            }
+
+        } catch (SQLException e) {
+            if (conn != null) {
+                conn.rollback();
+            }
+            throw e;
+        } finally {
+            if (conn != null) {
+                conn.setAutoCommit(true);
+                conn.close();
+            }
         }
     }
 

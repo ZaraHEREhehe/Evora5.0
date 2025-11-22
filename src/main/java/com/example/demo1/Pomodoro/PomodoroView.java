@@ -547,4 +547,17 @@ public class PomodoroView {
             default: return "❓";
         }
     }
+
+    public ScrollPane getViewAsScrollPane() {
+        ScrollPane scrollPane = new ScrollPane(mainContainer);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+
+        // Allow the content to grow beyond viewport
+        mainContainer.setMinHeight(Region.USE_PREF_SIZE);
+
+        return scrollPane;
+    }
 }
