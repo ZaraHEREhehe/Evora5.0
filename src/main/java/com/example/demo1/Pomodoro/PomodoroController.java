@@ -72,7 +72,7 @@ public class PomodoroController {
                 System.out.println("Loaded active session: " + currentSessionId + " - Status: " + activeSession.status);
             } else {
                 System.out.println("No active session found for user " + userId);
-                resetToDefault();
+                resetToNewSession();
             }
         }
     }
@@ -92,9 +92,10 @@ public class PomodoroController {
             timeline.play();
             System.out.println("Restored running session with " + timeLeft + " seconds remaining");
         } else {
+            // Session expired while app was closed
             sessionManager.completeSession(currentSessionId);
             currentSessionId = -1;
-            resetToDefault();
+            resetToNewSession();
         }
     }
 
@@ -112,7 +113,7 @@ public class PomodoroController {
         System.out.println("Restored paused session with " + timeLeft + " seconds remaining");
     }
 
-    private void resetToDefault() {
+    private void resetToNewSession() {
         isBreak = false;
         running = false;
         timeLeft = workTime;
@@ -214,16 +215,29 @@ public class PomodoroController {
     public void resetTimer() {
         timeline.stop();
         running = false;
-        timeLeft = isBreak ? breakTime : workTime;
-        if (view != null) {
-            view.updateTimerDisplay(formatTime(timeLeft), 0);
-            view.updateButtonState(false, isBreak);
-            view.setPetVisibility(false);
-        }
 
-        // Abort current session if exists
-        if (currentSessionId != -1 && !isBreak) {
-            abortCurrentSession();
+        if (isBreak) {
+            // Reset break session
+            timeLeft = breakTime;
+            if (view != null) {
+                view.updateStatus("☕ Break Time", true);
+                view.updateButtonState(false, true);
+                view.updateTimerDisplay(formatTime(timeLeft), 0);
+            }
+        } else {
+            // Reset work session
+            timeLeft = workTime;
+            if (view != null) {
+                view.updateStatus("💼 Work Session", false);
+                view.updateButtonState(false, false);
+                view.updateTimerDisplay(formatTime(timeLeft), 0);
+                view.setPetVisibility(false);
+            }
+
+            // Abort current session if exists
+            if (currentSessionId != -1) {
+                abortCurrentSession();
+            }
         }
     }
 
@@ -234,7 +248,7 @@ public class PomodoroController {
             view.updateStatus("💼 Work Session", false);
             view.updateButtonState(false, false);
             view.updateTimerDisplay(formatTime(timeLeft), 0);
-            view.setPetVisibility(true);
+            view.setPetVisibility(false);
         }
     }
 
@@ -242,6 +256,7 @@ public class PomodoroController {
         isBreak = true;
         sessions++;
         happiness = Math.min(100, happiness + 10);
+        timeLeft = breakTime;
         if (view != null) {
             view.updateStatus("☕ Break Time", true);
             view.updateButtonState(false, true);
@@ -384,6 +399,11 @@ public class PomodoroController {
         int min = seconds / 60;
         int sec = seconds % 60;
         return String.format("%02d:%02d", min, sec);
+    }
+
+    // New method to check if there's an active session
+    public boolean hasActiveSession() {
+        return currentSessionId != -1;
     }
 
     //for pausing when screen closes

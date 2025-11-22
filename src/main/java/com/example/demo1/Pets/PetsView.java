@@ -1,6 +1,8 @@
 package com.example.demo1.Pets;
 
 import com.example.demo1.Theme.Pastel;
+import com.example.demo1.Theme.Theme;
+import com.example.demo1.Theme.ThemeManager;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -22,9 +24,11 @@ public class PetsView extends BorderPane {
     private String activeTab = "current";
     private VBox contentArea;
     private HBox tabContainer;
+    private ThemeManager themeManager;
 
     public PetsView(PetsController controller) {
         this.controller = controller;
+        this.themeManager = ThemeManager.getInstance();
         createView();
         refreshData();
     }
@@ -37,7 +41,10 @@ public class PetsView extends BorderPane {
         VBox mainContent = new VBox(25);
         mainContent.setPadding(new Insets(30));
         mainContent.setAlignment(Pos.TOP_CENTER);
-        mainContent.setStyle("-fx-background-color: " + Pastel.BLUSH + ";");
+
+        // Use theme for background
+        Theme currentTheme = themeManager.getCurrentTheme();
+        mainContent.setStyle("-fx-background-color: " + currentTheme.getBackgroundColor() + ";");
 
         // Header
         VBox headerBox = createHeader();
@@ -62,18 +69,20 @@ public class PetsView extends BorderPane {
         scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 
         this.setCenter(scrollPane);
-        this.setStyle("-fx-background-color: " + Pastel.BLUSH + ";");
+        this.setStyle("-fx-background-color: " + currentTheme.getBackgroundColor() + ";");
     }
 
     private VBox createHeader() {
+        Theme currentTheme = themeManager.getCurrentTheme();
+
         Label title = new Label("Your Pet Companion 🐾");
         title.setFont(Font.font("System", FontWeight.BOLD, 32));
-        title.setStyle(forceTextColor(Color.web(Pastel.FOREST)));
+        title.setStyle(forceTextColor(Color.web(currentTheme.getTextPrimary())));
 
         int userExp = controller.getUserExperience();
         Label subtitle = new Label("Unlock new pets as you gain experience! • Your XP: " + userExp + " ✨");
         subtitle.setFont(Font.font("System", 16));
-        subtitle.setStyle(forceTextColor(Color.web(Pastel.SAGE)));
+        subtitle.setStyle(forceTextColor(Color.web(currentTheme.getTextSecondary())));
 
         VBox headerBox = new VBox(8, title, subtitle);
         headerBox.setAlignment(Pos.CENTER);
@@ -87,9 +96,12 @@ public class PetsView extends BorderPane {
 
         VBox card = new VBox();
         card.setPadding(new Insets(10));
-        card.setStyle("-fx-background-color: " + Pastel.IVORY + ";" +
+
+        // Use theme for tab navigation background
+        Theme currentTheme = themeManager.getCurrentTheme();
+        card.setStyle("-fx-background-color: " + currentTheme.getCardColor() + ";" +
                 "-fx-background-radius: 25;" +
-                "-fx-border-color: " + Pastel.LIGHT_PURPLE + ";" +
+                "-fx-border-color: " + currentTheme.getPrimaryColor() + ";" +
                 "-fx-border-width: 2;" +
                 "-fx-border-radius: 25;" +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.5, 0, 6);");
@@ -131,6 +143,8 @@ public class PetsView extends BorderPane {
     }
 
     private void updateTabButtonStyle(Button button, boolean isActive) {
+        Theme currentTheme = themeManager.getCurrentTheme();
+
         if (isActive) {
             button.setStyle(
                     "-fx-background-color: linear-gradient(to right, " + Pastel.GRADIENT_PURPLE + ", " + Pastel.GRADIENT_PINK + ");" +
@@ -142,7 +156,7 @@ public class PetsView extends BorderPane {
         } else {
             button.setStyle(
                     "-fx-background-color: transparent;" +
-                            "-fx-text-fill: " + Pastel.FOREST + ";" +
+                            "-fx-text-fill: " + currentTheme.getTextPrimary() + ";" +
                             "-fx-border-color: " + Pastel.GRAY_300 + ";" +
                             "-fx-border-width: 2;" +
                             "-fx-background-radius: 20;" +
@@ -194,9 +208,12 @@ public class PetsView extends BorderPane {
     private VBox createBadgesTab() {
         VBox card = new VBox(15);
         card.setPadding(new Insets(25));
-        card.setStyle("-fx-background-color: " + Pastel.IVORY + ";" +
+
+        // Use theme for card background
+        Theme currentTheme = themeManager.getCurrentTheme();
+        card.setStyle("-fx-background-color: " + currentTheme.getCardColor() + ";" +
                 "-fx-background-radius: 25;" +
-                "-fx-border-color: " + Pastel.LIGHT_PURPLE + ";" +
+                "-fx-border-color: " + Pastel.LIGHT_PURPLE + ";" + // Keep original border for consistency
                 "-fx-border-width: 2;" +
                 "-fx-border-radius: 25;" +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.5, 0, 6);");
@@ -204,7 +221,7 @@ public class PetsView extends BorderPane {
 
         Label title = new Label("Achievement Badges 🏆");
         title.setFont(Font.font("System", FontWeight.BOLD, 20));
-        title.setStyle(forceTextColor(Color.web(Pastel.FOREST)));
+        title.setStyle(forceTextColor(Color.web(currentTheme.getTextPrimary())));
         title.setAlignment(Pos.CENTER);
 
         VBox badgesList = new VBox(15);
@@ -217,7 +234,7 @@ public class PetsView extends BorderPane {
 
         if (badges.isEmpty()) {
             Label noBadgesLabel = new Label("No badges earned yet. Keep working to earn achievements! 🌟");
-            noBadgesLabel.setStyle(forceTextColor(Color.web(Pastel.SAGE)));
+            noBadgesLabel.setStyle(forceTextColor(Color.web(currentTheme.getTextSecondary())));
             noBadgesLabel.setAlignment(Pos.CENTER);
             badgesList.getChildren().add(noBadgesLabel);
         }
@@ -401,9 +418,12 @@ public class PetsView extends BorderPane {
     private VBox createPetDisplayCard(PetsController.Pet pet, boolean showEquipButton) {
         VBox card = new VBox(20);
         card.setPadding(new Insets(30));
-        card.setStyle("-fx-background-color: " + Pastel.IVORY + ";" +
+
+        // Use theme for card background
+        Theme currentTheme = themeManager.getCurrentTheme();
+        card.setStyle("-fx-background-color: " + currentTheme.getCardColor() + ";" +
                 "-fx-background-radius: 25;" +
-                "-fx-border-color: " + Pastel.LIGHT_PURPLE + ";" +
+                "-fx-border-color: " + Pastel.LIGHT_PURPLE + ";" + // Keep original border for consistency
                 "-fx-border-width: 2;" +
                 "-fx-border-radius: 25;" +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.5, 0, 6);");
@@ -416,7 +436,7 @@ public class PetsView extends BorderPane {
 
         Label petName = new Label(pet.getName());
         petName.setFont(Font.font("System", FontWeight.BOLD, 24));
-        petName.setStyle(forceTextColor(Color.web(Pastel.FOREST)));
+        petName.setStyle(forceTextColor(Color.web(currentTheme.getTextPrimary())));
 
         // Cute edit button
         Button editNameBtn = new Button("✏ Edit Name");
@@ -425,7 +445,7 @@ public class PetsView extends BorderPane {
                         "-fx-border-color: transparent;" +
                         "-fx-cursor: hand;" +
                         "-fx-font-size: 16;" +
-                        "-fx-text-fill: " + Pastel.SAGE + ";" +
+                        "-fx-text-fill: " + currentTheme.getTextSecondary() + ";" +
                         "-fx-padding: 4 8;"
         );
         editNameBtn.setOnMouseEntered(e -> editNameBtn.setStyle(
@@ -433,7 +453,7 @@ public class PetsView extends BorderPane {
                         "-fx-border-color: transparent;" +
                         "-fx-cursor: hand;" +
                         "-fx-font-size: 16;" +
-                        "-fx-text-fill: " + Pastel.FOREST + ";" +
+                        "-fx-text-fill: " + currentTheme.getTextPrimary() + ";" +
                         "-fx-padding: 4 8;" +
                         "-fx-background-radius: 10;"
         ));
@@ -442,7 +462,7 @@ public class PetsView extends BorderPane {
                         "-fx-border-color: transparent;" +
                         "-fx-cursor: hand;" +
                         "-fx-font-size: 16;" +
-                        "-fx-text-fill: " + Pastel.SAGE + ";" +
+                        "-fx-text-fill: " + currentTheme.getTextSecondary() + ";" +
                         "-fx-padding: 4 8;"
         ));
         editNameBtn.setOnAction(e -> showNameEditDialog(pet));
@@ -451,7 +471,7 @@ public class PetsView extends BorderPane {
 
         Label petSpecies = new Label(pet.getSpecies() + " • Unlocked at " + pet.getRequiredExperience() + " XP");
         petSpecies.setFont(Font.font("System", 14));
-        petSpecies.setStyle(forceTextColor(Color.web(Pastel.SAGE)));
+        petSpecies.setStyle(forceTextColor(Color.web(currentTheme.getTextSecondary())));
 
         VBox headerBox = new VBox(5, nameBox, petSpecies);
         headerBox.setAlignment(Pos.CENTER);
@@ -483,12 +503,15 @@ public class PetsView extends BorderPane {
         VBox content = new VBox(20);
         content.setPadding(new Insets(20));
         content.setAlignment(Pos.CENTER);
-        content.setStyle("-fx-background-color: linear-gradient(to bottom, " + Pastel.BLUSH + ", " + Pastel.MIST + ");");
+
+        // Use theme for dialog background
+        Theme currentTheme = themeManager.getCurrentTheme();
+        content.setStyle("-fx-background-color: " + currentTheme.getCardColor() + ";");
 
         // Header with emoji
         Label header = new Label("Give " + pet.getName() + " a new name! 🐾");
         header.setFont(Font.font("System", FontWeight.BOLD, 18));
-        header.setStyle("-fx-text-fill: " + Pastel.FOREST + ";");
+        header.setStyle("-fx-text-fill: " + currentTheme.getTextPrimary() + ";");
 
         // Pet image/emoji
         StackPane petDisplay = new StackPane();
@@ -511,19 +534,19 @@ public class PetsView extends BorderPane {
         nameField.setPromptText("Enter cute name here...");
         nameField.setPrefWidth(200);
         nameField.setStyle(
-                "-fx-background-color: white;" +
+                "-fx-background-color: " + currentTheme.getBackgroundColor() + ";" +
                         "-fx-border-color: " + Pastel.LIGHT_PURPLE + ";" +
                         "-fx-border-width: 2;" +
                         "-fx-border-radius: 15;" +
                         "-fx-background-radius: 15;" +
                         "-fx-padding: 10;" +
                         "-fx-font-size: 14;" +
-                        "-fx-text-fill: " + Pastel.FOREST + ";"
+                        "-fx-text-fill: " + currentTheme.getTextPrimary() + ";"
         );
 
         // Instruction text
         Label instruction = new Label("What should we call your adorable companion?");
-        instruction.setStyle("-fx-text-fill: " + Pastel.SAGE + "; -fx-font-size: 12;");
+        instruction.setStyle("-fx-text-fill: " + currentTheme.getTextSecondary() + "; -fx-font-size: 12;");
         instruction.setWrapText(true);
         instruction.setMaxWidth(250);
         instruction.setTextAlignment(TextAlignment.CENTER);
@@ -553,7 +576,7 @@ public class PetsView extends BorderPane {
 
         // Style the dialog pane
         dialog.getDialogPane().setStyle(
-                "-fx-background-color: linear-gradient(to bottom, " + Pastel.BLUSH + ", " + Pastel.MIST + ");" +
+                "-fx-background-color: " + currentTheme.getCardColor() + ";" +
                         "-fx-border-color: " + Pastel.LIGHT_PURPLE + ";" +
                         "-fx-border-width: 3;" +
                         "-fx-border-radius: 20;" +
@@ -578,7 +601,7 @@ public class PetsView extends BorderPane {
                 } else {
                     button.setStyle(
                             "-fx-background-color: transparent;" +
-                                    "-fx-text-fill: " + Pastel.FOREST + ";" +
+                                    "-fx-text-fill: " + currentTheme.getTextPrimary() + ";" +
                                     "-fx-border-color: " + Pastel.GRAY_300 + ";" +
                                     "-fx-border-width: 2;" +
                                     "-fx-background-radius: 15;" +
@@ -669,7 +692,7 @@ public class PetsView extends BorderPane {
         // Pet personality info
         Label personality = new Label("\"" + pet.getPersonality() + "\"");
         personality.setFont(Font.font("System", FontPosture.ITALIC, 14));
-        personality.setStyle(forceTextColor(Color.web(Pastel.SAGE)));
+        personality.setStyle(forceTextColor(Color.web(themeManager.getCurrentTheme().getTextSecondary())));
 
         Label activity = new Label("Current activity: " + pet.getWorkingActivity());
         activity.setFont(Font.font("System", 12));
@@ -713,9 +736,12 @@ public class PetsView extends BorderPane {
     private VBox createUnlockedPetsCard() {
         VBox card = new VBox(15);
         card.setPadding(new Insets(25));
-        card.setStyle("-fx-background-color: " + Pastel.IVORY + ";" +
+
+        // Use theme for card background
+        Theme currentTheme = themeManager.getCurrentTheme();
+        card.setStyle("-fx-background-color: " + currentTheme.getCardColor() + ";" +
                 "-fx-background-radius: 25;" +
-                "-fx-border-color: " + Pastel.LIGHT_PURPLE + ";" +
+                "-fx-border-color: " + Pastel.LIGHT_PURPLE + ";" + // Keep original border for consistency
                 "-fx-border-width: 2;" +
                 "-fx-border-radius: 25;" +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.5, 0, 6);");
@@ -724,7 +750,7 @@ public class PetsView extends BorderPane {
 
         Label title = new Label("Your Unlocked Pets 🎉");
         title.setFont(Font.font("System", FontWeight.BOLD, 20));
-        title.setStyle(forceTextColor(Color.web(Pastel.FOREST)));
+        title.setStyle(forceTextColor(Color.web(currentTheme.getTextPrimary())));
 
         FlowPane petGrid = new FlowPane();
         petGrid.setHgap(20);
@@ -744,7 +770,7 @@ public class PetsView extends BorderPane {
 
         if (petGrid.getChildren().isEmpty()) {
             Label noPetsLabel = new Label("No other pets unlocked yet. Keep gaining experience! 🌟");
-            noPetsLabel.setStyle(forceTextColor(Color.web(Pastel.SAGE)));
+            noPetsLabel.setStyle(forceTextColor(Color.web(currentTheme.getTextSecondary())));
             noPetsLabel.setAlignment(Pos.CENTER);
             petGrid.getChildren().add(noPetsLabel);
         }
@@ -794,9 +820,12 @@ public class PetsView extends BorderPane {
     private VBox createCollectionTab() {
         VBox card = new VBox(15);
         card.setPadding(new Insets(25));
-        card.setStyle("-fx-background-color: " + Pastel.IVORY + ";" +
+
+        // Use theme for card background
+        Theme currentTheme = themeManager.getCurrentTheme();
+        card.setStyle("-fx-background-color: " + currentTheme.getCardColor() + ";" +
                 "-fx-background-radius: 25;" +
-                "-fx-border-color: " + Pastel.LIGHT_PURPLE + ";" +
+                "-fx-border-color: " + Pastel.LIGHT_PURPLE + ";" + // Keep original border for consistency
                 "-fx-border-width: 2;" +
                 "-fx-border-radius: 25;" +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.5, 0, 6);");
@@ -804,7 +833,7 @@ public class PetsView extends BorderPane {
 
         Label title = new Label("My Pet Collection 🎀");
         title.setFont(Font.font("System", FontWeight.BOLD, 20));
-        title.setStyle(forceTextColor(Color.web(Pastel.FOREST)));
+        title.setStyle(forceTextColor(Color.web(currentTheme.getTextPrimary())));
         title.setAlignment(Pos.CENTER);
 
         VBox petsList = new VBox(15);
@@ -817,7 +846,7 @@ public class PetsView extends BorderPane {
 
         if (unlockedPets.isEmpty()) {
             Label noPetsLabel = new Label("No pets unlocked yet. Start gaining experience to unlock pets! 🌟");
-            noPetsLabel.setStyle(forceTextColor(Color.web(Pastel.SAGE)));
+            noPetsLabel.setStyle(forceTextColor(Color.web(currentTheme.getTextSecondary())));
             noPetsLabel.setAlignment(Pos.CENTER);
             petsList.getChildren().add(noPetsLabel);
         }
@@ -877,9 +906,12 @@ public class PetsView extends BorderPane {
     private VBox createAllPetsTab() {
         VBox card = new VBox(15);
         card.setPadding(new Insets(25));
-        card.setStyle("-fx-background-color: " + Pastel.IVORY + ";" +
+
+        // Use theme for card background
+        Theme currentTheme = themeManager.getCurrentTheme();
+        card.setStyle("-fx-background-color: " + currentTheme.getCardColor() + ";" +
                 "-fx-background-radius: 25;" +
-                "-fx-border-color: " + Pastel.LIGHT_PURPLE + ";" +
+                "-fx-border-color: " + Pastel.LIGHT_PURPLE + ";" + // Keep original border for consistency
                 "-fx-border-width: 2;" +
                 "-fx-border-radius: 25;" +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.5, 0, 6);");
@@ -888,12 +920,12 @@ public class PetsView extends BorderPane {
         int userExp = controller.getUserExperience();
         Label expHeader = new Label("Your Total Experience: " + userExp + " XP ✨");
         expHeader.setFont(Font.font("System", FontWeight.BOLD, 18));
-        expHeader.setStyle(forceTextColor(Color.web(Pastel.FOREST)));
+        expHeader.setStyle(forceTextColor(Color.web(currentTheme.getTextPrimary())));
         expHeader.setAlignment(Pos.CENTER);
 
         Label title = new Label("All Available Pets 🌈");
         title.setFont(Font.font("System", FontWeight.BOLD, 20));
-        title.setStyle(forceTextColor(Color.web(Pastel.FOREST)));
+        title.setStyle(forceTextColor(Color.web(currentTheme.getTextPrimary())));
         title.setAlignment(Pos.CENTER);
 
         VBox petsList = new VBox(15);

@@ -1,6 +1,8 @@
 package com.example.demo1.Login;
 
 import com.example.demo1.Database.DatabaseConnection;
+import com.example.demo1.Theme.ThemeService;
+import com.example.demo1.Theme.ThemeManager;
 import com.example.demo1.HelloApplication;
 import javafx.scene.control.Alert;
 import java.sql.*;
@@ -13,14 +15,17 @@ public class LoginController {
             return;
         }
 
-        // Use REAL database authentication
+        // database authentication + setting theme
         try {
             int userId = authenticateUser(email, password);
             if (userId != -1) {
                 String username = getUsername(email);
                 System.out.println("✅ Login successful! User: " + username + " ID: " + userId);
 
-                // Navigate to dashboard - THIS IS THE KEY
+                // LOAD USER THEME HERE
+                loadUserTheme(userId);
+
+                // Navigate to dashboard
                 HelloApplication.showDashboard(username, userId);
             } else {
                 showAlert("Invalid email or password", Alert.AlertType.ERROR);
@@ -29,6 +34,14 @@ public class LoginController {
             showAlert("Database error: " + e.getMessage(), Alert.AlertType.ERROR);
             e.printStackTrace();
         }
+    }
+
+    //helper to laod user theme
+    private void loadUserTheme(int userId) {
+        String userTheme = ThemeService.getUserTheme(userId);
+        ThemeManager themeManager = ThemeManager.getInstance();
+        themeManager.setTheme(userTheme);
+        System.out.println("🎨 Loaded user theme: " + userTheme);
     }
 
     public void handleSignup(String username, String email, String password, String confirmPassword) {
@@ -54,9 +67,13 @@ public class LoginController {
         }
 
         try {
-            if (registerUser(username, email, password)) {
+            int newUserId = registerUser(username, email, password);
+            if (newUserId != -1) {
+                // Set default theme for new user
+                ThemeService.saveUserTheme(newUserId, "pastel");
+
                 showAlert("Account created successfully! You can now login.", Alert.AlertType.INFORMATION);
-                System.out.println("✅ Signup successful! User: " + username + " Email: " + email);
+                System.out.println("✅ Signup successful! User: " + username + " Email: " + email + " ID: " + newUserId);
             } else {
                 showAlert("Email already exists. Please use a different email.", Alert.AlertType.ERROR);
             }
@@ -90,24 +107,32 @@ public class LoginController {
         }
     }
 
-    // REAL USER REGISTRATION
-    private boolean registerUser(String username, String email, String password) throws SQLException {
+    // USER REGISTRATION - returns registered id
+    // USER REGISTRATION - returns registered id
+    private int registerUser(String username, String email, String password) throws SQLException {
         // First check if email already exists
         if (emailExists(email)) {
-            return false;
+            return -1;
         }
 
-        String sql = "INSERT INTO Users (username, email, password, created_at, experience, level) VALUES (?, ?, ?, GETDATE(), 0, 1)";
+        //use the correct syntax for returning generated keys
+        String sql = "INSERT INTO Users (username, email, password, created_at, experience, level) OUTPUT INSERTED.user_id VALUES (?, ?, ?, GETDATE(), 0, 1)";
 
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             stmt.setString(1, username);
             stmt.setString(2, email);
             stmt.setString(3, password);
 
-            int rowsAffected = stmt.executeUpdate();
-            return rowsAffected > 0;
+            try (ResultSet generatedKeys = stmt.executeQuery()) {
+                if (generatedKeys.next()) {
+                    int newUserId = generatedKeys.getInt(1);
+                    System.out.println("🆕 New user created with ID: " + newUserId);
+                    return newUserId;
+                }
+            }
+            return -1; // Return -1 if insertion failed
         }
     }
 

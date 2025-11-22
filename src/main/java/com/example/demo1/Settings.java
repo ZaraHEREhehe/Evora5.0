@@ -99,6 +99,7 @@ public class Settings {
         themeCard.getChildren().add(content);
         return themeCard;
     }
+
     private VBox createThemeOption(String id, String name, String description, String color1, String color2) {
         VBox themeOption = new VBox(10);
         themeOption.setAlignment(Pos.CENTER);
@@ -153,11 +154,19 @@ public class Settings {
             ));
         });
 
-        // Add click handler to change theme
+        // === FIX: ONLY ONE CLICK HANDLER ===
         themeOption.setOnMouseClicked(e -> {
+            // Set the theme in ThemeManager
             themeManager.setTheme(id);
-            // Force the entire application to refresh by showing a notification
+
+            // Save to database
+            ThemeService.saveUserTheme(userId, id);
+
+            // Show notification
             showThemeChangeNotification(id);
+
+            // Debug: Print to confirm it's working
+            System.out.println("🎨 Theme changed to: " + id + " for user: " + userId);
         });
 
         return themeOption;

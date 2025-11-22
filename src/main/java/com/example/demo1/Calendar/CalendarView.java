@@ -1,6 +1,9 @@
 // src/main/java/com/example/demo1/calendar/CalendarView.java
 package com.example.demo1.Calendar;
+
 import com.example.demo1.Database.DatabaseConnection;
+import com.example.demo1.Theme.Theme;
+import com.example.demo1.Theme.ThemeManager;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.geometry.*;
@@ -16,6 +19,7 @@ import javafx.scene.text.Font;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.Cursor;
 import org.kordamp.ikonli.javafx.FontIcon;
+
 import java.sql.*;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -28,31 +32,34 @@ public class CalendarView {
     private LocalDate currentDate;
     private LocalDate selectedDate;
     private final List<Todo> todos;
-    private  int CURRENT_USER_ID ;
+    private int CURRENT_USER_ID;
     private Runnable onContentChange;
     private DoubleProperty widthProperty = new SimpleDoubleProperty(1400);
+    private ThemeManager themeManager;
 
     public CalendarView(int userId) {
         connectToDatabase();
         this.currentDate = LocalDate.now();
         this.selectedDate = null;
-        this.CURRENT_USER_ID = userId;    // ← Set FIRST
-        this.todos = loadTodosFromDB();   // ← Then load todos
+        this.CURRENT_USER_ID = userId;
+        this.themeManager = ThemeManager.getInstance();
+        this.todos = loadTodosFromDB();
     }
+
     private void connectToDatabase() {
         try {
             conn = DatabaseConnection.getConnection();
-            System.out.println("Connected to EvoraDB from Calender!");
+            System.out.println("Connected to EvoraDB from Calendar!");
         } catch (SQLException e) {
             System.out.println("DB Connection failed: " + e.getMessage());
             e.printStackTrace();
         }
     }
+
     public void setOnContentChange(Runnable callback) {
         this.onContentChange = callback;
     }
 
-    // Add this method to handle width changes from parent
     public void setWidth(double width) {
         widthProperty.set(width);
     }
@@ -66,6 +73,14 @@ public class CalendarView {
         main.setPadding(new Insets(40));
         main.setAlignment(Pos.TOP_CENTER);
 
+        // Set background based on theme
+        Theme currentTheme = themeManager.getCurrentTheme();
+        main.setBackground(new Background(new BackgroundFill(
+                Color.web(currentTheme.getBackgroundColor()),
+                CornerRadii.EMPTY,
+                Insets.EMPTY
+        )));
+
         // Bind font scaling to width property
         main.styleProperty().bind(
                 javafx.beans.binding.Bindings.createStringBinding(() ->
@@ -76,7 +91,8 @@ public class CalendarView {
 
         // === TITLE ===
         Label title = new Label("Calendar");
-        title.setStyle("-fx-font-weight: 700; -fx-text-fill: #5c5470;");
+        title.setStyle("-fx-font-weight: 700;");
+        title.setTextFill(Color.web(currentTheme.getTextPrimary()));
         title.fontProperty().bind(
                 javafx.beans.binding.Bindings.createObjectBinding(() ->
                                 Font.font("Poppins", 36 * getScale()),
@@ -85,7 +101,7 @@ public class CalendarView {
         );
 
         Label subtitle = new Label("See your tasks at a glance on the calendar!");
-        subtitle.setStyle("-fx-text-fill: #9189a5;");
+        subtitle.setTextFill(Color.web(currentTheme.getTextSecondary()));
         subtitle.fontProperty().bind(
                 javafx.beans.binding.Bindings.createObjectBinding(() ->
                                 Font.font("Poppins", 16 * getScale()),
@@ -160,7 +176,13 @@ public class CalendarView {
     private VBox createResponsiveLegend() {
         VBox card = new VBox(16);
         card.setPadding(new Insets(20));
-        card.setBackground(new Background(new BackgroundFill(Color.web("#ffffff", 0.7), new CornerRadii(30), Insets.EMPTY)));
+
+        Theme currentTheme = themeManager.getCurrentTheme();
+        card.setBackground(new Background(new BackgroundFill(
+                Color.web(currentTheme.getCardColor()),
+                new CornerRadii(30),
+                Insets.EMPTY
+        )));
         card.setEffect(new DropShadow(20, Color.gray(0, 0.15)));
         card.setAlignment(Pos.CENTER);
 
@@ -170,12 +192,19 @@ public class CalendarView {
         flow.setVgap(12);
         flow.setPadding(new Insets(8));
 
+        // Use theme-appropriate colors for legend
+        String highPriorityColor = getPriorityColor("high");
+        String mediumPriorityColor = getPriorityColor("medium");
+        String lowPriorityColor = getPriorityColor("low");
+        String todayColor = getTodayColor();
+        String taskDueColor = getTaskDueColor();
+
         flow.getChildren().addAll(
-                legendItem("High Priority", "#ef4444"),
-                legendItem("Medium Priority", "#f59e0b"),
-                legendItem("Low Priority", "#10b981"),
-                legendItem("Today", "#ec4899"),
-                legendItem("Task Due", "#93c5fd")
+                legendItem("High Priority", highPriorityColor),
+                legendItem("Medium Priority", mediumPriorityColor),
+                legendItem("Low Priority", lowPriorityColor),
+                legendItem("Today", todayColor),
+                legendItem("Task Due", taskDueColor)
         );
 
         card.getChildren().add(flow);
@@ -186,7 +215,7 @@ public class CalendarView {
         HBox item = new HBox(10);
         Circle dot = new Circle(6, Color.web(color));
         Label label = new Label(text);
-        label.setTextFill(Color.web("#4b5563"));
+        label.setTextFill(Color.web(themeManager.getCurrentTheme().getTextPrimary()));
         label.setFont(Font.font("Poppins", 13));
         item.getChildren().addAll(dot, label);
         return item;
@@ -195,7 +224,13 @@ public class CalendarView {
     private VBox createCalendarCard() {
         VBox card = new VBox(20);
         card.setPadding(new Insets(30));
-        card.setBackground(new Background(new BackgroundFill(Color.web("#ffffff", 0.7), new CornerRadii(32), Insets.EMPTY)));
+
+        Theme currentTheme = themeManager.getCurrentTheme();
+        card.setBackground(new Background(new BackgroundFill(
+                Color.web(currentTheme.getCardColor()),
+                new CornerRadii(32),
+                Insets.EMPTY
+        )));
         card.setEffect(new DropShadow(20, Color.gray(0, 0.15)));
 
         HBox nav = new HBox(20);
@@ -204,7 +239,8 @@ public class CalendarView {
         Button prev = createNavButton("Previous", () -> changeMonth(-1));
 
         Label monthLabel = new Label(getMonthYear());
-        monthLabel.setStyle("-fx-font-weight: 600; -fx-text-fill: #1f2937;");
+        monthLabel.setStyle("-fx-font-weight: 600;");
+        monthLabel.setTextFill(Color.web(currentTheme.getTextPrimary()));
         monthLabel.fontProperty().bind(
                 javafx.beans.binding.Bindings.createObjectBinding(() ->
                                 Font.font("Poppins", 28 * getScale()),
@@ -221,7 +257,8 @@ public class CalendarView {
         String[] days = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
         for (int i = 0; i < 7; i++) {
             Label d = new Label(days[i]);
-            d.setStyle("-fx-text-fill: #6b7280; -fx-font-weight: 600;");
+            d.setTextFill(Color.web(currentTheme.getTextSecondary()));
+            d.setStyle("-fx-font-weight: 600;");
             d.setMinWidth(50);
             d.setAlignment(Pos.CENTER);
             dayHeaders.add(d, i, 0);
@@ -316,14 +353,9 @@ public class CalendarView {
         cell.setPadding(new Insets(6, 8, 8, 8));
         cell.setCursor(Cursor.HAND);
 
-        String bg = isSelected ? "#f3e8ff" :
-                isToday ? "#fce7f3" :
-                        hasTasks ? "#dbeafe" : "#ffffff";
-
-        String border = isSelected ? "#c084fc" :
-                isToday ? "#ec4899" :
-                        hasTasks ? "#93c5fd" : "#e5e7eb";
-
+        // Use theme-appropriate colors
+        String bg = getDayCellBackgroundColor(isSelected, isToday, hasTasks);
+        String border = getDayCellBorderColor(isSelected, isToday, hasTasks);
         String opacity = isOtherMonth ? "0.4" : "1.0";
 
         cell.setStyle(String.format("""
@@ -346,25 +378,21 @@ public class CalendarView {
 
         Label dayLabel = new Label(String.valueOf(date.getDayOfMonth()));
         dayLabel.setFont(Font.font("Poppins", 14));
-        dayLabel.setTextFill(isOtherMonth ? Color.web("#9ca3af") :
-                isToday ? Color.web("#be185d") :
-                        hasTasks ? Color.web("#1e40af") : Color.web("#374151"));
+
+        // Use theme-appropriate text colors
+        Color textColor = getDayCellTextColor(isOtherMonth, isToday, hasTasks);
+        dayLabel.setTextFill(textColor);
         dayLabel.setStyle("-fx-font-weight: bold;");
 
         HBox dots = new HBox(3);
         dots.setAlignment(Pos.CENTER);
         pending.stream().limit(3).forEach(t -> {
-            Circle c = new Circle(3, switch (t.getPriority()) {
-                case "high" -> Color.web("#ef4444");
-                case "medium" -> Color.web("#f59e0b");
-                case "low" -> Color.web("#10b981");
-                default -> Color.GRAY;
-            });
+            Circle c = new Circle(3, Color.web(getPriorityColor(t.getPriority())));
             dots.getChildren().add(c);
         });
         if (pending.size() > 3) {
             Label more = new Label("+" + (pending.size() - 3));
-            more.setTextFill(Color.web("#6b7280"));
+            more.setTextFill(Color.web(themeManager.getCurrentTheme().getTextSecondary()));
             more.setFont(Font.font(9));
             more.setStyle("-fx-font-weight: bold;");
             dots.getChildren().add(more);
@@ -399,7 +427,13 @@ public class CalendarView {
     private VBox createTaskCard() {
         VBox card = new VBox(16);
         card.setPadding(new Insets(24));
-        card.setBackground(new Background(new BackgroundFill(Color.web("#ffffff", 0.7), new CornerRadii(30), Insets.EMPTY)));
+
+        Theme currentTheme = themeManager.getCurrentTheme();
+        card.setBackground(new Background(new BackgroundFill(
+                Color.web(currentTheme.getCardColor()),
+                new CornerRadii(30),
+                Insets.EMPTY
+        )));
         card.setEffect(new DropShadow(20, Color.gray(0, 0.15)));
 
         HBox header = new HBox(12);
@@ -414,7 +448,7 @@ public class CalendarView {
 
         SVGPath calendarOutline = new SVGPath();
         calendarOutline.setContent("M8 2v4M16 2v4M3 10h18M5 2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z");
-        calendarOutline.setStroke(Color.web("#6b7280"));
+        calendarOutline.setStroke(Color.web(currentTheme.getTextSecondary()));
         calendarOutline.setStrokeWidth(2);
         calendarOutline.setFill(Color.TRANSPARENT);
         calendarOutline.setStrokeLineCap(StrokeLineCap.ROUND);
@@ -422,7 +456,7 @@ public class CalendarView {
 
         SVGPath checkmark = new SVGPath();
         checkmark.setContent("M9 12.75L11.25 15 15 9.75");
-        checkmark.setStroke(Color.web("#6b7280"));
+        checkmark.setStroke(Color.web(currentTheme.getTextSecondary()));
         checkmark.setStrokeWidth(2);
         checkmark.setFill(Color.TRANSPARENT);
         checkmark.setStrokeLineCap(StrokeLineCap.ROUND);
@@ -436,7 +470,8 @@ public class CalendarView {
         Label title = new Label(selectedDate != null ?
                 "Tasks for " + selectedDate.format(DateTimeFormatter.ofPattern("MMM d, yyyy")) :
                 "Select a date");
-        title.setStyle("-fx-font-weight: 600; -fx-text-fill: #1f2937;");
+        title.setStyle("-fx-font-weight: 600;");
+        title.setTextFill(Color.web(currentTheme.getTextPrimary()));
         title.fontProperty().bind(
                 javafx.beans.binding.Bindings.createObjectBinding(() ->
                                 Font.font("Poppins", 18 * getScale()),
@@ -459,7 +494,8 @@ public class CalendarView {
             emptyIconContainer.setMinSize(48, 48);
             emptyIconContainer.setPrefSize(48, 48);
             emptyIconContainer.setMaxSize(48, 48);
-            emptyIconContainer.setStyle("-fx-background-color: #f3f4f6; -fx-background-radius: 12;");
+            emptyIconContainer.setStyle(String.format("-fx-background-color: %s; -fx-background-radius: 12;",
+                    currentTheme.getBackgroundColor()));
 
             SVGPath emptyIcon = new SVGPath();
             if (selectedDate == null) {
@@ -467,7 +503,7 @@ public class CalendarView {
             } else {
                 emptyIcon.setContent("M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z");
             }
-            emptyIcon.setStroke(Color.web("#9ca3af"));
+            emptyIcon.setStroke(Color.web(currentTheme.getTextSecondary()));
             emptyIcon.setStrokeWidth(2);
             emptyIcon.setFill(Color.TRANSPARENT);
             emptyIcon.setStrokeLineCap(StrokeLineCap.ROUND);
@@ -476,7 +512,7 @@ public class CalendarView {
             emptyIconContainer.getChildren().add(emptyIcon);
 
             Label emptyText = new Label(selectedDate == null ? "Click a date to see tasks" : "No tasks for this date");
-            emptyText.setTextFill(Color.web("#9ca3af"));
+            emptyText.setTextFill(Color.web(currentTheme.getTextSecondary()));
             emptyText.fontProperty().bind(
                     javafx.beans.binding.Bindings.createObjectBinding(() ->
                                     Font.font("Poppins", 14 * getScale()),
@@ -507,24 +543,25 @@ public class CalendarView {
     private VBox createTodoItem(Todo todo) {
         VBox item = new VBox(8);
         item.setPadding(new Insets(14));
+
+        Theme currentTheme = themeManager.getCurrentTheme();
+        String bgColor = todo.isCompleted() ? getCompletedTaskColor() : currentTheme.getCardColor();
+        String borderColor = todo.isCompleted() ? getCompletedTaskBorderColor() : currentTheme.getTextSecondary();
+
         item.setBackground(new Background(new BackgroundFill(
-                todo.isCompleted() ? Color.web("#ecfdf5") : Color.web("#ffffff"),
-                new CornerRadii(22), Insets.EMPTY)));
-        item.setStyle("-fx-border-radius: 22; -fx-border-width: 2; -fx-border-color: " +
-                (todo.isCompleted() ? "#86efac" : "#e5e7eb") + ";");
+                Color.web(bgColor),
+                new CornerRadii(22),
+                Insets.EMPTY
+        )));
+        item.setStyle("-fx-border-radius: 22; -fx-border-width: 2; -fx-border-color: " + borderColor + ";");
 
         HBox top = new HBox(10);
         top.setAlignment(Pos.CENTER_LEFT);
 
-        Circle dot = new Circle(5, switch (todo.getPriority()) {
-            case "high" -> Color.web("#ef4444");
-            case "medium" -> Color.web("#f59e0b");
-            case "low" -> Color.web("#10b981");
-            default -> Color.GRAY;
-        });
+        Circle dot = new Circle(5, Color.web(getPriorityColor(todo.getPriority())));
 
         Label text = new Label(todo.getText());
-        text.setTextFill(Color.web("#1f2937"));
+        text.setTextFill(Color.web(currentTheme.getTextPrimary()));
         text.setFont(Font.font("Poppins", 14));
         if (todo.isCompleted()) {
             text.setStyle("-fx-strikethrough: true; -fx-opacity: 0.7;");
@@ -535,17 +572,14 @@ public class CalendarView {
 
         Label priority = new Label(todo.getPriority().toUpperCase());
         priority.setFont(Font.font("Poppins", 11));
+
+        String[] priorityColors = getPriorityBadgeColors(todo.getPriority());
         priority.setStyle(String.format("""
         -fx-background-color: %s;
         -fx-text-fill: %s;
         -fx-padding: 4 10;
         -fx-background-radius: 16;
-        """,
-                todo.getPriority().equals("high") ? "#fecaca" :
-                        todo.getPriority().equals("medium") ? "#fde68a" : "#bbf7d0",
-                todo.getPriority().equals("high") ? "#991b1b" :
-                        todo.getPriority().equals("medium") ? "#92400e" : "#166534"
-        ));
+        """, priorityColors[0], priorityColors[1]));
 
         badges.getChildren().add(priority);
 
@@ -564,11 +598,18 @@ public class CalendarView {
     private VBox createStatsCard() {
         VBox card = new VBox(16);
         card.setPadding(new Insets(20));
-        card.setBackground(new Background(new BackgroundFill(Color.web("#ffffff", 0.7), new CornerRadii(30), Insets.EMPTY)));
+
+        Theme currentTheme = themeManager.getCurrentTheme();
+        card.setBackground(new Background(new BackgroundFill(
+                Color.web(currentTheme.getCardColor()),
+                new CornerRadii(30),
+                Insets.EMPTY
+        )));
         card.setEffect(new DropShadow(20, Color.gray(0, 0.15)));
 
         Label title = new Label("Quick Stats");
-        title.setStyle("-fx-font-weight: 600; -fx-text-fill: #1f2937;");
+        title.setStyle("-fx-font-weight: 600;");
+        title.setTextFill(Color.web(currentTheme.getTextPrimary()));
         title.fontProperty().bind(
                 javafx.beans.binding.Bindings.createObjectBinding(() ->
                                 Font.font("Poppins", 17 * getScale()),
@@ -578,10 +619,10 @@ public class CalendarView {
 
         VBox stats = new VBox(10);
         stats.getChildren().addAll(
-                statRow("Total Tasks", String.valueOf(todos.size()), "#dbeafe"),
-                statRow("Pending", String.valueOf(todos.stream().filter(t -> !t.isCompleted()).count()), "#fed7aa"),
-                statRow("Completed", String.valueOf(todos.stream().filter(Todo::isCompleted).count()), "#d1fae5"),
-                statRow("High Priority", String.valueOf(todos.stream().filter(t -> "high".equals(t.getPriority()) && !t.isCompleted()).count()), "#fecaca")
+                statRow("Total Tasks", String.valueOf(todos.size()), currentTheme.getStatCardColor1()),
+                statRow("Pending", String.valueOf(todos.stream().filter(t -> !t.isCompleted()).count()), currentTheme.getStatCardColor2()),
+                statRow("Completed", String.valueOf(todos.stream().filter(Todo::isCompleted).count()), currentTheme.getStatCardColor3()),
+                statRow("High Priority", String.valueOf(todos.stream().filter(t -> "high".equals(t.getPriority()) && !t.isCompleted()).count()), currentTheme.getStatCardColor4())
         );
 
         card.getChildren().addAll(title, stats);
@@ -593,14 +634,15 @@ public class CalendarView {
         row.setAlignment(Pos.CENTER_LEFT);
 
         Label l = new Label(label);
-        l.setTextFill(Color.web("#6b7280"));
+        l.setTextFill(Color.web(themeManager.getCurrentTheme().getTextSecondary()));
         l.setFont(Font.font("Poppins", 13));
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
         Label v = new Label(value);
-        v.setStyle("-fx-background-color: " + bg + "; -fx-padding: 5 10; -fx-background-radius: 16; -fx-text-fill: #1f2937;");
+        v.setStyle("-fx-background-color: " + bg + "; -fx-padding: 5 10; -fx-background-radius: 16;");
+        v.setTextFill(Color.web(themeManager.getCurrentTheme().getTextPrimary()));
         v.setFont(Font.font("Poppins", 13));
 
         row.getChildren().addAll(l, spacer, v);
@@ -609,11 +651,14 @@ public class CalendarView {
 
     private Button createNavButton(String type, Runnable action) {
         Button btn = new Button();
-        btn.setStyle("-fx-background-radius: 50; -fx-padding: 8 12; -fx-background-color: #f3f4f6; -fx-font-family: 'Poppins'; -fx-cursor: hand;");
+        Theme currentTheme = themeManager.getCurrentTheme();
+
+        btn.setStyle(String.format("-fx-background-radius: 50; -fx-padding: 8 12; -fx-background-color: %s; -fx-font-family: 'Poppins'; -fx-cursor: hand;",
+                currentTheme.getButtonColor()));
         btn.setOnAction(e -> action.run());
 
         FontIcon icon = new FontIcon();
-        icon.setIconColor(Color.web("#4b5563"));
+        icon.setIconColor(Color.web(currentTheme.getTextPrimary()));
         icon.setIconSize(16);
 
         if (type.equals("Previous")) {
@@ -642,6 +687,136 @@ public class CalendarView {
                 .filter(t -> t.getDueDate() != null &&
                         LocalDate.parse(t.getDueDate()).equals(date))
                 .collect(Collectors.toList());
+    }
+
+    // Theme-based color methods
+    private String getPriorityColor(String priority) {
+        Theme currentTheme = themeManager.getCurrentTheme();
+        if (currentTheme instanceof com.example.demo1.Theme.GalaxyTheme) {
+            // Galaxy theme colors
+            switch (priority) {
+                case "high": return "#ef4444";    // Keep original for visibility
+                case "medium": return "#f59e0b";  // Keep original for visibility
+                case "low": return "#10b981";     // Keep original for visibility
+                default: return "#9ca3af";
+            }
+        } else {
+            // Pastel theme colors (original)
+            switch (priority) {
+                case "high": return "#ef4444";
+                case "medium": return "#f59e0b";
+                case "low": return "#10b981";
+                default: return "#9ca3af";
+            }
+        }
+    }
+
+    private String[] getPriorityBadgeColors(String priority) {
+        Theme currentTheme = themeManager.getCurrentTheme();
+        if (currentTheme instanceof com.example.demo1.Theme.GalaxyTheme) {
+            // Galaxy theme badge colors
+            switch (priority) {
+                case "high": return new String[]{"#fecaca", "#991b1b"};
+                case "medium": return new String[]{"#fde68a", "#92400e"};
+                case "low": return new String[]{"#bbf7d0", "#166534"};
+                default: return new String[]{"#d1d5db", "#374151"};
+            }
+        } else {
+            // Pastel theme badge colors (original)
+            switch (priority) {
+                case "high": return new String[]{"#fecaca", "#991b1b"};
+                case "medium": return new String[]{"#fde68a", "#92400e"};
+                case "low": return new String[]{"#bbf7d0", "#166534"};
+                default: return new String[]{"#d1d5db", "#374151"};
+            }
+        }
+    }
+
+    private String getTodayColor() {
+        Theme currentTheme = themeManager.getCurrentTheme();
+        if (currentTheme instanceof com.example.demo1.Theme.GalaxyTheme) {
+            return "#ec4899"; // Keep original pink for visibility
+        } else {
+            return "#ec4899"; // Original
+        }
+    }
+
+    private String getTaskDueColor() {
+        Theme currentTheme = themeManager.getCurrentTheme();
+        if (currentTheme instanceof com.example.demo1.Theme.GalaxyTheme) {
+            return "#93c5fd"; // Keep original blue for visibility
+        } else {
+            return "#93c5fd"; // Original
+        }
+    }
+
+    private String getDayCellBackgroundColor(boolean isSelected, boolean isToday, boolean hasTasks) {
+        Theme currentTheme = themeManager.getCurrentTheme();
+        if (currentTheme instanceof com.example.demo1.Theme.GalaxyTheme) {
+            // Galaxy theme backgrounds
+            if (isSelected) return "#4a5568";     // Darker selection
+            if (isToday) return "#2d3748";        // Dark today
+            if (hasTasks) return "#3182ce";       // Blue for tasks
+            return "#2d3748";                     // Default dark
+        } else {
+            // Pastel theme backgrounds (original)
+            if (isSelected) return "#f3e8ff";
+            if (isToday) return "#fce7f3";
+            if (hasTasks) return "#dbeafe";
+            return "#ffffff";
+        }
+    }
+
+    private String getDayCellBorderColor(boolean isSelected, boolean isToday, boolean hasTasks) {
+        Theme currentTheme = themeManager.getCurrentTheme();
+        if (currentTheme instanceof com.example.demo1.Theme.GalaxyTheme) {
+            // Galaxy theme borders
+            if (isSelected) return "#c084fc";
+            if (isToday) return "#ec4899";
+            if (hasTasks) return "#63b3ed";
+            return "#4a5568";
+        } else {
+            // Pastel theme borders (original)
+            if (isSelected) return "#c084fc";
+            if (isToday) return "#ec4899";
+            if (hasTasks) return "#93c5fd";
+            return "#e5e7eb";
+        }
+    }
+
+    private Color getDayCellTextColor(boolean isOtherMonth, boolean isToday, boolean hasTasks) {
+        Theme currentTheme = themeManager.getCurrentTheme();
+        if (currentTheme instanceof com.example.demo1.Theme.GalaxyTheme) {
+            // Galaxy theme text colors
+            if (isOtherMonth) return Color.web("#718096");
+            if (isToday) return Color.web("#fbb6ce");
+            if (hasTasks) return Color.web("#90cdf4");
+            return Color.web("#e2e8f0");
+        } else {
+            // Pastel theme text colors (original)
+            if (isOtherMonth) return Color.web("#9ca3af");
+            if (isToday) return Color.web("#be185d");
+            if (hasTasks) return Color.web("#1e40af");
+            return Color.web("#374151");
+        }
+    }
+
+    private String getCompletedTaskColor() {
+        Theme currentTheme = themeManager.getCurrentTheme();
+        if (currentTheme instanceof com.example.demo1.Theme.GalaxyTheme) {
+            return "#2d3748"; // Dark completed task
+        } else {
+            return "#ecfdf5"; // Original light completed task
+        }
+    }
+
+    private String getCompletedTaskBorderColor() {
+        Theme currentTheme = themeManager.getCurrentTheme();
+        if (currentTheme instanceof com.example.demo1.Theme.GalaxyTheme) {
+            return "#4a5568"; // Dark border
+        } else {
+            return "#86efac"; // Original light border
+        }
     }
 
     private List<Todo> loadTodosFromDB() {
@@ -711,6 +886,7 @@ public class CalendarView {
         public String getPriority() { return priority; }
         public String getDueDate() { return dueDate; }
     }
+
     // REQUIRED FOR CalendarView
     public boolean isConnected() {
         try {
