@@ -218,7 +218,7 @@ public class MainController implements ThemeManager.ThemeChangeListener {
     }
 
     private void showDashboard() {
-        Dashboard dashboard = new Dashboard();
+        Dashboard dashboard = new Dashboard(userId, userName);
         dashboard.setSidebarController(sidebarController);
         dashboard.setSidebarController(sidebarController);
 
