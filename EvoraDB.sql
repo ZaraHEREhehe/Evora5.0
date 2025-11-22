@@ -626,6 +626,9 @@ END;
 
 -- Drop the existing completion log table and triggers
 DROP TABLE IF EXISTS TaskCompletionLog;
+-- Drop all triggers that reference the deleted table
+DROP TRIGGER trg_LogCompletedTask;
+DROP TRIGGER trg_LogDeletedCompletedTask;
 
 -- Create a table to permanently log ALL deleted tasks for analytics
 CREATE TABLE TaskDeletionLog (
