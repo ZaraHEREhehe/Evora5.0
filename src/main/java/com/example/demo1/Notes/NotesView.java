@@ -1,5 +1,8 @@
 package com.example.demo1.Notes;
 
+import com.example.demo1.Theme.PastelTheme;
+import com.example.demo1.Theme.ThemeManager;
+import com.example.demo1.Theme.Theme;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -21,17 +24,32 @@ public class NotesView extends BorderPane {
     private final List<StickyNote> notes = new ArrayList<>();
     private boolean showAddForm = false;
     private VBox mainContent;
+    private ThemeManager themeManager;
 
     public NotesView(NotesController controller) {
         this.controller = controller;
+        this.themeManager = ThemeManager.getInstance();
 
         boardPane = new Pane();
         boardPane.setPrefSize(650, 1000);
         boardPane.setMinSize(650, 1000);
 
+        // Board background remains consistent across themes
         boardPane.setStyle("-fx-background-color: linear-gradient(to bottom right, #fef3c7, #fed7aa); " +
                 "-fx-border-color: #92400e; -fx-border-width: 4; " +
                 "-fx-background-radius: 30; -fx-border-radius: 30;");
+        // Add listener for board size changes
+        boardPane.widthProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal.doubleValue() > 0) {
+                addCornerPins(); // Reposition pins when board size changes
+            }
+        });
+
+        boardPane.heightProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal.doubleValue() > 0) {
+                addCornerPins(); // Reposition pins when board size changes
+            }
+        });
 
         createView();
         loadExistingNotes(); //from db
@@ -52,25 +70,27 @@ public class NotesView extends BorderPane {
     }
 
     private void createView() {
-        // Main container with proper spacing
+        Theme currentTheme = themeManager.getCurrentTheme();
+
+        // Main container with proper spacing - USE THEME BACKGROUND
         mainContent = new VBox(20);
         mainContent.setPadding(new Insets(20));
         mainContent.setAlignment(Pos.TOP_CENTER);
-        mainContent.setStyle("-fx-background-color: #fdf7ff;");
+        mainContent.setStyle("-fx-background-color: " + currentTheme.getBackgroundColor() + ";");
 
-        // Title section
+        // Title section - USE THEME TEXT COLORS
         Label title = new Label("Sticky Notes");
         title.setFont(Font.font("Poppins", 32));
-        title.setTextFill(Color.web("#5c5470"));
+        title.setStyle("-fx-text-fill: " + currentTheme.getTextPrimary() + ";");
 
         Label subtitle = new Label("Jot down your thoughts and ideas on your digital corkboard!");
         subtitle.setFont(Font.font("Poppins", 14));
-        subtitle.setTextFill(Color.web("#2E2E2E"));
+        subtitle.setStyle("-fx-text-fill: " + currentTheme.getTextSecondary() + ";");
 
         VBox headerBox = new VBox(8, title, subtitle);
         headerBox.setAlignment(Pos.CENTER);
 
-        // Add Note Button
+        // Add Note Button - USE THEME COLORS (same as old version)
         Button addBtn = new Button("+ Add New Note");
         addBtn.setFont(Font.font("Poppins", 14));
         addBtn.setStyle("-fx-background-color: linear-gradient(to right, #FACEEA, #D7D8FF); " +
@@ -98,18 +118,27 @@ public class NotesView extends BorderPane {
     }
 
     private void addCornerPins() {
-        // Add realistic gray pins to all four corners
-        double[][] cornerPositions = {
-                {20, 20},    // Top-left
-                {950, 20},   // Top-right
-                {20, 970},   // Bottom-left
-                {950, 970}   // Bottom-right
-        };
+        // Wait for the boardPane to be laid out to get its actual size
+        Platform.runLater(() -> {
+            double boardWidth = boardPane.getWidth();
+            double boardHeight = boardPane.getHeight();
 
-        for (double[] position : cornerPositions) {
-            RealisticPin pin = new RealisticPin(position[0], position[1]);
-            boardPane.getChildren().add(pin);
-        }
+            // Use percentages of the actual board size instead of hardcoded positions
+            double[][] cornerPositions = {
+                    {20, 20},                                    // Top-left (fixed offset)
+                    {boardWidth - 30, 20},                       // Top-right
+                    {20, boardHeight - 30},                      // Bottom-left
+                    {boardWidth - 30, boardHeight - 30}          // Bottom-right
+            };
+
+            // Clear any existing pins first
+            boardPane.getChildren().removeIf(node -> node instanceof RealisticPin);
+
+            for (double[] position : cornerPositions) {
+                RealisticPin pin = new RealisticPin(position[0], position[1]);
+                boardPane.getChildren().add(pin);
+            }
+        });
     }
 
     private void toggleAddForm() {
@@ -128,21 +157,13 @@ public class NotesView extends BorderPane {
     private void showAddForm() {
         showAddForm = true;
 
-        // Create add note form - smaller and cuter like the TypeScript version
+        // Create add note form - KEEP THE SAME STYLE AS ORIGINAL
         VBox form = new VBox(15);
         form.setPadding(new Insets(25));
-      /*  form.setStyle("-fx-background-color: rgba(255,255,255,0.95); " +
+        form.setStyle("-fx-background-color: rgba(255,255,255,0.95); " +
                 "-fx-background-radius: 25; -fx-border-color: #FACEEA; -fx-border-width: 2; " +
-                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0.5, 0, 2);");*/
-        form.setStyle("""
-            -fx-background-color: rgba(255,255,255,0.95);
-            -fx-background-radius: 25;
-            -fx-border-color: #FACEEA;
-            -fx-border-width: 2;
-            -fx-border-radius: 25;
-            -fx-background-insets: 0;
-            -fx-padding: 25;
-        """+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0.5, 0, 2);");
+                "-fx-border-radius: 25; -fx-background-insets: 0; -fx-padding: 25; " +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0.5, 0, 2);");
 
         form.setMaxWidth(380);
         form.setAlignment(Pos.TOP_CENTER);
@@ -315,7 +336,6 @@ public class NotesView extends BorderPane {
         });
     }
 
-
     private void addNewNote(String content, int colorIndex) {
         // color_ids start at 1
         int colorId = colorIndex + 1;
@@ -402,7 +422,7 @@ public class NotesView extends BorderPane {
             textArea.setFont(Font.font("Comic Sans MS", 14));
             textArea.setStyle("-fx-background-color: transparent; " +
                     "-fx-border-color: transparent; " +
-                    "-fx-text-fill: #374151; " +
+                    "-fx-text-fill: #374151; " + // Keep consistent text color for notes
                     "-fx-font-weight: normal; " +
                     "-fx-opacity: 1.0; " +
                     "-fx-focus-color: transparent; " +
@@ -546,6 +566,5 @@ public class NotesView extends BorderPane {
                 controller.updateNotePosition(noteId, newX, newY);
             }
         }
-
     }
 }
