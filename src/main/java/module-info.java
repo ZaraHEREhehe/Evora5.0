@@ -1,4 +1,4 @@
-module com.example.demo1 {
+module com.example.Evora {
     requires javafx.controls;
     requires javafx.fxml;
     requires javafx.web;
@@ -17,12 +17,12 @@ module com.example.demo1 {
     requires java.naming; // needed for JDBC
     requires com.microsoft.sqlserver.jdbc; // module name for SQL Server driver
 
-    //requires com.example.demo1;
-    //exports com.example.demo1.Whitenoise;
-    opens com.example.demo1 to javafx.fxml;
-    opens com.example.demo1.Pomodoro to javafx.fxml; //
-    exports com.example.demo1.Theme;
-    exports com.example.demo1;
-    exports com.example.demo1.Calendar;
-    opens com.example.demo1.Calendar to javafx.fxml;
+    //requires com.example.Evora;
+    //exports com.example.Evora.Whitenoise;
+    opens com.example.Evora to javafx.fxml;
+    opens com.example.Evora.Pomodoro to javafx.fxml; //
+    exports com.example.Evora.Theme;
+    exports com.example.Evora;
+    exports com.example.Evora.Calendar;
+    opens com.example.Evora.Calendar to javafx.fxml;
 }
