@@ -464,7 +464,7 @@ public class MoodView extends BorderPane {
         double chartWidth = chartCanvas.getWidth() - 2 * padding;
         double chartHeight = chartCanvas.getHeight() - 2 * padding;
 
-        // Find the closest data point
+        // Handle single entry positioning
         double mouseX = event.getX();
         double mouseY = event.getY();
 
@@ -473,12 +473,21 @@ public class MoodView extends BorderPane {
 
         for (int i = 0; i < entries.size(); i++) {
             MoodController.MoodEntry entry = entries.get(i);
-            double x = padding + (chartWidth / (entries.size() - 1)) * i;
-            double y = padding + chartHeight - ((entry.getMoodValue() - 1) / 4.0) * chartHeight;
+            double x, y;
+
+            // Position single entry in center
+            if (entries.size() == 1) {
+                x = padding + chartWidth / 2;
+            } else {
+                x = padding + (chartWidth / (entries.size() - 1)) * i;
+            }
+
+            y = padding + chartHeight - ((entry.getMoodValue() - 1) / 4.0) * chartHeight;
 
             double distance = Math.sqrt(Math.pow(mouseX - x, 2) + Math.pow(mouseY - y, 2));
+            double detectionRadius = entries.size() == 1 ? 25 : 20; // Larger radius for single entry
 
-            if (distance < 20 && distance < minDistance) {
+            if (distance < detectionRadius && distance < minDistance) {
                 minDistance = distance;
                 closestEntry = entry;
             }
@@ -507,7 +516,43 @@ public class MoodView extends BorderPane {
             return;
         }
 
-        drawChartWithData(gc, entries);
+        // Handle single entry case
+        if (entries.size() == 1) {
+            drawSingleEntryChart(gc, entries.get(0));
+        } else {
+            drawChartWithData(gc, entries);
+        }
+    }
+
+    //Handle single entry visualization for new users
+    private void drawSingleEntryChart(GraphicsContext gc, MoodController.MoodEntry entry) {
+        double padding = 60;
+        double chartWidth = chartCanvas.getWidth() - 2 * padding;
+        double chartHeight = chartCanvas.getHeight() - 2 * padding;
+
+        drawGrid(gc, padding, chartWidth, chartHeight, List.of(entry, entry)); // Pass 2 entries for grid
+        drawYAxisLabels(gc, padding, chartHeight);
+
+        // Draw the single data point prominently
+        double x = padding + chartWidth / 2; // Center the point
+        double y = padding + chartHeight - ((entry.getMoodValue() - 1) / 4.0) * chartHeight;
+
+        // Draw a larger, more prominent point for single entry
+        gc.setFill(Color.web(colors.get("accent_purple")));
+        gc.setStroke(Color.web(colors.get("accent_pink")));
+        gc.setLineWidth(3);
+        gc.fillOval(x - 8, y - 8, 16, 16);
+        gc.strokeOval(x - 8, y - 8, 16, 16);
+
+        // Add today's date label
+        gc.setFill(CHART_TEXT_COLOR);
+        gc.setFont(Font.font("System", FontWeight.LIGHT, 12));
+        String dateStr = entry.getDate().format(DateTimeFormatter.ofPattern("MMM dd, yyyy"));
+        gc.fillText(dateStr, x - 25, chartCanvas.getHeight() - 15);
+
+        // Add mood value label
+        String moodLabel = controller.getMoodLabels()[entry.getMoodValue() - 1];
+        gc.fillText(moodLabel + " (" + entry.getMoodValue() + "/5)", x - 30, padding - 10);
     }
 
     private void drawPlaceholderChart(GraphicsContext gc) {
@@ -543,8 +588,14 @@ public class MoodView extends BorderPane {
             gc.strokeLine(padding, y, padding + chartWidth, y);
         }
 
-        // Vertical grid lines
-        int verticalDivisions = Math.min(entries.size() - 1, 10);
+        // Vertical grid lines to handle single entry
+        int verticalDivisions;
+        if (entries.size() <= 1) {
+            verticalDivisions = 4; // Show 5 vertical lines for single entry
+        } else {
+            verticalDivisions = Math.min(entries.size() - 1, 10);
+        }
+
         for (int i = 0; i <= verticalDivisions; i++) {
             double x = padding + (chartWidth / verticalDivisions) * i;
             gc.strokeLine(x, padding, x, padding + chartHeight);
