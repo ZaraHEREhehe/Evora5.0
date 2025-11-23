@@ -30,6 +30,12 @@ public class LoginView extends Application {
     private VBox signupSection;
     private StackPane mainContent;
 
+    // Validation labels only for signup
+    private Label usernameValidationLabel;
+    private Label emailValidationLabel;
+    private Label passwordValidationLabel;
+    private Label confirmPasswordValidationLabel;
+
     @Override
     public void start(Stage stage) {
         primaryStage = stage;
@@ -267,7 +273,7 @@ public class LoginView extends Application {
     }
 
     private VBox createLoginForm() {
-        VBox form = new VBox(15);
+        VBox form = new VBox(15); // Back to original spacing
         form.setAlignment(Pos.CENTER_LEFT);
         form.setPrefWidth(280);
 
@@ -277,7 +283,6 @@ public class LoginView extends Application {
         VBox passwordBox = createFormField("Password", "Enter your password", true);
         passwordField = (PasswordField) passwordBox.getChildren().get(1);
 
-      //  HBox options = createFormOptions();
         Button loginButton = createLoginButton();
         HBox signupLink = createSignupLink();
 
@@ -289,21 +294,41 @@ public class LoginView extends Application {
     }
 
     private VBox createSignupForm() {
-        VBox form = new VBox(15);
+        VBox form = new VBox(10); // Reduced spacing for validation labels
         form.setAlignment(Pos.CENTER_LEFT);
         form.setPrefWidth(280);
 
         VBox usernameBox = createFormField("Username", "Choose a username", false);
         signupUsernameField = (TextField) usernameBox.getChildren().get(1);
 
+        // Username validation
+        usernameValidationLabel = createValidationLabel();
+        usernameBox.getChildren().add(usernameValidationLabel);
+        setupUsernameValidation();
+
         VBox emailBox = createFormField("Email Address", "Enter your email", false);
         signupEmailField = (TextField) emailBox.getChildren().get(1);
+
+        // Email validation
+        emailValidationLabel = createValidationLabel();
+        emailBox.getChildren().add(emailValidationLabel);
+        setupSignupEmailValidation();
 
         VBox passwordBox = createFormField("Password", "Create a password", true);
         signupPasswordField = (PasswordField) passwordBox.getChildren().get(1);
 
+        // Password validation
+        passwordValidationLabel = createValidationLabel();
+        passwordBox.getChildren().add(passwordValidationLabel);
+        setupSignupPasswordValidation();
+
         VBox confirmPasswordBox = createFormField("Confirm Password", "Confirm your password", true);
         signupConfirmPasswordField = (PasswordField) confirmPasswordBox.getChildren().get(1);
+
+        // Confirm password validation
+        confirmPasswordValidationLabel = createValidationLabel();
+        confirmPasswordBox.getChildren().add(confirmPasswordValidationLabel);
+        setupConfirmPasswordValidation();
 
         Button signupButton = createSignupButton();
         HBox loginLink = createLoginLink();
@@ -313,6 +338,127 @@ public class LoginView extends Application {
         );
 
         return form;
+    }
+
+    // Create styled validation labels
+    private Label createValidationLabel() {
+        Label validationLabel = new Label();
+        validationLabel.setStyle(
+                "-fx-text-fill: #e75480; " + // Always red for errors
+                        "-fx-font-family: 'Segoe UI', sans-serif; " +
+                        "-fx-font-size: 10px; " +
+                        "-fx-font-weight: bold; " +
+                        "-fx-padding: 2 0 0 5;"
+        );
+        validationLabel.setWrapText(true);
+        validationLabel.setMaxWidth(280);
+        return validationLabel;
+    }
+
+    // Real-time validation methods for signup only
+    private void setupSignupEmailValidation() {
+        signupEmailField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue.isEmpty()) {
+                emailValidationLabel.setText("");
+                setFieldValidStyle(signupEmailField, true);
+            } else if (!isValidEmail(newValue)) {
+                emailValidationLabel.setText("✗ Please enter a valid email address");
+                setFieldValidStyle(signupEmailField, false);
+            } else {
+                emailValidationLabel.setText("✓ Valid email");
+                setFieldValidStyle(signupEmailField, true);
+            }
+        });
+    }
+
+    private void setupSignupPasswordValidation() {
+        signupPasswordField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue.isEmpty()) {
+                passwordValidationLabel.setText("");
+                setFieldValidStyle(signupPasswordField, true);
+            } else if (newValue.length() < 6) {
+                passwordValidationLabel.setText("✗ Password must be at least 6 characters");
+                setFieldValidStyle(signupPasswordField, false);
+            } else {
+                passwordValidationLabel.setText("✓ Valid password");
+                setFieldValidStyle(signupPasswordField, true);
+            }
+        });
+    }
+
+    private void setupUsernameValidation() {
+        signupUsernameField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue.isEmpty()) {
+                usernameValidationLabel.setText("");
+                setFieldValidStyle(signupUsernameField, true);
+            } else if (newValue.length() < 3) {
+                usernameValidationLabel.setText("✗ Username must be at least 3 characters");
+                setFieldValidStyle(signupUsernameField, false);
+            } else {
+                usernameValidationLabel.setText("✓ Valid username");
+                setFieldValidStyle(signupUsernameField, true);
+            }
+        });
+    }
+
+    private void setupConfirmPasswordValidation() {
+        signupConfirmPasswordField.textProperty().addListener((observable, oldValue, newValue) -> {
+            String password = signupPasswordField.getText();
+
+            if (newValue.isEmpty()) {
+                confirmPasswordValidationLabel.setText("");
+                setFieldValidStyle(signupConfirmPasswordField, true);
+            } else if (!newValue.equals(password)) {
+                confirmPasswordValidationLabel.setText("✗ Passwords don't match");
+                setFieldValidStyle(signupConfirmPasswordField, false);
+            } else {
+                confirmPasswordValidationLabel.setText("✓ Passwords match");
+                setFieldValidStyle(signupConfirmPasswordField, true);
+            }
+        });
+
+        // Also validate when password field changes
+        signupPasswordField.textProperty().addListener((observable, oldValue, newValue) -> {
+            String confirmPassword = signupConfirmPasswordField.getText();
+            if (!confirmPassword.isEmpty()) {
+                if (!confirmPassword.equals(newValue)) {
+                    confirmPasswordValidationLabel.setText("✗ Passwords don't match");
+                    setFieldValidStyle(signupConfirmPasswordField, false);
+                } else {
+                    confirmPasswordValidationLabel.setText("✓ Passwords match");
+                    setFieldValidStyle(signupConfirmPasswordField, true);
+                }
+            }
+        });
+    }
+
+    // Style fields based on validation - only show red for errors
+    private void setFieldValidStyle(TextInputControl field, boolean isValid) {
+        if (isValid) {
+            field.setStyle(
+                    "-fx-background-color: #f8f8f8; " +
+                            "-fx-background-radius: 8; " +
+                            "-fx-border-radius: 8; " +
+                            "-fx-border-color: #e0e0e0; " +
+                            "-fx-padding: 0 12; " +
+                            "-fx-font-family: 'Segoe UI', sans-serif; " +
+                            "-fx-font-size: 13px;"
+            );
+        } else {
+            field.setStyle(
+                    "-fx-background-color: #fff5f5; " +
+                            "-fx-background-radius: 8; " +
+                            "-fx-border-radius: 8; " +
+                            "-fx-border-color: #e75480; " +
+                            "-fx-padding: 0 12; " +
+                            "-fx-font-family: 'Segoe UI', sans-serif; " +
+                            "-fx-font-size: 13px;"
+            );
+        }
+    }
+
+    private boolean isValidEmail(String email) {
+        return email != null && email.contains("@") && email.contains(".") && email.length() > 5;
     }
 
     private void moveToNextField(Control currentField, Control nextField) {
@@ -347,26 +493,6 @@ public class LoginView extends Application {
 
         field.getChildren().addAll(label, input);
         return field;
-    }
-
-    private HBox createFormOptions() {
-        HBox options = new HBox(60);
-        options.setAlignment(Pos.CENTER_LEFT);
-
-        CheckBox rememberMe = new CheckBox("Remember me");
-        rememberMe.setStyle("-fx-font-family: 'Segoe UI', sans-serif; " +
-                "-fx-font-size: 11px; -fx-text-fill: #666;");
-
-        Button forgotPassword = new Button("Forgot Password?");
-        forgotPassword.setStyle("-fx-background-color: transparent; " +
-                "-fx-text-fill: #e75480; " +
-                "-fx-font-family: 'Segoe UI', sans-serif; " +
-                "-fx-font-size: 11px; " +
-                "-fx-underline: true; " +
-                "-fx-padding: 0;");
-
-        options.getChildren().addAll(rememberMe);
-        return options;
     }
 
     private Button createLoginButton() {
@@ -481,12 +607,29 @@ public class LoginView extends Application {
         loginSection.setVisible(false);
         signupSection.setVisible(true);
         clearLoginFields();
+        // Reset validation labels when switching to signup
+        resetSignupValidation();
     }
 
     private void switchToLogin() {
         signupSection.setVisible(false);
         loginSection.setVisible(true);
         clearSignupFields();
+        // Reset validation labels when switching to login
+        resetSignupValidation();
+    }
+
+    private void resetSignupValidation() {
+        if (usernameValidationLabel != null) usernameValidationLabel.setText("");
+        if (emailValidationLabel != null) emailValidationLabel.setText("");
+        if (passwordValidationLabel != null) passwordValidationLabel.setText("");
+        if (confirmPasswordValidationLabel != null) confirmPasswordValidationLabel.setText("");
+
+        // Reset field styles
+        if (signupUsernameField != null) setFieldValidStyle(signupUsernameField, true);
+        if (signupEmailField != null) setFieldValidStyle(signupEmailField, true);
+        if (signupPasswordField != null) setFieldValidStyle(signupPasswordField, true);
+        if (signupConfirmPasswordField != null) setFieldValidStyle(signupConfirmPasswordField, true);
     }
 
     private void clearLoginFields() {

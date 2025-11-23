@@ -5,14 +5,17 @@ import com.example.Evora.Theme.ThemeService;
 import com.example.Evora.Theme.ThemeManager;
 import com.example.Evora.HelloApplication;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.DialogPane;
+
 import java.sql.*;
 
 public class LoginController {
 
-    public void handleLogin(String email, String password) {
+    public boolean handleLogin(String email, String password) {
         if (email == null || email.isEmpty() || password == null || password.isEmpty()) {
             showAlert("Please fill in all fields", Alert.AlertType.WARNING);
-            return;
+            return false;
         }
 
         // database authentication + setting theme
@@ -27,43 +30,39 @@ public class LoginController {
 
                 // Navigate to dashboard
                 HelloApplication.showDashboard(username, userId);
+                return true;
             } else {
                 showAlert("Invalid email or password", Alert.AlertType.ERROR);
+                return false;
             }
         } catch (SQLException e) {
             showAlert("Database error: " + e.getMessage(), Alert.AlertType.ERROR);
             e.printStackTrace();
+            return false;
         }
     }
 
-    //helper to laod user theme
-    private void loadUserTheme(int userId) {
-        String userTheme = ThemeService.getUserTheme(userId);
-        ThemeManager themeManager = ThemeManager.getInstance();
-        themeManager.setTheme(userTheme);
-        System.out.println("🎨 Loaded user theme: " + userTheme);
-    }
-
-    public void handleSignup(String username, String email, String password, String confirmPassword) {
+    // NEW: Handle signup with auto-login
+    public boolean handleSignup(String username, String email, String password, String confirmPassword) {
         if (username == null || username.isEmpty() || email == null || email.isEmpty() ||
                 password == null || password.isEmpty() || confirmPassword == null || confirmPassword.isEmpty()) {
             showAlert("Please fill in all fields", Alert.AlertType.WARNING);
-            return;
+            return false;
         }
 
         if (!password.equals(confirmPassword)) {
             showAlert("Passwords do not match", Alert.AlertType.ERROR);
-            return;
+            return false;
         }
 
         if (password.length() < 6) {
             showAlert("Password must be at least 6 characters long", Alert.AlertType.WARNING);
-            return;
+            return false;
         }
 
         if (!isValidEmail(email)) {
             showAlert("Please enter a valid email address", Alert.AlertType.WARNING);
-            return;
+            return false;
         }
 
         try {
@@ -72,15 +71,28 @@ public class LoginController {
                 // Set default theme for new user
                 ThemeService.saveUserTheme(newUserId, "pastel");
 
-                showAlert("Account created successfully! You can now login.", Alert.AlertType.INFORMATION);
-                System.out.println("✅ Signup successful! User: " + username + " Email: " + email + " ID: " + newUserId);
+                // NEW: Auto-login after successful signup
+                System.out.println("✅ Signup successful! Auto-logging in user: " + username + " ID: " + newUserId);
+                loadUserTheme(newUserId);
+                HelloApplication.showDashboard(username, newUserId);
+                return true;
             } else {
                 showAlert("Email already exists. Please use a different email.", Alert.AlertType.ERROR);
+                return false;
             }
         } catch (SQLException e) {
             showAlert("Database error: " + e.getMessage(), Alert.AlertType.ERROR);
             e.printStackTrace();
+            return false;
         }
+    }
+
+    //helper to load user theme
+    private void loadUserTheme(int userId) {
+        String userTheme = ThemeService.getUserTheme(userId);
+        ThemeManager themeManager = ThemeManager.getInstance();
+        themeManager.setTheme(userTheme);
+        System.out.println("🎨 Loaded user theme: " + userTheme);
     }
 
     // REAL DATABASE AUTHENTICATION
@@ -206,11 +218,33 @@ public class LoginController {
         return email != null && email.contains("@") && email.contains(".") && email.length() > 5;
     }
 
+    // NEW: Improved alert styling
     private void showAlert(String message, Alert.AlertType type) {
         Alert alert = new Alert(type);
         alert.setTitle("Évora");
         alert.setHeaderText(null);
         alert.setContentText(message);
+
+        // Style the alert dialog
+        DialogPane dialogPane = alert.getDialogPane();
+        dialogPane.setStyle(
+                "-fx-background-color: white; " +
+                        "-fx-border-color: #e0e0e0; " +
+                        "-fx-border-width: 2; " +
+                        "-fx-border-radius: 15; " +
+                        "-fx-background-radius: 15; " +
+                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0.5, 0, 2);"
+        );
+
+        // Style the buttons
+        dialogPane.lookupButton(ButtonType.OK).setStyle(
+                "-fx-background-color: linear-gradient(to right, #ff9a9e, #fad0c4); " +
+                        "-fx-text-fill: white; " +
+                        "-fx-background-radius: 10; " +
+                        "-fx-font-weight: bold; " +
+                        "-fx-padding: 8 20;"
+        );
+
         alert.showAndWait();
     }
 }
