@@ -72,7 +72,6 @@ public class WhiteNoiseView {
     public void createAndShow(Stage stage, SidebarController sidebarController, String userName) {
         BorderPane root = new BorderPane();
 
-        // FIXED: Use theme background color
         Theme currentTheme = themeManager.getCurrentTheme();
         root.setStyle("-fx-background-color: " + currentTheme.getBackgroundColor() + ";");
 
@@ -98,7 +97,6 @@ public class WhiteNoiseView {
         VBox mainContent = new VBox(20);
         mainContent.setPadding(new Insets(20));
 
-        // FIXED: Use theme background color
         Theme currentTheme = themeManager.getCurrentTheme();
         mainContent.setStyle("-fx-background-color: " + currentTheme.getBackgroundColor() + ";");
 
@@ -122,21 +120,20 @@ public class WhiteNoiseView {
     }
 
     private VBox createHeader() {
-        // FIXED: Use theme text color for heading
+
         Theme currentTheme = themeManager.getCurrentTheme();
 
         Label title = new Label("White Noise Player 🎵");
         title.setStyle("-fx-font-size: 32; -fx-font-weight: bold; -fx-text-fill: " + currentTheme.getTextColor() + ";");
 
         Label subtitle = new Label("Create your perfect ambient soundscape");
-        subtitle.setStyle("-fx-font-size: 16; -fx-text-fill: " + currentTheme.getTextColor() + "AA;"); // FIXED: Use theme color with reduced opacity
+        subtitle.setStyle("-fx-font-size: 16; -fx-text-fill: " + currentTheme.getTextColor() + "AA;"); // Use theme color with reduced opacity
 
         VBox header = new VBox(8, title, subtitle);
         header.setAlignment(Pos.CENTER);
 
         return header;
     }
-    // ALL OTHER METHODS REMAIN EXACTLY THE SAME - NO CHANGES BELOW THIS POINT
 
     private VBox createMasterControls() {
         VBox masterCard = createCard("🎛 Master Controls", 600);

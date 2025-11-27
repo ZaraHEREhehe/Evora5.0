@@ -514,7 +514,7 @@ public class Sidebar extends VBox {
 
         Label defaultText = new Label("Your Companion");
         defaultText.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-        defaultText.setTextFill(Color.web(currentTheme.getTextPrimary())); // FIXED: Use theme color
+        defaultText.setTextFill(Color.web(currentTheme.getTextPrimary())); // Use theme color
 
         // Temporary experience display until mascot is updated
         HBox tempExpBox = new HBox(5);
@@ -523,7 +523,7 @@ public class Sidebar extends VBox {
         tempStar.setFont(Font.font(12));
         expLabel = new Label("Loading...");
         expLabel.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 12));
-        expLabel.setTextFill(Color.web(currentTheme.getTextPrimary())); // FIXED: Use theme color
+        expLabel.setTextFill(Color.web(currentTheme.getTextPrimary())); // Use theme color
         tempExpBox.getChildren().addAll(tempStar, expLabel);
 
         mascotContainer.getChildren().addAll(defaultMascot, defaultText, tempExpBox);

@@ -166,7 +166,7 @@ public class Dashboard {
         return mainContent;
     }
 
-    // Database methods to get real data - FIXED TO MATCH ANALYTICS FORMAT
+    // Database methods to get real data - TO MATCH ANALYTICS FORMAT
     private DashboardData getDashboardData() {
         // FINAL CHECK: If user ID is still 0, use global
         if (currentUserId == 0 ) {

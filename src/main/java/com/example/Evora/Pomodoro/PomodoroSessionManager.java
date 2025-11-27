@@ -68,7 +68,7 @@ public class PomodoroSessionManager {
         return null;
     }
 
-    // Calculate elapsed seconds - FIXED for async running
+    // Calculate elapsed seconds - for async running
     public long getElapsedSeconds(int sessionId) {
         String sql = "SELECT start_time, last_pause_time, status FROM PomodoroSessions WHERE session_id = ?";
 

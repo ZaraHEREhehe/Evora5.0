@@ -34,7 +34,7 @@ public class AnalyticsView {
     // Chart colors array
     private Color[] chartColors;
 
-    // FIXED COLORS FOR ALL CHART TEXT - ALWAYS BLACK FOR VISIBILITY
+    // COLORS FOR ALL CHART TEXT - ALWAYS BLACK FOR VISIBILITY
     private final Color CHART_TEXT_COLOR = Color.BLACK;
     private final Color CHART_GRID_COLOR = Color.web("#E5E7EB");
     private final Color CHART_AXIS_COLOR = Color.web("#374151");
@@ -96,14 +96,14 @@ public class AnalyticsView {
     }
 
     private void setupChartTooltip() {
-        // FIXED: Tooltip always has black text for visibility
+        //Tooltip always has black text for visibility
         this.chartTooltip.setStyle("-fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: rgba(255,255,255,0.95); -fx-text-fill: black; -fx-border-color: " + colors.get("border_primary") + "; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-radius: 5;");
     }
 
     public Node create() {
         mainContent = new VBox(20);
         mainContent.setPadding(new Insets(20));
-        // FIXED: Make main content wider to spread background color
+        // : Make main content wider to spread background color
         mainContent.setStyle("-fx-background-color: " + colors.get("bg_primary") + "; -fx-min-width: 1200px; -fx-pref-width: 1200px;");
 
         // Make VBox expand to fill all available space within its container
@@ -495,7 +495,7 @@ public class AnalyticsView {
         chartContainer.setMaxWidth(1000);
         chartContainer.setAlignment(Pos.CENTER);
 
-        // FIXED: Chart title ALWAYS uses black text, never theme color
+        // : Chart title ALWAYS uses black text, never theme color
         Label title = new Label("Weekly Activity");
         title.setStyle(CHART_HEADING_STYLE);
 
@@ -527,7 +527,7 @@ public class AnalyticsView {
     }
 
     private void drawActivityGrid(GraphicsContext gc, double padding, double chartWidth, double chartHeight, List<AnalyticsController.WeeklyData> data) {
-        // FIXED: Grid lines use fixed colors
+        // : Grid lines use  colors
         gc.setStroke(CHART_GRID_COLOR);
         gc.setLineWidth(1);
 
@@ -541,7 +541,7 @@ public class AnalyticsView {
             double y = padding + chartHeight - (chartHeight / 5) * i;
             gc.strokeLine(padding, y, padding + chartWidth, y);
 
-            // Y-axis labels - ALWAYS USE FIXED BLACK TEXT FOR VISIBILITY
+            // Y-axis labels - ALWAYS USE  BLACK TEXT FOR VISIBILITY
             gc.setFill(CHART_TEXT_COLOR);
             gc.setFont(Font.font("System", 12));
             int value = (int) ((i / 5.0) * maxValue);
@@ -620,7 +620,7 @@ public class AnalyticsView {
             gc.strokeRect(x - 5, y - 5, 10, 10);
         }
 
-        // Day labels with shortened names to prevent overlap - ALWAYS USE FIXED BLACK TEXT
+        // Day labels with shortened names to prevent overlap - ALWAYS USE  BLACK TEXT
         gc.setFont(Font.font("System", 12));
         for (int i = 0; i < data.size(); i++) {
             double x = padding + (chartWidth / (data.size() - 1)) * i;
@@ -631,7 +631,7 @@ public class AnalyticsView {
             gc.fillText(dayLabel, x - 10, padding + chartHeight + 25);
         }
 
-        // Add legend with proper spacing - ALWAYS USE FIXED BLACK TEXT
+        // Add legend with proper spacing - ALWAYS USE  BLACK TEXT
         gc.setFill(CHART_TEXT_COLOR);
         gc.fillText("Tasks Completed", padding + 10, padding - 20);
         gc.fillText("Focus Sessions", padding + 150, padding - 20);
@@ -731,7 +731,7 @@ public class AnalyticsView {
         chartContainer.setPrefWidth(550); // Wider container
         chartContainer.setAlignment(Pos.CENTER);
 
-        // FIXED: Chart title ALWAYS uses black text, never theme color
+        // : Chart title ALWAYS uses black text, never theme color
         Label chartTitle = new Label("Daily Task Completion");
         chartTitle.setStyle(CHART_SUBHEADING_STYLE);
 
@@ -755,7 +755,7 @@ public class AnalyticsView {
         chartContainer.setPrefWidth(550); // Wider container
         chartContainer.setAlignment(Pos.CENTER);
 
-        // FIXED: Chart title ALWAYS uses black text, never theme color
+        // : Chart title ALWAYS uses black text, never theme color
         Label chartTitle = new Label("Focus Session Intensity");
         chartTitle.setStyle(CHART_SUBHEADING_STYLE);
 
@@ -796,7 +796,7 @@ public class AnalyticsView {
             gc.setFill(barColor);
             gc.fillRect(x, y, barWidth, barHeight);
 
-            // Add shortened day label with proper spacing - ALWAYS USE FIXED BLACK TEXT
+            // Add shortened day label with proper spacing - ALWAYS USE  BLACK TEXT
             gc.setFill(CHART_TEXT_COLOR);
             gc.setFont(Font.font("System", 12));
 
@@ -805,7 +805,7 @@ public class AnalyticsView {
             gc.fillText(dayLabel, x + barWidth/2 - 10, padding + chartHeight + 25);
         }
 
-        // Y-axis labels - ALWAYS USE FIXED BLACK TEXT
+        // Y-axis labels - ALWAYS USE  BLACK TEXT
         gc.setFill(CHART_TEXT_COLOR);
         gc.setFont(Font.font("System", 12));
         for (int i = 0; i <= 5; i++) {
@@ -943,7 +943,7 @@ public class AnalyticsView {
         chartContainer.setPrefWidth(550);
         chartContainer.setAlignment(Pos.CENTER);
 
-        // FIXED: Chart title ALWAYS uses black text, never theme color
+        // : Chart title ALWAYS uses black text, never theme color
         Label title = new Label("Mood Distribution");
         title.setStyle(CHART_SUBHEADING_STYLE);
 
@@ -1049,7 +1049,7 @@ public class AnalyticsView {
         chartContainer.setPrefWidth(550);
         chartContainer.setAlignment(Pos.CENTER);
 
-        // FIXED: Chart title ALWAYS uses black text, never theme color
+        // : Chart title ALWAYS uses black text, never theme color
         Label title = new Label("Weekly Mood Trend");
         title.setStyle(CHART_SUBHEADING_STYLE);
 
@@ -1100,7 +1100,7 @@ public class AnalyticsView {
             gc.setLineWidth(2);
             gc.strokeOval(x - 6, y - 6, 12, 12);
 
-            // Day label with shortened names - ALWAYS USE FIXED BLACK TEXT
+            // Day label with shortened names - ALWAYS USE  BLACK TEXT
             gc.setFill(CHART_TEXT_COLOR);
             gc.setFont(Font.font("System", 12));
 
@@ -1109,7 +1109,7 @@ public class AnalyticsView {
             gc.fillText(dayLabel, x - 10, padding + chartHeight + 25);
         }
 
-        // Y-axis labels - ALWAYS USE FIXED BLACK TEXT
+        // Y-axis labels - ALWAYS USE  BLACK TEXT
         String[] moodLevels = {"5 - 😄", "4 - 😊", "3 - 😐", "2 - 😟", "1 - 😢"};
         gc.setFont(Font.font("System", 12));
         for (int i = 0; i < 5; i++) {
@@ -1342,7 +1342,7 @@ public class AnalyticsView {
     }
 
     private void drawPlaceholderChart(GraphicsContext gc, double width, double height) {
-        // FIXED: Placeholder text always uses black for visibility
+        // : Placeholder text always uses black for visibility
         gc.setFill(CHART_TEXT_COLOR);
         gc.setFont(Font.font("System", FontWeight.NORMAL, 16));
         gc.fillText("No data available yet. Keep using the app!", width/2 - 120, height/2);

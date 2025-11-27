@@ -454,7 +454,7 @@ public class MainController implements ThemeManager.ThemeChangeListener {
             ScrollPane scrollPane = new ScrollPane(analyticsContent);
             scrollPane.setFitToWidth(true);
 
-            // FIXED: Use theme background color instead of hardcoded Pastel.BLUSH
+            // Use theme background color instead of hardcoded Pastel.BLUSH
             Theme currentTheme = themeManager.getCurrentTheme();
             scrollPane.setStyle("-fx-background: " + currentTheme.getBackgroundColor() + "; -fx-border-color: " + currentTheme.getBackgroundColor() + ";");
             scrollPane.setPadding(new Insets(20));

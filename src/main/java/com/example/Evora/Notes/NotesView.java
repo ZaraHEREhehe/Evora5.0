@@ -124,10 +124,10 @@ public class NotesView extends BorderPane {
 
             // Use percentages of the actual board size instead of hardcoded positions
             double[][] cornerPositions = {
-                    {20, 20},                                    // Top-left (fixed offset)
-                    {boardWidth - 30, 20},                       // Top-right
-                    {20, boardHeight - 30},                      // Bottom-left
-                    {boardWidth - 30, boardHeight - 30}          // Bottom-right
+                    {20, 20},
+                    {boardWidth - 30, 20},
+                    {20, boardHeight - 30},
+                    {boardWidth - 30, boardHeight - 30}
             };
 
             // Clear any existing pins first
